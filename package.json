@@ -5,7 +5,7 @@
   "main": "bot.js",
   "dependencies": {
     "discord.js": "^11.4.2",
-    "hltv": "^2.12.2",
+    "hltv": "^2.12.3",
     "svg-to-img": "^2.0.9"
   },
   "devDependencies": {},
