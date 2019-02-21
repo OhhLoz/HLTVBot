@@ -12,7 +12,6 @@ var teamDictionary =
     "ASTRALIS": 6665,
     "LIQUID" : 5973,
     "NAVI" : 4608,
-    "NATUS-VINCERE" : 4608,
     "NRG" : 6673,
     "FAZE" : 6667,
     "CLOUD9" : 5752,
@@ -40,7 +39,7 @@ var mapDictionary =
     "cch" : "Cache",
     "ovp" : "Overpass",
     "cbl" : "Cobblestone",
-    "'-'" : "Other"
+    "-" : "Other"
 };
 
 client.on("ready", () => {
@@ -100,27 +99,44 @@ client.on("message", async message =>
     });
   }
 
+  // IF COMMAND IS A TEAM LINK THEIR TEAM PROFILE
+
+  if(command == "teams")
+  {
+    // SORT OUTPUT ALPHABETICALLY?
+    var outputMsg = "Valid Teams: ";
+    var count = 1;
+    for (var teamName in teamDictionary)
+    {
+      outputMsg += teamName;
+      if(count != Object.keys(teamDictionary).length)
+        outputMsg += ", ";
+      count++;
+    }
+    message.channel.send(outputMsg);
+  }
+
   if (command == "team")
   {
     // CHECK IF VALID TEAM NAME
 
-
     var teamname = args[1].toUpperCase();
     var teamid = teamDictionary[teamname];
+
     if (args[0] == "profile")
     {
       HLTV.getTeam({id: teamid}).then(res =>
         {
           console.log(res);
           const embed = new Discord.RichEmbed()
-          .setTitle(res.name)
+          .setTitle(teamname + " Profile")
           .setColor(0x00AE86)
           .setThumbnail(res.logo)
           // .setImage(res.coverImage)
           .setTimestamp()
-          .setURL(`https://www.hltv.org/team/${teamid}/${res.name}`)
+          .setURL(`https://www.hltv.org/team/${teamid}/${teamname}`)
           .addField("Nationality", res.location)
-          .addField("Players", `${res.players[0].name}, ${res.players[1].name}, ${res.players[2].name}, ${res.players[3].name} & ${res.players[4].name}`)
+          .addField("Players", `${res.players[0].name}, ${res.players[1].name}, ${res.players[2].name}, ${res.players[3].name}, ${res.players[4].name}`)
           .addField("Rank", res.rank)
           .addField("Recent Matches", `(${res.name} ${res.recentResults[0].result} ${res.recentResults[0].enemyTeam.name}) \n \t\t(${res.name} ${res.recentResults[1].result} ${res.recentResults[1].enemyTeam.name}) \n \t\t(${res.name} ${res.recentResults[2].result} ${res.recentResults[2].enemyTeam.name})`)
           message.channel.send({embed});
@@ -132,10 +148,10 @@ client.on("message", async message =>
         {
           console.log(res);
           const embed = new Discord.RichEmbed()
-          .setTitle(teamname)
+          .setTitle(teamname + " Stats")
           .setColor(0x00AE86)
           .setTimestamp()
-          .setURL(`https://www.hltv.org/team/${teamid}/${teamname}`)
+          .setURL(`https://www.hltv.org/stats/teams/${teamid}/${teamname}`)
           .addField("Maps Played", res.overview.mapsPlayed, true)
           .addField("Rounds Played", res.overview.roundsPlayed, true)
           .addField("Wins", res.overview.wins, true)
@@ -153,27 +169,36 @@ client.on("message", async message =>
       HLTV.getTeamStats({id: teamid}).then(res =>
         {
           console.log(res);
-
+          var embed;
+          var loopcount = 0;
           for (var mapKey in res.mapStats)
           {
-            console.log(map);
             // CHECK IF VALID MAP
             // TURN INTO FUNCTION?
-            const embed = new Discord.RichEmbed()
-            .setTitle(teamname)
-            .setColor(0x00AE86)
-            .setTimestamp()
-            .setURL(`https://www.hltv.org/team/${teamid}/${teamname}`)
+            if (loopcount % 3 == 0)
+            {
+              embed = new Discord.RichEmbed()
+              .setTitle(teamname + " Maps")
+              .setColor(0x00AE86)
+              .setTimestamp()
+              .setURL(`https://www.hltv.org/stats/teams/${teamid}/${teamname}`)
+            }
             var map = res.mapStats[mapKey];
-            embed.addField(mapDictionary[mapKey], " - " , true);
+            var mapname = mapDictionary[mapKey];
+
+            embed.addField(mapname, "==========================================================" , false);
             embed.addField("Wins", map.wins , true);
             embed.addField("Draws", map.draws , true);
             embed.addField("Losses", map.losses , true);
             embed.addField("Win Rate", map.winRate , true);
             embed.addField("Total Rounds", map.totalRounds , true);
-            embed.addField("Win Percentage After First Kill", map.roundWinPAfterFirstKill , true);
-            embed.addField("Win Percentage After First Death", map.roundWinPAfterFirstDeath , true);
-            message.channel.send({embed});
+            // embed.addField("Win Percentage After First Kill", map.roundWinPAfterFirstKill , true);
+            // embed.addField("Win Percentage After First Death", map.roundWinPAfterFirstDeath , true);
+            embed.addBlankField();
+
+            loopcount++;
+            if (loopcount % 3 == 0)
+              message.channel.send({embed});
           }
         });
     }
