@@ -4,6 +4,8 @@ const client = new Discord.Client();
 const config = require("./config.json");
 const { HLTV } = require('hltv');
 
+var matchCache;
+var resultCache;
 
 // MAYBE MOVE THESE TO EXTERNAL FILE
 var teamDictionary =
@@ -43,11 +45,17 @@ var mapDictionary =
 };
 
 client.on("ready", () => {
-  console.log(`Bot has started, with ${client.users.size} users, in ${client.channels.size} channels of ${client.guilds.size} guilds.`);
+  console.log(`Bot has started, with ${client.users.size} users, in ${client.channels.size} channels of ${client.guilds.size} servers.`);
   // Example of changing the bot's playing game to something useful. `client.user` is what the
   // docs refer to as the "ClientUser".
   //client.user.setActivity(`Serving ${client.guilds.size} servers`);
   client.user.setActivity(`use .help`);
+  HLTV.getMatches().then((res) => {
+    matchCache = res;
+  });
+  HLTV.getResults({pages: 1}).then((res) => {
+    resultCache = res;
+  });
 });
 
 client.on("guildCreate", guild => {
@@ -81,23 +89,55 @@ client.on("message", async message =>
   const args = message.content.slice(config.prefix.length).trim().split(/ +/g);
   const command = args.shift().toLowerCase();
 
-  // Let's go with a few common example commands! Feel free to delete or change those.
 
-  if(command === "ping")
+  // MAYBE REMOVE HLTVBOT PREFIX
+  if(command === "hltvbot")
   {
-    // Calculates ping between sending a message and editing it, giving a nice round-trip latency.
-    // The second ping is an average latency between the bot and the websocket server (one-way, not round-trip)
-    const m = await message.channel.send("Calculating");
-    m.edit(`Latency is ${m.createdTimestamp - message.createdTimestamp}ms. API Latency is ${Math.round(client.ping)}ms`);
+    if (args[0] == "ping")
+    {
+      // Calculates ping between sending a message and editing it, giving a nice round-trip latency.
+      // The second ping is an average latency between the bot and the websocket server (one-way, not round-trip)
+      const m = await message.channel.send("Calculating");
+      m.edit(`Latency is ${m.createdTimestamp - message.createdTimestamp}ms. API Latency is ${Math.round(client.ping)}ms`);
+    }
+    else if (args[0] == "stats")
+    {
+      var outputStr = `HLTVBot is currently serving ${client.users.size} users, in ${client.channels.size} channels of ${client.guilds.size} servers.`;
+      console.log(outputStr);
+      message.channel.send(outputStr);
+    }
+    else if (args[0] == "help")
+    {
+      message.channel.send("HELP");
+    }
   }
 
   if(command === "results")
   {
-    HLTV.getResults({pages: 1}).then(res =>
-    {
-        console.log(res);
-    });
+    console.log(resultCache);
+    console.log("\n\n\n ======================================================================== \n\n\n");
   }
+
+  if(command === "matches")
+  {
+    console.log(matchCache);
+    console.log("\n\n\n ======================================================================== \n\n\n");
+  }
+
+  // if(command === "matchesstats")
+  // {
+  //   var currDate = new Date();
+  //   var prevDate = new Date();
+  //   var currDateStr = currDate.toISOString().slice(0,10);
+  //   prevDate.setDate(currDate.getDate() - 1);
+  //   var prevDateStr = prevDate.toISOString().slice(0,10);
+  //   HLTV.getMatchesStats({startDate: `${prevDateStr}`, endDate: `${currDateStr}`}).then((res) => {
+  //     console.log(res);
+  //     console.log("\n\n\n ======================================================================== \n\n\n");
+  //   });
+  // }
+
+
 
   // IF COMMAND IS A TEAM LINK THEIR TEAM PROFILE
 
@@ -128,6 +168,7 @@ client.on("message", async message =>
       HLTV.getTeam({id: teamid}).then(res =>
         {
           console.log(res);
+          console.log("\n\n\n ======================================================================== \n\n\n");
           const embed = new Discord.RichEmbed()
           .setTitle(teamname + " Profile")
           .setColor(0x00AE86)
@@ -138,6 +179,7 @@ client.on("message", async message =>
           .addField("Nationality", res.location)
           .addField("Players", `${res.players[0].name}, ${res.players[1].name}, ${res.players[2].name}, ${res.players[3].name}, ${res.players[4].name}`)
           .addField("Rank", res.rank)
+          // MAYBE ADD BO1 OR BO3?
           .addField("Recent Matches", `(${res.name} ${res.recentResults[0].result} ${res.recentResults[0].enemyTeam.name}) \n \t\t(${res.name} ${res.recentResults[1].result} ${res.recentResults[1].enemyTeam.name}) \n \t\t(${res.name} ${res.recentResults[2].result} ${res.recentResults[2].enemyTeam.name})`)
           message.channel.send({embed});
         });
@@ -147,6 +189,7 @@ client.on("message", async message =>
       HLTV.getTeamStats({id: teamid}).then(res =>
         {
           console.log(res);
+          console.log("\n\n\n ======================================================================== \n\n\n");
           const embed = new Discord.RichEmbed()
           .setTitle(teamname + " Stats")
           .setColor(0x00AE86)
@@ -201,6 +244,14 @@ client.on("message", async message =>
               message.channel.send({embed});
           }
         });
+    }
+    else if (args[0] == "link")
+    {
+      message.channel.send(`https://www.hltv.org/team/${teamid}/${teamname}`);
+    }
+    else
+    {
+      message.channel.send("Invalid Command, use .help for commands");
     }
   }
 });
