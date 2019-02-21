@@ -49,7 +49,7 @@ client.on("ready", () => {
   // Example of changing the bot's playing game to something useful. `client.user` is what the
   // docs refer to as the "ClientUser".
   //client.user.setActivity(`Serving ${client.guilds.size} servers`);
-  client.user.setActivity(`use .help`);
+  client.user.setActivity(`use .hltvbot`);
   HLTV.getMatches().then((res) => {
     matchCache = res;
   });
@@ -89,11 +89,29 @@ client.on("message", async message =>
   const args = message.content.slice(config.prefix.length).trim().split(/ +/g);
   const command = args.shift().toLowerCase();
 
+  if(command == "teams")
+  {
+    // SORT OUTPUT ALPHABETICALLY?
+    var outputMsg = "Valid Teams: ";
+    var count = 1;
+    for (var teamName in teamDictionary)
+    {
+      outputMsg += teamName;
+      if(count != Object.keys(teamDictionary).length)
+        outputMsg += ", ";
+      count++;
+    }
+    message.channel.send(outputMsg);
+  }
 
-  // MAYBE REMOVE HLTVBOT PREFIX
+  // MAYBE REMOVE HLTVBOT PREFIX?
   if(command === "hltvbot")
   {
-    if (args[0] == "ping")
+    if (args.length == 0)
+    {
+      message.channel.send("HELP");
+    }
+    else if (args[0] == "ping")
     {
       // Calculates ping between sending a message and editing it, giving a nice round-trip latency.
       // The second ping is an average latency between the bot and the websocket server (one-way, not round-trip)
@@ -106,10 +124,6 @@ client.on("message", async message =>
       console.log(outputStr);
       message.channel.send(outputStr);
     }
-    else if (args[0] == "help")
-    {
-      message.channel.send("HELP");
-    }
     else
     {
       message.channel.send("Invalid Command, use .help for commands");
@@ -121,7 +135,7 @@ client.on("message", async message =>
     var teamName = command.toUpperCase();
     var teamID = teamDictionary[teamName];
 
-    if(args.length == 0)
+    if(args.length == 0) // IF JUST TEAMNAME
     {
       HLTV.getTeam({id: teamID}).then(res =>
         {
@@ -131,10 +145,13 @@ client.on("message", async message =>
           .setTitle(teamName + " Profile")
           .setColor(0x00AE86)
           .setThumbnail(res.logo)
-          // .setImage(res.coverImage)
+          //.setImage(res.coverImage)
           .setTimestamp()
+          .setFooter("Sent by HLTVBot", client.user.avatarURL)
           .setURL(`https://www.hltv.org/team/${teamID}/${teamName}`)
-          .addField("Nationality", res.location)
+          .addField("Location", res.location)
+          .addField("Facebook", res.facebook)
+          .addField("Twitter", res.twitter)
           .addField("Players", `${res.players[0].name}, ${res.players[1].name}, ${res.players[2].name}, ${res.players[3].name}, ${res.players[4].name}`)
           .addField("Rank", res.rank)
           // MAYBE ADD BO1 OR BO3?
@@ -152,6 +169,7 @@ client.on("message", async message =>
           .setTitle(teamName + " Stats")
           .setColor(0x00AE86)
           .setTimestamp()
+          .setFooter("Sent by HLTVBot", client.user.avatarURL)
           .setURL(`https://www.hltv.org/stats/teams/${teamID}/${teamName}`)
           .addField("Maps Played", res.overview.mapsPlayed, true)
           .addField("Rounds Played", res.overview.roundsPlayed, true)
@@ -182,6 +200,7 @@ client.on("message", async message =>
               .setTitle(teamName + " Maps")
               .setColor(0x00AE86)
               .setTimestamp()
+              .setFooter("Sent by HLTVBot", client.user.avatarURL)
               .setURL(`https://www.hltv.org/stats/teams/${teamID}/${teamName}`)
             }
             var map = res.mapStats[mapKey];
@@ -238,25 +257,6 @@ client.on("message", async message =>
   //     console.log("\n\n\n ======================================================================== \n\n\n");
   //   });
   // }
-
-
-
-  // IF COMMAND IS A TEAM LINK THEIR TEAM PROFILE
-
-  if(command == "teams")
-  {
-    // SORT OUTPUT ALPHABETICALLY?
-    var outputMsg = "Valid Teams: ";
-    var count = 1;
-    for (var teamName in teamDictionary)
-    {
-      outputMsg += teamName;
-      if(count != Object.keys(teamDictionary).length)
-        outputMsg += ", ";
-      count++;
-    }
-    message.channel.send(outputMsg);
-  }
 });
 
 client.login(config.token);
