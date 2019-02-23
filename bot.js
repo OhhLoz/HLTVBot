@@ -7,6 +7,8 @@ const { HLTV } = require('hltv');
 var matchCache;
 var resultCache;
 
+const versionNumber = "1.0";
+
 // MAYBE MOVE THESE TO EXTERNAL FILE
 var teamDictionary =
 {
@@ -109,7 +111,22 @@ client.on("message", async message =>
   {
     if (args.length == 0)
     {
-      message.channel.send("HELP");
+      var embed = new Discord.RichEmbed()
+      .setTitle("Help")
+      .setColor(0xff8d00)
+      .setTimestamp()
+      .setFooter("Sent by HLTVBot", client.user.avatarURL)
+      .addField(".hltvbot", "Lists all current commands", false)
+      .addField(".hltvbot ping", "Displays the current ping to the bot & the API", false)
+      .addField(".hltvbot stats", "Displays the statistics of the bot (servercount, usercount & channelcount)", false)
+      .addField(".hltvbot version", "Displays the current version number of the bot", false)
+      .addField(".teams", "Lists all of the currently accepted teams", false)
+      .addField(".[teamname]", "Displays the profile related to the input team", false)
+      .addField(".[teamname] stats", "Displays the statistics related to the input team", false)
+      .addField(".[teamname] maps", "Displays the map statistics related to the input team", false)
+      .addField(".[teamname] link", "Displays a link to the input teams HLTV page", false)
+
+      message.channel.send({embed});
     }
     else if (args[0] == "ping")
     {
@@ -124,9 +141,15 @@ client.on("message", async message =>
       console.log(outputStr);
       message.channel.send(outputStr);
     }
+    else if (args[0] == "version")
+    {
+      var outputStr = `HLTVBot is currently running version: ${versionNumber}`;
+      console.log(outputStr);
+      message.channel.send(outputStr);
+    }
     else
     {
-      message.channel.send("Invalid Command, use .help for commands");
+      message.channel.send("Invalid Command, use .hltvbot for commands");
     }
   }
 
@@ -228,7 +251,7 @@ client.on("message", async message =>
     }
     else
     {
-      message.channel.send("Invalid Command, use .help for commands");
+      message.channel.send("Invalid Command, use .hltvbot for commands");
     }
     //message.channel.send(command);
   }
