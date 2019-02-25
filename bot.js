@@ -4,9 +4,6 @@ const client = new Discord.Client();
 const config = require("./config.json");
 const { HLTV } = require('hltv');
 
-var matchCache;
-var resultCache;
-
 const versionNumber = "1.0";
 
 // MAYBE MOVE THESE TO EXTERNAL FILE
@@ -52,12 +49,6 @@ client.on("ready", () => {
   // docs refer to as the "ClientUser".
   //client.user.setActivity(`Serving ${client.guilds.size} servers`);
   client.user.setActivity(`use .hltvbot`);
-  HLTV.getMatches().then((res) => {
-    matchCache = res;
-  });
-  HLTV.getResults({pages: 1}).then((res) => {
-    resultCache = res;
-  });
 });
 
 client.on("guildCreate", guild => {
@@ -125,6 +116,7 @@ client.on("message", async message =>
       .addField(".[teamname] stats", "Displays the statistics related to the input team", false)
       .addField(".[teamname] maps", "Displays the map statistics related to the input team", false)
       .addField(".[teamname] link", "Displays a link to the input teams HLTV page", false)
+      .addField(".livematches", "Displays all currently live matches", false)
 
       message.channel.send({embed});
     }
@@ -256,16 +248,59 @@ client.on("message", async message =>
     //message.channel.send(command);
   }
 
+  if (command == "livematches")
+  {
+    var livecount = 0;
+    var embed = new Discord.RichEmbed()
+    .setTitle("Live Matches")
+    .setColor(0x00AE86)
+    .setTimestamp()
+    .setFooter("Sent by HLTVBot", client.user.avatarURL)
+    HLTV.getMatches().then((res) => {
+      for (var matchKey in res)
+      {
+        var match = res[matchKey];
+        if (match.live == true)
+        {
+          livecount++;
+          embed.addField("Match", `${match.team1.name} vs ${match.team2.name}`, false);
+          embed.addField("Format", `${match.format}`, false);
+          var mapStr = "";
+          for (var mapKey in match.maps)
+          {
+            mapStr += mapDictionary[match.maps[mapKey]];
+            if (match.maps[mapKey] != match.maps.length)
+              mapStr += ", ";
+          }
+          embed.addField("Map", `${mapStr}`, false);
+          embed.addField("Event", `${match.event.name}`, false);
+          // IF MORE THAN 1 LIVE THEN embed.addBlankField();
+          // CHECK FOR MORE THAN 25 FIELDS
+          // MAYBE CLEAN UP FORMATTING
+        }
+      }
+
+      if (livecount == 0)
+        embed.addField("Matches", "There are currently no live matches.", false);
+
+      message.channel.send({embed});
+    });
+  }
+
   if(command === "results")
   {
-    console.log(resultCache);
-    console.log("\n\n\n ======================================================================== \n\n\n");
+    HLTV.getResults({pages: 1}).then((res) => {
+      console.log(res);
+      console.log("\n\n\n ======================================================================== \n\n\n");
+    });
   }
 
   if(command === "matches")
   {
-    console.log(matchCache);
-    console.log("\n\n\n ======================================================================== \n\n\n");
+    HLTV.getMatches().then((res) => {
+      console.log(res);
+      console.log("\n\n\n ======================================================================== \n\n\n");
+    });
   }
 
   // if(command === "matchesstats")
