@@ -203,7 +203,12 @@ client.on("message", async message =>
       HLTV.getTeamStats({id: teamID}).then(res =>
         {
           console.log(res);
-          var embed;
+          var embed = new Discord.RichEmbed()
+          .setTitle(teamName + " Maps")
+          .setColor(0x00AE86)
+          .setTimestamp()
+          .setFooter("Sent by HLTVBot", client.user.avatarURL)
+          .setURL(`https://www.hltv.org/stats/teams/${teamID}/${teamName}`);
           var loopcount = 0;
           for (var mapKey in res.mapStats)
           {
@@ -235,6 +240,7 @@ client.on("message", async message =>
             if (loopcount % 3 == 0)
               message.channel.send({embed});
           }
+          message.channel.send({embed});
         });
     }
     else if (args[0] == "link")
@@ -251,38 +257,65 @@ client.on("message", async message =>
   if (command == "livematches")
   {
     var livecount = 0;
-    var embed = new Discord.RichEmbed()
-    .setTitle("Live Matches")
-    .setColor(0x00AE86)
-    .setTimestamp()
-    .setFooter("Sent by HLTVBot", client.user.avatarURL)
+    var liveArr = [];
     HLTV.getMatches().then((res) => {
       for (var matchKey in res)
       {
         var match = res[matchKey];
         if (match.live == true)
         {
+          liveArr[livecount] = match;
           livecount++;
-          embed.addField("Match", `${match.team1.name} vs ${match.team2.name}`, false);
-          embed.addField("Format", `${match.format}`, false);
-          var mapStr = "";
-          for (var mapKey in match.maps)
-          {
-            mapStr += mapDictionary[match.maps[mapKey]];
-            if (match.maps[mapKey] != match.maps.length)
-              mapStr += ", ";
-          }
-          embed.addField("Map", `${mapStr}`, false);
-          embed.addField("Event", `${match.event.name}`, false);
-          // IF MORE THAN 1 LIVE THEN embed.addBlankField();
-          // CHECK FOR MORE THAN 25 FIELDS
-          // MAYBE CLEAN UP FORMATTING
+          // MAYBE INCLUDE LINKS TO TEAM / EVENT
         }
       }
 
       if (livecount == 0)
         embed.addField("Matches", "There are currently no live matches.", false);
+      else
+      {
+        var loopcount = 0;
+        var embed;
+        for (var matchKey in liveArr)
+        {
+          var match = liveArr[matchKey];
+          // CAN ONLY FIT 5 MATCHES PER EMBED MESSAGE
+          if (loopcount % 5 == 0)
+          {
+            embed = new Discord.RichEmbed()
+            .setTitle("Live Matches")
+            .setColor(0x00AE86)
+            .setTimestamp()
+            .setFooter("Sent by HLTVBot", client.user.avatarURL)
+          }
 
+          // POPULATE EMBED
+          embed.addField("Match", `${match.team1.name} vs ${match.team2.name}`, false);
+          embed.addField("Format", `${match.format}`, false);
+          var mapStr = "";
+          for (var mapKey in match.maps)
+          {
+            var currMap = mapDictionary[match.maps[mapKey]]
+            if (currMap == undefined)
+              mapStr += "Not Defined";
+            else
+              mapStr += currMap;
+
+            if (mapKey != match.maps.length - 1)
+              mapStr += ", ";
+          }
+          embed.addField("Map", `${mapStr}`, false);
+          embed.addField("Event", `${match.event.name}`, false);
+
+          // IF CURRENT MATCH IS NOT THE LAST ONE ADD A SEPERATOR (BLANK FIELD)
+          if(matchKey != liveArr.length - 1)
+            embed.addBlankField();
+
+          loopcount++;
+          if (loopcount % 5 == 0)
+            message.channel.send({embed});
+        }
+      }
       message.channel.send({embed});
     });
   }
