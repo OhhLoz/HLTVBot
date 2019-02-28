@@ -237,6 +237,7 @@ client.on("message", async message =>
             embed.addBlankField();
 
             loopcount++;
+            // DUPLICATION BUG IF END % 3 == 0 as below is executed aswell
             if (loopcount % 3 == 0)
               message.channel.send({embed});
           }
@@ -297,7 +298,7 @@ client.on("message", async message =>
           {
             var currMap = mapDictionary[match.maps[mapKey]]
             if (currMap == undefined)
-              mapStr += "Not Defined";
+              mapStr += match.maps[mapKey];
             else
               mapStr += currMap;
 
@@ -312,6 +313,7 @@ client.on("message", async message =>
             embed.addBlankField();
 
           loopcount++;
+          // DUPLICATION BUG IF END % 5 == 0 as below is executed aswell
           if (loopcount % 5 == 0)
             message.channel.send({embed});
         }
