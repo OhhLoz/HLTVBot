@@ -40,7 +40,15 @@ var mapDictionary =
     "cch" : "Cache",
     "ovp" : "Overpass",
     "cbl" : "Cobblestone",
-    "-" : "Other"
+    "-" : "Other",
+    undefined : "Not Selected"
+};
+
+var formatDictionary =
+{
+    "bo1" : "Best of 1",
+    "bo3" : "Best of 3",
+    undefined : "Not Selected"
 };
 
 client.on("ready", () => {
@@ -117,6 +125,7 @@ client.on("message", async message =>
       .addField(".[teamname] maps", "Displays the map statistics related to the input team", false)
       .addField(".[teamname] link", "Displays a link to the input teams HLTV page", false)
       .addField(".livematches", "Displays all currently live matches", false)
+      .addField(".matches", "Displays the next 4 scheduled matches", false)
 
       message.channel.send({embed});
     }
@@ -322,17 +331,80 @@ client.on("message", async message =>
     });
   }
 
-  if(command === "results")
+  if (command == "matches")
   {
-    HLTV.getResults({pages: 1}).then((res) => {
-      console.log(res);
-      console.log("\n\n\n ======================================================================== \n\n\n");
+    var matchcount = 0;
+    var matchArr = [];
+    HLTV.getMatches().then((res) => {
+      for (var matchKey in res)
+      {
+        var match = res[matchKey];
+        if (match.live != true)
+        {
+          matchArr[matchcount] = match;
+          matchcount++;
+          console.log(match);
+          console.log("\n");
+          // MAYBE INCLUDE LINKS TO TEAM / EVENT
+          if (matchcount == 4) // CAN ONLY HAVE 4 MATCHES PER EMBED, SO I ONLY SEND 1 EMBED
+            break;
+        }
+      }
+
+      if (matchcount == 0)
+        embed.addField("Matches", "There are currently no scheduled matches.", false);
+      else
+      {
+        var loopcount = 0;
+        var embed = new Discord.RichEmbed()
+        .setTitle("Scheduled Matches")
+        .setColor(0x00AE86)
+        .setTimestamp()
+        .setFooter("Sent by HLTVBot", client.user.avatarURL);
+        for (var matchKey in matchArr)
+        {
+          var match = matchArr[matchKey];
+          // POPULATE EMBED
+          var matchDate = new Date(match.date);
+          embed.addField("Match", `${match.team1.name} vs ${match.team2.name}`, false);
+          embed.addField("Date", `${matchDate.toString()}`, false);
+          embed.addField("Format", `${formatDictionary[match.format]}`, false);
+          var mapStr = "";
+          var isMapArray = Array.isArray(match.map);
+          if (isMapArray)
+          {
+            for (var mapKey in match.map)
+            {
+              var currMap = mapDictionary[match.map[mapKey]]
+              if (currMap == undefined)
+                mapStr += match.map[mapKey];
+              else
+                mapStr += currMap;
+
+              if (mapKey != match.map.length - 1)
+                mapStr += ", ";
+            }
+          }
+          else
+          {
+            mapStr += mapDictionary[match.map];
+          }
+          embed.addField("Map", `${mapStr}`, false);
+          embed.addField("Event", `${match.event.name}`, false);
+
+          // IF CURRENT MATCH IS NOT THE LAST ONE ADD A SEPERATOR (BLANK FIELD)
+          loopcount++;
+          if(loopcount <= 3)
+            embed.addBlankField();
+        }
+      }
+      message.channel.send({embed});
     });
   }
 
-  if(command === "matches")
+  if(command === "results")
   {
-    HLTV.getMatches().then((res) => {
+    HLTV.getResults({pages: 1}).then((res) => {
       console.log(res);
       console.log("\n\n\n ======================================================================== \n\n\n");
     });
