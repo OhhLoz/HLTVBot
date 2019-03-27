@@ -132,7 +132,7 @@ client.on("message", async message =>
       .addField(".hltvbot ping", "Displays the current ping to the bot & the API", false)
       .addField(".hltvbot stats", "Displays the statistics of the bot (servercount, usercount & channelcount)", false)
       .addField(".hltvbot version", "Displays the current version number of the bot", false)
-      .addField(".teamrankings", "Displays the top 30 teams' rankings and any rank changes", false)
+      .addField(".rankings [team,player]", "Displays the top 30 players' or team rankings", false)
       .addField(".teams", "Lists all of the currently accepted teams", false)
       .addField(".[teamname]", "Displays the profile related to the input team", false)
       .addField(".[teamname] stats", "Displays the statistics related to the input team", false)
@@ -425,30 +425,62 @@ client.on("message", async message =>
     });
   }
 
-  if(command == "teamrankings")
+  if(command == "rankings")
   {
-    var outputStr = "";
-    HLTV.getTeamRanking().then((res) => {
-      console.log(res);
-      for (var rankObjKey in res)
-      {
-        var rankObj = res[rankObjKey];
-        var teamStr = "";
-        if(teamDictionary.hasOwnProperty(rankObj.team.name.toUpperCase()))
-            teamStr = `[${rankObj.team.name}](https://www.hltv.org/team/${rankObj.team.id}/${reverseTeamDictionary[rankObj.team.id][0]})`
-        else
-            teamStr = `${rankObj.team.name}`;
-        outputStr += `${rankObj.place}. ${teamStr} (${rankObj.change})\n`
-      }
-      const embed = new Discord.RichEmbed()
-      .setTitle("Team Rankings")
-      .setColor(0x00AE86)
-      .setTimestamp()
-      .setFooter("Sent by HLTVBot", client.user.avatarURL)
-      .setDescription(outputStr);
-      message.channel.send({embed});
-    });
+    if(args[0] == "team")
+    {
+      var outputStr = "";
+      HLTV.getTeamRanking().then((res) => {
+        //console.log(res);
+        for (var rankObjKey in res)
+        {
+          var rankObj = res[rankObjKey];
+          var teamStr = "";
+          if(teamDictionary.hasOwnProperty(rankObj.team.name.toUpperCase()))
+              teamStr = `[${rankObj.team.name}](https://www.hltv.org/team/${rankObj.team.id}/${reverseTeamDictionary[rankObj.team.id][0]})`
+          else
+              teamStr = `${rankObj.team.name}`;
+          outputStr += `${rankObj.place}. ${teamStr} (${rankObj.change})\n`
+        }
+        const embed = new Discord.RichEmbed()
+        .setTitle("Team Rankings")
+        .setColor(0x00AE86)
+        .setTimestamp()
+        .setFooter("Sent by HLTVBot", client.user.avatarURL)
+        .setDescription(outputStr);
+        message.channel.send({embed});
+      });
+    }
+    else if(args[0] == "player")
+    {
+      HLTV.getPlayerRanking({startDate: '', endDate: '', rankingFilter: 'Top30'}).then((res) => {
+        console.log(res);
+        var count = 1;
+        var outputStr = "";
+        for (var playerObjKey in res)
+        {
+          var playerObj = res[playerObjKey];
+          outputStr += `${count}. [${playerObj.name}](https://www.hltv.org/stats/players/${playerObj.id}/${playerObj.name}) (${playerObj.rating})\n`
+          if (count == 30)
+            break;
+          count++;
+        }
+        const embed = new Discord.RichEmbed()
+        .setTitle("Team Rankings")
+        .setColor(0x00AE86)
+        .setTimestamp()
+        .setFooter("Sent by HLTVBot", client.user.avatarURL)
+        .setDescription(outputStr);
+        message.channel.send({embed});
+      });
+    }
+    else
+    {
+      message.channel.send("Invalid Command, use .hltvbot for commands");
+    }
   }
+
+
 
   // if(command === "matchesstats")
   // {
