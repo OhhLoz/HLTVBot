@@ -13,6 +13,7 @@ var teamDictionary =
     "ASTRALIS": 6665,
     "LIQUID" : 5973,
     "NAVI" : 4608,
+    "NATUS VINCERE" : 4608,
     "NRG" : 6673,
     "FAZE" : 6667,
     "CLOUD9" : 5752,
@@ -29,6 +30,8 @@ var teamDictionary =
     "HELLRAISERS" : 5310,
     "COMPLEXITY" : 5005
 };
+
+var reverseTeamDictionary;
 
 var mapDictionary =
 {
@@ -51,12 +54,22 @@ var formatDictionary =
     undefined : "Not Selected"
 };
 
+var id = function(x) {return x;};
+
+var reverseMapFromMap = function(map, f) {
+  return Object.keys(map).reduce(function(acc, k) {
+    acc[map[k]] = (acc[map[k]] || []).concat((f || id)(k))
+    return acc
+  },{})
+}
+
 client.on("ready", () => {
   console.log(`Bot has started, with ${client.users.size} users, in ${client.channels.size} channels of ${client.guilds.size} servers.`);
   // Example of changing the bot's playing game to something useful. `client.user` is what the
   // docs refer to as the "ClientUser".
   //client.user.setActivity(`Serving ${client.guilds.size} servers`);
   client.user.setActivity(`use .hltvbot`);
+  reverseTeamDictionary = reverseMapFromMap(teamDictionary);
 });
 
 client.on("guildCreate", guild => {
@@ -105,7 +118,7 @@ client.on("message", async message =>
     message.channel.send(outputMsg);
   }
 
-  // MAYBE REMOVE HLTVBOT PREFIX?
+  // MAYBE REMOVE HLTVBOT PREFIX? MAYBE REFORMAT SO BROKEN INTO SECTIONS (HELP, TEAMS, MATCHES, RESULTS)
   if(command === "hltvbot")
   {
     if (args.length == 0)
@@ -119,6 +132,7 @@ client.on("message", async message =>
       .addField(".hltvbot ping", "Displays the current ping to the bot & the API", false)
       .addField(".hltvbot stats", "Displays the statistics of the bot (servercount, usercount & channelcount)", false)
       .addField(".hltvbot version", "Displays the current version number of the bot", false)
+      .addField(".teamrankings", "Displays the top 30 teams' rankings and any rank changes", false)
       .addField(".teams", "Lists all of the currently accepted teams", false)
       .addField(".[teamname]", "Displays the profile related to the input team", false)
       .addField(".[teamname] stats", "Displays the statistics related to the input team", false)
@@ -154,6 +168,7 @@ client.on("message", async message =>
     }
   }
 
+  // IF COMMAND STARTS WITH TEAMNAME (.nip, .cloud9, etc)
   if(teamDictionary.hasOwnProperty(command.toUpperCase()))
   {
     var teamName = command.toUpperCase();
@@ -407,6 +422,31 @@ client.on("message", async message =>
     HLTV.getResults({pages: 1}).then((res) => {
       console.log(res);
       console.log("\n\n\n ======================================================================== \n\n\n");
+    });
+  }
+
+  if(command == "teamrankings")
+  {
+    var outputStr = "";
+    HLTV.getTeamRanking().then((res) => {
+      console.log(res);
+      for (var rankObjKey in res)
+      {
+        var rankObj = res[rankObjKey];
+        var teamStr = "";
+        if(teamDictionary.hasOwnProperty(rankObj.team.name.toUpperCase()))
+            teamStr = `[${rankObj.team.name}](https://www.hltv.org/team/${rankObj.team.id}/${reverseTeamDictionary[rankObj.team.id][0]})`
+        else
+            teamStr = `${rankObj.team.name}`;
+        outputStr += `${rankObj.place}. ${teamStr} (${rankObj.change})\n`
+      }
+      const embed = new Discord.RichEmbed()
+      .setTitle("Team Rankings")
+      .setColor(0x00AE86)
+      .setTimestamp()
+      .setFooter("Sent by HLTVBot", client.user.avatarURL)
+      .setDescription(outputStr);
+      message.channel.send({embed});
     });
   }
 
