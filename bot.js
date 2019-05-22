@@ -4,7 +4,7 @@ const client = new Discord.Client();
 const config = require("./config.json");
 const { HLTV } = require('hltv');
 
-const versionNumber = "1.0";
+const versionNumber = "1.1";
 
 // MAYBE MOVE THESE TO EXTERNAL FILE
 var teamDictionary =
@@ -140,6 +140,7 @@ client.on("message", async message =>
       .addField(".[teamname] link", "Displays a link to the input teams HLTV page", false)
       .addField(".livematches", "Displays all currently live matches", false)
       .addField(".matches", "Displays the next 4 scheduled matches", false)
+      .addField(".results", "Displays 3 most recent match results", false)
 
       message.channel.send({embed});
     }
@@ -256,8 +257,6 @@ client.on("message", async message =>
             embed.addField("Losses", map.losses , true);
             embed.addField("Win Rate", map.winRate , true);
             embed.addField("Total Rounds", map.totalRounds , true);
-            // embed.addField("Win Percentage After First Kill", map.roundWinPAfterFirstKill , true);
-            // embed.addField("Win Percentage After First Death", map.roundWinPAfterFirstDeath , true);
             embed.addBlankField();
 
             loopcount++;
@@ -419,9 +418,63 @@ client.on("message", async message =>
 
   if(command === "results")
   {
-    HLTV.getResults({pages: 1}).then((res) => {
-      console.log(res);
-      console.log("\n\n\n ======================================================================== \n\n\n");
+    HLTV.getResults({pages: 1}).then((res) =>
+    {
+      if (matchcount == 0)
+        embed.addField("Results", "There are currently no match results available.", false);
+      else
+      {
+        var loopcount = 0;
+        var embed = new Discord.RichEmbed()
+        .setTitle("Recent Match Results")
+        .setColor(0x00AE86)
+        .setTimestamp()
+        .setFooter("Sent by HLTVBot", client.user.avatarURL);
+        for (var matchKey in res)
+        {
+          var match = res[matchKey];
+          // POPULATE EMBED
+          var matchDate = new Date(match.date);
+          embed.addField("Match", `${match.team1.name} vs ${match.team2.name}`, false);
+          embed.addField("Date", `${matchDate.toString()}`, false);
+          embed.addField("Format", `${formatDictionary[match.format]}`, false);
+          var mapStr = "";
+          var isMapArray = Array.isArray(match.map);
+          if (isMapArray)
+          {
+            for (var mapKey in match.map)
+            {
+              var currMap = mapDictionary[match.map[mapKey]]
+              if (currMap == undefined)
+                mapStr += match.map[mapKey];
+              else
+                mapStr += currMap;
+
+              if (mapKey != match.map.length - 1)
+                mapStr += ", ";
+            }
+          }
+          else
+          {
+            mapStr += mapDictionary[match.map];
+          }
+          embed.addField("Map", `${mapStr}`, false);
+          embed.addField("Event", `${match.event.name}`, false);
+          embed.addField("Result", `${match.result}`, false);
+
+          console.log(match);
+          console.log("\n\n\n ======================================================================== \n\n\n");
+
+          // IF CURRENT MATCH IS NOT THE LAST ONE ADD A SEPERATOR (BLANK FIELD)
+          loopcount++;
+          if(loopcount == 3)
+            break;
+
+          if(loopcount <= 3)
+            embed.addBlankField();
+        }
+      }
+      message.channel.send({embed});
     });
   }
 
@@ -480,20 +533,29 @@ client.on("message", async message =>
     }
   }
 
+  if(command === "debugmatches")
+  {
+    var currDate = new Date();
+    var prevDate = new Date();
+    var currDateStr = currDate.toISOString().slice(0,10);
+    prevDate.setDate(currDate.getDate() - 1);
+    var prevDateStr = prevDate.toISOString().slice(0,10);
+    HLTV.getMatchesStats({startDate: `${prevDateStr}`, endDate: `${currDateStr}`}).then((res) =>
+    {
+      console.log(res);
+      console.log("\n\n\n ======================================================================== \n\n\n");
+    });
+  }
 
+  if(command === "debugresults")
+  {
+    HLTV.getResults({pages: 1}).then((res) =>
+    {
+      console.log(res);
+      console.log("\n\n\n ======================================================================== \n\n\n");
+    });
+  }
 
-  // if(command === "matchesstats")
-  // {
-  //   var currDate = new Date();
-  //   var prevDate = new Date();
-  //   var currDateStr = currDate.toISOString().slice(0,10);
-  //   prevDate.setDate(currDate.getDate() - 1);
-  //   var prevDateStr = prevDate.toISOString().slice(0,10);
-  //   HLTV.getMatchesStats({startDate: `${prevDateStr}`, endDate: `${currDateStr}`}).then((res) => {
-  //     console.log(res);
-  //     console.log("\n\n\n ======================================================================== \n\n\n");
-  //   });
-  // }
 });
 
 client.login(config.token);
