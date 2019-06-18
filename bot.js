@@ -8,7 +8,7 @@ const teamDictionary = require("./teams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.2.0";
+const versionNumber = "1.2.1";
 
 var reverseTeamDictionary;
 
@@ -74,7 +74,7 @@ client.on("message", async message =>
   }
 
   // MAYBE REMOVE HLTVBOT PREFIX? MAYBE REFORMAT SO BROKEN INTO SECTIONS (HELP, TEAMS, MATCHES, RESULTS)
-  if(command === "hltvbot")
+  if(command === "hltv")
   {
     if (args.length == 0)
     {
@@ -83,11 +83,11 @@ client.on("message", async message =>
       .setColor(0xff8d00)
       .setTimestamp()
       .setFooter("Sent by HLTVBot", client.user.avatarURL)
-      .addField(".hltvbot", "Lists all current commands", false)
-      .addField(".hltvbot ping", "Displays the current ping to the bot & the API", false)
-      .addField(".hltvbot stats", "Displays the statistics of the bot (servercount, usercount & channelcount)", false)
-      .addField(".hltvbot version", "Displays the current version number of the bot", false)
-      .addField(".hltvbot contact", "Displays the contact information (if there are any bugs to report)", false)
+      .addField(".hltv", "Lists all current commands", false)
+      .addField(".hltv ping", "Displays the current ping to the bot & the API", false)
+      .addField(".hltv stats", "Displays the statistics of the bot (servercount, usercount & channelcount)", false)
+      .addField(".hltv version", "Displays the current version number of the bot", false)
+      .addField(".hltv contact", "Displays the contact information (if there are any bugs to report)", false)
       .addField(".rankings [team,player]", "Displays the top 30 players' or team rankings", false)
       .addField(".teams", "Lists all of the currently accepted teams", false)
       .addField(".[teamname]", "Displays the profile related to the input team", false)
