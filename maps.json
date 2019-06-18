@@ -1,0 +1,11 @@
+{
+    "inf" : "Inferno",
+    "d2" : "Dust 2",
+    "nuke" : "Nuke",
+    "trn" : "Train",
+    "mrg" : "Mirage",
+    "cch" : "Cache",
+    "ovp" : "Overpass",
+    "cbl" : "Cobblestone",
+    "-" : "Other"
+}

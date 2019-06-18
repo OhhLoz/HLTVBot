@@ -4,55 +4,13 @@ const client = new Discord.Client();
 const config = require("./config.json");
 const { HLTV } = require('hltv');
 
-const versionNumber = "1.1";
+const teamDictionary = require("./teams.json");
+const mapDictionary = require("./maps.json");
+const formatDictionary = require("./formats.json");
 
-// MAYBE MOVE THESE TO EXTERNAL FILE
-var teamDictionary =
-{
-    "NIP": 4411,
-    "ASTRALIS": 6665,
-    "LIQUID" : 5973,
-    "NAVI" : 4608,
-    "NATUS VINCERE" : 4608,
-    "NRG" : 6673,
-    "FAZE" : 6667,
-    "CLOUD9" : 5752,
-    "RENEGADES" : 6211,
-    "ENCE" : 4869,
-    "NORTH" : 7533,
-    "MIBR" : 9215,
-    "VITALITY" : 9565,
-    "FNATIC" : 4991,
-    "BIG" : 7532,
-    "AVANGAR" : 8120,
-    "G2" : 5995,
-    "TYLOO" : 4863,
-    "HELLRAISERS" : 5310,
-    "COMPLEXITY" : 5005
-};
+const versionNumber = "1.2.0";
 
 var reverseTeamDictionary;
-
-var mapDictionary =
-{
-    "inf" : "Inferno",
-    "d2" : "Dust 2",
-    "nuke" : "Nuke",
-    "trn" : "Train",
-    "mrg" : "Mirage",
-    "cch" : "Cache",
-    "ovp" : "Overpass",
-    "cbl" : "Cobblestone",
-    "-" : "Other",
-    undefined : "Not Selected"
-};
-
-var formatDictionary =
-{
-    "bo1" : "Best of 1",
-    "bo3" : "Best of 3",
-    undefined : "Not Selected"
-};
 
 var id = function(x) {return x;};
 
@@ -97,9 +55,6 @@ client.on("message", async message =>
   if(message.content.indexOf(config.prefix) !== 0) return;
 
   // Here we separate our "command" name, and our "arguments" for the command.
-  // e.g. if we have the message "+say Is this the real life?" , we'll get the following:
-  // command = say
-  // args = ["Is", "this", "the", "real", "life?"]
   const args = message.content.slice(config.prefix.length).trim().split(/ +/g);
   const command = args.shift().toLowerCase();
 
@@ -132,6 +87,7 @@ client.on("message", async message =>
       .addField(".hltvbot ping", "Displays the current ping to the bot & the API", false)
       .addField(".hltvbot stats", "Displays the statistics of the bot (servercount, usercount & channelcount)", false)
       .addField(".hltvbot version", "Displays the current version number of the bot", false)
+      .addField(".hltvbot contact", "Displays the contact information (if there are any bugs to report)", false)
       .addField(".rankings [team,player]", "Displays the top 30 players' or team rankings", false)
       .addField(".teams", "Lists all of the currently accepted teams", false)
       .addField(".[teamname]", "Displays the profile related to the input team", false)
@@ -154,13 +110,19 @@ client.on("message", async message =>
     else if (args[0] == "stats")
     {
       var outputStr = `HLTVBot is currently serving ${client.users.size} users, in ${client.channels.size} channels of ${client.guilds.size} servers.`;
-      console.log(outputStr);
+      //console.log(outputStr);
       message.channel.send(outputStr);
     }
     else if (args[0] == "version")
     {
       var outputStr = `HLTVBot is currently running version: ${versionNumber}`;
-      console.log(outputStr);
+      //console.log(outputStr);
+      message.channel.send(outputStr);
+    }
+    else if (args[0] == "contact")
+    {
+      var outputStr = `The best method of contacting is on the github page, issues can be made here: https://github.com/OhhLoz/HLTVBot`;
+      //console.log(outputStr);
       message.channel.send(outputStr);
     }
     else
@@ -179,8 +141,8 @@ client.on("message", async message =>
     {
       HLTV.getTeam({id: teamID}).then(res =>
         {
-          console.log(res);
-          console.log("\n\n\n ======================================================================== \n\n\n");
+          //console.log(res);
+          //console.log("\n\n\n ======================================================================== \n\n\n");
           const embed = new Discord.RichEmbed()
           .setTitle(teamName + " Profile")
           .setColor(0x00AE86)
@@ -203,8 +165,8 @@ client.on("message", async message =>
     {
       HLTV.getTeamStats({id: teamID}).then(res =>
         {
-          console.log(res);
-          console.log("\n\n\n ======================================================================== \n\n\n");
+          //console.log(res);
+          //console.log("\n\n\n ======================================================================== \n\n\n");
           const embed = new Discord.RichEmbed()
           .setTitle(teamName + " Stats")
           .setColor(0x00AE86)
@@ -227,7 +189,7 @@ client.on("message", async message =>
     {
       HLTV.getTeamStats({id: teamID}).then(res =>
         {
-          console.log(res);
+          //console.log(res);
           var embed = new Discord.RichEmbed()
           .setTitle(teamName + " Maps")
           .setColor(0x00AE86)
@@ -357,8 +319,9 @@ client.on("message", async message =>
         {
           matchArr[matchcount] = match;
           matchcount++;
-          console.log(match);
-          console.log("\n");
+          //console.log(match);
+          //console.log("\n");
+
           // MAYBE INCLUDE LINKS TO TEAM / EVENT
           if (matchcount == 4) // CAN ONLY HAVE 4 MATCHES PER EMBED, SO I ONLY SEND 1 EMBED
             break;
@@ -462,8 +425,8 @@ client.on("message", async message =>
           embed.addField("Event", `${match.event.name}`, false);
           embed.addField("Result", `${match.result}`, false);
 
-          console.log(match);
-          console.log("\n\n\n ======================================================================== \n\n\n");
+          //console.log(match);
+          //console.log("\n\n\n ======================================================================== \n\n\n");
 
           // IF CURRENT MATCH IS NOT THE LAST ONE ADD A SEPERATOR (BLANK FIELD)
           loopcount++;
@@ -507,7 +470,7 @@ client.on("message", async message =>
     else if(args[0] == "player")
     {
       HLTV.getPlayerRanking({startDate: '', endDate: '', rankingFilter: 'Top30'}).then((res) => {
-        console.log(res);
+        //console.log(res);
         var count = 1;
         var outputStr = "";
         for (var playerObjKey in res)
