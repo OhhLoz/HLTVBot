@@ -8,7 +8,7 @@ const teamDictionary = require("./teams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.2.1";
+const versionNumber = "1.2.2";
 
 var reverseTeamDictionary;
 
@@ -26,7 +26,7 @@ client.on("ready", () => {
   // Example of changing the bot's playing game to something useful. `client.user` is what the
   // docs refer to as the "ClientUser".
   //client.user.setActivity(`Serving ${client.guilds.size} servers`);
-  client.user.setActivity(`use .hltvbot`);
+  client.user.setActivity(`use .hltv`);
   reverseTeamDictionary = reverseMapFromMap(teamDictionary);
 });
 
