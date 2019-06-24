@@ -8,7 +8,7 @@ const teamDictionary = require("./teams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.2.4";
+const versionNumber = "1.2.5";
 
 var reverseTeamDictionary;
 
@@ -53,16 +53,23 @@ client.on("message", async message =>
   // Outputs valid teams the user can use
   if(command == "teams")
   {
-    var outputMsg = "Valid Teams: ";
+    var embed = new Discord.RichEmbed()
+      .setTitle("Valid Teams")
+      .setColor(0xff8d00)
+      .setTimestamp()
+      .setFooter("Sent by HLTVBot", client.user.avatarURL)
     var count = 1;
-    for (var teamName in teamDictionary)
+    var outputMsg = "";
+    var teamKeysSorted = Object.keys(teamDictionary).sort();
+    for (i = 0; i < teamKeysSorted.length; i++)
     {
-      outputMsg += teamName;
+      outputMsg += teamKeysSorted[i];
       if(count != Object.keys(teamDictionary).length)
-        outputMsg += ", ";
+        outputMsg += "\n";
       count++;
     }
-    message.channel.send(outputMsg);
+    embed.setDescription(outputMsg);
+    message.channel.send({embed});
   }
 
   // HLTV command represents commands pertinent to the actual bot, its functionality, diagnostics & statistics
@@ -119,7 +126,7 @@ client.on("message", async message =>
     }
     else
     {
-      message.channel.send("Invalid Command, use .hltvbot for commands");
+      message.channel.send("Invalid Command, use .hltv for commands");
     }
   }
 
@@ -227,7 +234,7 @@ client.on("message", async message =>
     }
     else  // Error catching for incorrect command
     {
-      message.channel.send("Invalid Command, use .hltvbot for commands");
+      message.channel.send("Invalid Command, use .hltv for commands");
     }
     //message.channel.send(command);
   }
@@ -346,7 +353,7 @@ client.on("message", async message =>
             {
               var currMap = mapDictionary[match.map[mapKey]]
               if (currMap == undefined)
-                mapStr += match.map[mapKey];
+                mapStr += "Not Selected";
               else
                 mapStr += currMap;
 
@@ -356,7 +363,11 @@ client.on("message", async message =>
           }
           else
           {
-            mapStr += mapDictionary[match.map];
+            var currMap = mapDictionary[match.map];
+            if (currMap == undefined)
+              mapStr += "Not Selected";
+            else
+              mapStr += currMap;
           }
           embed.addField("Map", `${mapStr}`, false);
           embed.addField("Event", `${match.event.name}`, false);
@@ -401,7 +412,7 @@ client.on("message", async message =>
             {
               var currMap = mapDictionary[match.map[mapKey]]
               if (currMap == undefined)
-                mapStr += match.map[mapKey];
+                mapStr += "Unknown";
               else
                 mapStr += currMap;
 
@@ -411,7 +422,7 @@ client.on("message", async message =>
           }
           else
           {
-            mapStr += mapDictionary[match.map];
+            mapStr += "Unknown";
           }
           embed.addField("Map", `${mapStr}`, false);
           embed.addField("Event", `${match.event.name}`, false);
@@ -484,7 +495,7 @@ client.on("message", async message =>
     }
     else
     {
-      message.channel.send("Invalid Command, use .hltvbot for commands");
+      message.channel.send("Invalid Command, use .hltv for commands");
     }
   }
 
