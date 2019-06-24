@@ -8,7 +8,7 @@ const teamDictionary = require("./teams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.2.3";
+const versionNumber = "1.2.4";
 
 var reverseTeamDictionary;
 
@@ -23,7 +23,7 @@ var reverseMapFromMap = function(map, f) {
 
 client.on("ready", () =>
 {
-  console.log(`Bot has started, with ${client.users.size} users, in ${client.channels.size} channels of ${client.guilds.size} servers.`);
+  console.log(`HLTVBot is currently serving ${client.users.filter(user => !user.bot).size} users, in ${client.channels.size} channels of ${client.guilds.size} servers. Alongside ${client.users.filter(user => user.bot).size} bot brothers.`);
   client.user.setActivity(`use .hltv`);
   reverseTeamDictionary = reverseMapFromMap(teamDictionary);
 });
@@ -101,7 +101,7 @@ client.on("message", async message =>
     }
     else if (args[0] == "stats")
     {
-      var outputStr = `HLTVBot is currently serving ${client.users.size} users, in ${client.channels.size} channels of ${client.guilds.size} servers.`;
+      var outputStr = `HLTVBot is currently serving ${client.users.filter(user => !user.bot).size} users, in ${client.channels.size} channels of ${client.guilds.size} servers. Alongside ${client.users.filter(user => user.bot).size} bot brothers.`;
       //console.log(outputStr);
       message.channel.send(outputStr);
     }
