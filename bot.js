@@ -8,7 +8,7 @@ const teamDictionary = require("./teams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.2.2";
+const versionNumber = "1.2.3";
 
 var reverseTeamDictionary;
 
@@ -21,46 +21,38 @@ var reverseMapFromMap = function(map, f) {
   },{})
 }
 
-client.on("ready", () => {
+client.on("ready", () =>
+{
   console.log(`Bot has started, with ${client.users.size} users, in ${client.channels.size} channels of ${client.guilds.size} servers.`);
-  // Example of changing the bot's playing game to something useful. `client.user` is what the
-  // docs refer to as the "ClientUser".
-  //client.user.setActivity(`Serving ${client.guilds.size} servers`);
   client.user.setActivity(`use .hltv`);
   reverseTeamDictionary = reverseMapFromMap(teamDictionary);
 });
 
-client.on("guildCreate", guild => {
-  // This event triggers when the bot joins a guild.
+client.on("guildCreate", guild =>
+{
   console.log(`New guild joined: ${guild.name} (id: ${guild.id}). This guild has ${guild.memberCount} members!`);
-  //client.user.setActivity(`Serving ${client.guilds.size} servers`);
 });
 
-client.on("guildDelete", guild => {
-  // this event triggers when the bot is removed from a guild.
+client.on("guildDelete", guild =>
+{
   console.log(`I have been removed from: ${guild.name} (id: ${guild.id})`);
-  //client.user.setActivity(`Serving ${client.guilds.size} servers`);
 });
 
 client.on("message", async message =>
 {
-  // This event will run on every single message received, from any channel or DM.
-
-  // It's good practice to ignore other bots. This also makes your bot ignore itself
-  // and not get into a spam loop (we call that "botception").
+  // Ignore other bots.
   if(message.author.bot) return;
 
-  // Also good practice to ignore any message that does not start with our prefix,
-  // which is set in the configuration file.
+  // Ignore any message that does not start with our prefix
   if(message.content.indexOf(config.prefix) !== 0) return;
 
-  // Here we separate our "command" name, and our "arguments" for the command.
+  // Separate our command names, and command arguments
   const args = message.content.slice(config.prefix.length).trim().split(/ +/g);
   const command = args.shift().toLowerCase();
 
+  // Outputs valid teams the user can use
   if(command == "teams")
   {
-    // SORT OUTPUT ALPHABETICALLY?
     var outputMsg = "Valid Teams: ";
     var count = 1;
     for (var teamName in teamDictionary)
@@ -73,7 +65,7 @@ client.on("message", async message =>
     message.channel.send(outputMsg);
   }
 
-  // MAYBE REMOVE HLTVBOT PREFIX? MAYBE REFORMAT SO BROKEN INTO SECTIONS (HELP, TEAMS, MATCHES, RESULTS)
+  // HLTV command represents commands pertinent to the actual bot, its functionality, diagnostics & statistics
   if(command === "hltv")
   {
     if (args.length == 0)
@@ -137,7 +129,7 @@ client.on("message", async message =>
     var teamName = command.toUpperCase();
     var teamID = teamDictionary[teamName];
 
-    if(args.length == 0) // IF JUST TEAMNAME
+    if(args.length == 0)    // IF JUST TEAMNAME display a team overview
     {
       HLTV.getTeam({id: teamID}).then(res =>
         {
@@ -161,7 +153,7 @@ client.on("message", async message =>
           message.channel.send({embed});
         });
     }
-    else if (args[0] == "stats")
+    else if (args[0] == "stats")     // If stats after teamname display a team stats page
     {
       HLTV.getTeamStats({id: teamID}).then(res =>
         {
@@ -185,7 +177,7 @@ client.on("message", async message =>
           message.channel.send({embed});
         });
     }
-    else if (args[0] == "maps")
+    else if (args[0] == "maps")     // If maps after teamname display a team maps page
     {
       HLTV.getTeamStats({id: teamID}).then(res =>
         {
@@ -229,11 +221,11 @@ client.on("message", async message =>
           message.channel.send({embed});
         });
     }
-    else if (args[0] == "link")
+    else if (args[0] == "link")     // If link after teamname send a link to the team page
     {
       message.channel.send(`https://www.hltv.org/team/${teamID}/${teamName}`);
     }
-    else
+    else  // Error catching for incorrect command
     {
       message.channel.send("Invalid Command, use .hltvbot for commands");
     }
