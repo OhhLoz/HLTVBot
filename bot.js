@@ -8,7 +8,7 @@ const teamDictionary = require("./teams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.2.5";
+const versionNumber = "1.2.6";
 
 var reverseTeamDictionary;
 
@@ -87,6 +87,7 @@ client.on("message", async message =>
       .addField(".hltv stats", "Displays the statistics of the bot (servercount, usercount & channelcount)", false)
       .addField(".hltv version", "Displays the current version number of the bot", false)
       .addField(".hltv contact", "Displays the contact information (if there are any bugs to report)", false)
+      .addField(".hltv invite", "Displays an invite link for the bot", false)
       .addField(".rankings [team,player]", "Displays the top 30 players' or team rankings", false)
       .addField(".teams", "Lists all of the currently accepted teams", false)
       .addField(".[teamname]", "Displays the profile related to the input team", false)
@@ -121,6 +122,12 @@ client.on("message", async message =>
     else if (args[0] == "contact")
     {
       var outputStr = `The best method of contacting is on the github page, issues can be made here: https://github.com/OhhLoz/HLTVBot`;
+      //console.log(outputStr);
+      message.channel.send(outputStr);
+    }
+    else if (args[0] == "invite")
+    {
+      var outputStr = `https://discordapp.com/oauth2/authorize?client_id=548165454158495745&scope=bot&permissions=330816`;
       //console.log(outputStr);
       message.channel.send(outputStr);
     }
