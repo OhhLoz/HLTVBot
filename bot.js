@@ -8,7 +8,7 @@ const teamDictionary = require("./teams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.2.7";
+const versionNumber = "1.2.8";
 
 var reverseTeamDictionary;
 
@@ -99,16 +99,15 @@ client.on("message", async message =>
       .setFooter("Sent by HLTVBot", client.user.avatarURL)
       .addField(".hltv", "Lists all current commands", false)
       .addField(".hltv ping", "Displays the current ping to the bot & the API", false)
-      .addField(".hltv stats", "Displays the statistics of the bot (servercount, usercount & channelcount)", false)
-      .addField(".hltv version", "Displays the current version number of the bot", false)
-      .addField(".hltv contact", "Displays the contact information (if there are any bugs to report)", false)
-      .addField(".hltv invite", "Displays an invite link for the bot", false)
+      .addField(".hltv stats", "Displays bot statistics, invite link and contact information", false)
+      .addBlankField()
       .addField(".rankings [team,player]", "Displays the top 30 players' or team rankings", false)
       .addField(".teams", "Lists all of the currently accepted teams", false)
       .addField(".[teamname]", "Displays the profile related to the input team", false)
       .addField(".[teamname] stats", "Displays the statistics related to the input team", false)
       .addField(".[teamname] maps", "Displays the map statistics related to the input team", false)
       .addField(".[teamname] link", "Displays a link to the input teams HLTV page", false)
+      .addBlankField()
       .addField(".livematches", "Displays all currently live matches", false)
       .addField(".matches", "Displays the next 4 scheduled matches", false)
       .addField(".results", "Displays 3 most recent match results", false)
@@ -132,33 +131,26 @@ client.on("message", async message =>
       {
         if (guild.id == "264445053596991498")
           return;
-
         servercount += 1;
         channelcount += guild.channels.filter(channel => channel.type != 'category').size;
         usercount += guild.members.filter(member => !member.user.bot).size;
         botcount += guild.members.filter(member => member.user.bot).size;
       })
-
-      var outputStr = `HLTVBot is currently serving ${usercount} users, in ${channelcount} channels of ${servercount} servers. Alongside ${botcount} bot brothers.`;
-      message.channel.send(outputStr);
-    }
-    else if (args[0] == "version")
-    {
-      var outputStr = `HLTVBot is currently running version: ${versionNumber}`;
-      //console.log(outputStr);
-      message.channel.send(outputStr);
-    }
-    else if (args[0] == "contact")
-    {
-      var outputStr = `The best method of contacting is on the github page, issues can be made here: https://github.com/OhhLoz/HLTVBot`;
-      //console.log(outputStr);
-      message.channel.send(outputStr);
-    }
-    else if (args[0] == "invite")
-    {
-      var outputStr = `https://discordapp.com/oauth2/authorize?client_id=548165454158495745&scope=bot&permissions=330816`;
-      //console.log(outputStr);
-      message.channel.send(outputStr);
+      var embed = new Discord.RichEmbed()
+      .setTitle("Bot Stats")
+      .setColor(0xff8d00)
+      .setTimestamp()
+      .setThumbnail(client.user.avatarURL)
+      .setFooter("Sent by HLTVBot", client.user.avatarURL)
+      .addField("Server Count", servercount, true)
+      .addField("Channel Count", channelcount, true)
+      .addField("User Count", usercount, true)
+      .addField("Bot User Count", botcount, true)
+      .addField("Version", versionNumber, true)
+      .addField("Uptime", getTime(client.uptime), true)
+      .addField("Invite Link", "[Invite](https://discordapp.com/oauth2/authorize?client_id=548165454158495745&scope=bot&permissions=330816)", true)
+      .addField("Contact Link", "[GitHub](https://github.com/OhhLoz/HLTVBot)", true)
+      message.channel.send(embed);
     }
     else
     {
