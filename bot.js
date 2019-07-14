@@ -8,7 +8,7 @@ const teamDictionary = require("./teams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.2.8";
+const versionNumber = "1.2.9";
 
 var reverseTeamDictionary;
 
@@ -19,6 +19,15 @@ var reverseMapFromMap = function(map, f) {
     acc[map[k]] = (acc[map[k]] || []).concat((f || id)(k))
     return acc
   },{})
+}
+
+let getTime = (milli) => {
+  let time = new Date(milli);
+  let hours = time.getUTCHours();
+  let minutes = time.getUTCMinutes();
+  let seconds = time.getUTCSeconds();
+  let milliseconds = time.getUTCMilliseconds();
+  return hours + "H " + minutes + "M " + seconds + "S";
 }
 
 client.on("ready", () =>
