@@ -552,13 +552,90 @@ client.on("message", async message =>
 
   if(command === "debugresults")
   {
+    var originalAuthor = message.author;
     HLTV.getResults({pages: 1}).then((res) =>
     {
       console.log(res);
-      console.log("\n\n\n ======================================================================== \n\n\n");
-    });
-  }
+      var loopcount = 0;
+      var currIndex = 0;
+      var embed = new Discord.RichEmbed()
+      .setTitle("Recent Match Results")
+      .setColor(0x00AE86)
+      .setTimestamp()
+      .setFooter("Sent by HLTVBot", client.user.avatarURL);
+      for (var i = currIndex; i <= currIndex+2; i++)
+      {
+        if(res[currIndex] != null)
+        {
+          var match = res[i];
+          var matchDate = new Date(match.date);
+          var team1NameFormatted = match.team1.name.replace(/\s+/g, '-').toLowerCase();
+          var team2NameFormatted = match.team2.name.replace(/\s+/g, '-').toLowerCase();
+          var eventFormatted = match.event.name.replace(/\s+/g, '-').toLowerCase();
 
+          embed.addField(`Match`, `[${match.team1.name}](https://www.hltv.org/team/${match.team1.id}/${team1NameFormatted}) vs [${match.team2.name}](https://www.hltv.org/team/${match.team2.id}/${team2NameFormatted})`, false);
+          embed.addField("Date", `${matchDate.toString()}`, false);
+          embed.addField("Format", `${formatDictionary[match.format]}`, false);
+
+          var mapStr = "";
+          if (Array.isArray(match.map))
+          {
+            for (var mapKey in match.map)
+            {
+              var currMap = mapDictionary[match.map[mapKey]]
+              if (currMap == undefined)
+                mapStr += "Unknown";
+              else
+                mapStr += currMap;
+
+              if (mapKey != match.map.length - 1)
+                mapStr += ", ";
+            }
+          }
+          else
+          {
+            mapStr += "Unknown";
+          }
+
+          embed.addField("Map", `${mapStr}`, false);
+          embed.addField("Event", `[${match.event.name}](https://www.hltv.org/events/${match.event.id}/${match.event.name.replace(/\s+/g, '-').toLowerCase()})`, false);
+          embed.addField("Result", `${match.result}`, false);
+
+          if(i != currIndex+2)
+            embed.addBlankField();
+        }
+      }
+      message.channel.send({embed}).then((message) =>
+      {
+        message.react('⬅').then(() => message.react('➡'));
+
+        const filter = (reaction, user) => {
+          return ['⬅', '➡'].includes(reaction.emoji.name) && user.id === originalAuthor;
+        };
+
+        message.awaitReactions(filter, { max: 1, time: 60000, errors: ['time'] })
+          .then(collected =>
+          {
+            const reaction = collected.first();
+
+            if (reaction.emoji.name === '⬅')
+            {
+              message.reply('you reacted with a left.');
+            }
+            else if (reaction.emoji.name === '➡')
+            {
+              message.reply('you reacted with a right.');
+            }
+          })
+          .catch(collected =>
+          {
+            message.reply('Error');
+          });
+      });
+      }
+      );
+
+  }
 });
 
 client.login(config.token);
