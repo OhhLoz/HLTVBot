@@ -30,147 +30,137 @@ let getTime = (milli) => {
   return hours + "H " + minutes + "M " + seconds + "S";
 }
 
-var getResults = (res, startIndex) => {
+var handlePages = (res, startIndex, code) => {
+  var pageSize = 0;
   var embed = new Discord.RichEmbed()
-      .setTitle("Recent Match Results")
       .setColor(0x00AE86)
-      .setTimestamp()
-      for (var i = startIndex; i < startIndex+3; i++)
+      .setTimestamp();
+  var liveArr = [];
+  var livecount = 0;
+
+  if(code == "r")
+  {
+    pageSize = 3;
+    embed.setTitle("Match Results");
+  }
+  else if (code == "lm")
+  {
+    pageSize = 5;
+    embed.setTitle("Live Matches");
+
+    for (var matchKey in res)
+    {
+      var match = res[matchKey];
+      if (match.live == true)
       {
-        if(res[i] != null)
-        {
-          var match = res[i];
-          var matchDate = new Date(match.date);
-          var team1NameFormatted = match.team1.name.replace(/\s+/g, '-').toLowerCase();
-          var team2NameFormatted = match.team2.name.replace(/\s+/g, '-').toLowerCase();
-          var eventFormatted = match.event.name.replace(/\s+/g, '-').toLowerCase();
-
-          embed.setFooter(`Page ${startIndex/3 + 1} of ${Math.ceil(res.length/3) + 1}`, client.user.avatarURL);
-          embed.addField(`Match`, `[${match.team1.name}](https://www.hltv.org/team/${match.team1.id}/${team1NameFormatted}) vs [${match.team2.name}](https://www.hltv.org/team/${match.team2.id}/${team2NameFormatted})`, false);
-          embed.addField("Date", `${matchDate.toString()}`, false);
-          embed.addField("Format", `${formatDictionary[match.format]}`, false);
-
-          var mapStr = "";
-          if (Array.isArray(match.map))
-          {
-            for (var mapKey in match.map)
-            {
-              var currMap = mapDictionary[match.map[mapKey]]
-              if (currMap == undefined)
-                mapStr += "Unknown";
-              else
-                mapStr += currMap;
-
-              if (mapKey != match.map.length - 1)
-                mapStr += ", ";
-            }
-          }
-          else
-          {
-            mapStr += "Unknown";
-          }
-
-          embed.addField("Map", `${mapStr}`, false);
-          embed.addField("Event", `[${match.event.name}](https://www.hltv.org/events/${match.event.id}/${eventFormatted})`, false);
-          embed.addField("Result", `${match.result}`, false);
-
-          if(i != startIndex+2)
-            embed.addBlankField();
-        }
+        liveArr[livecount] = match;
+        livecount++;
       }
-      return embed;
-}
+    }
+  }
+  else if (code == "m")
+  {
+    pageSize = 3;
+    embed.setTitle("Scheduled Matches");
+  }
 
-var getMatches = (res, startIndex) => {
-  var embed = new Discord.RichEmbed()
-      .setTitle("Scheduled Matches")
-      .setColor(0x00AE86)
-      .setTimestamp()
-      //console.log(res);
-      for (var i = startIndex; i < startIndex+3; i++)
+  for (var i = startIndex; i < startIndex+pageSize; i++)
+    {
+      var match = res[i];
+      var pages = res.length/pageSize;
+
+      if(code == "lm")
       {
-        if(res[i] != null)
+        match = liveArr[i];
+        pages = liveArr.length/pageSize;
+      }
+
+      if(match == null) //Error with live matches, assumes will have enough to fill 1 page so less than that throws an error
+        return embed;
+
+      // POPULATE EMBED 
+      var team1NameFormatted = match.team1.name.replace(/\s+/g, '-').toLowerCase();
+      var team2NameFormatted = match.team2.name.replace(/\s+/g, '-').toLowerCase();
+      var eventFormatted = match.event.name.replace(/\s+/g, '-').toLowerCase();
+
+      embed.setFooter(`Page ${startIndex/pageSize + 1} of ${Math.ceil(pages) + 1}`, client.user.avatarURL);
+      embed.addField(`Match`, `[${match.team1.name}](https://www.hltv.org/team/${match.team1.id}/${team1NameFormatted}) vs [${match.team2.name}](https://www.hltv.org/team/${match.team2.id}/${team2NameFormatted})`, false);
+      if(code == "m")
+      {
+        var matchDate = new Date(match.date);
+        if(match.live)
+          matchDate = "Live";
+        embed.addField("Date", `${matchDate.toString()}`, false);
+      }
+      embed.addField("Format", `${formatDictionary[match.format]}`, false);
+
+      var mapStr = "";
+
+      if (match.map != undefined)
+      {
+        var isMapArray = Array.isArray(match.map);
+        if (isMapArray)
         {
-          var match = res[i];
-          // POPULATE EMBED
-          var matchDate = new Date(match.date);
-
-          if(match.live)
-            matchDate = "Live";
-          var team1NameFormatted = match.team1.name.replace(/\s+/g, '-').toLowerCase();
-          var team2NameFormatted = match.team2.name.replace(/\s+/g, '-').toLowerCase();
-          var eventFormatted = match.event.name.replace(/\s+/g, '-').toLowerCase();
-
-          embed.setFooter(`Page ${startIndex/3 + 1} of ${Math.ceil(res.length/3) + 1}`, client.user.avatarURL);
-          embed.addField(`Match`, `[${match.team1.name}](https://www.hltv.org/team/${match.team1.id}/${team1NameFormatted}) vs [${match.team2.name}](https://www.hltv.org/team/${match.team2.id}/${team2NameFormatted})`, false);
-          embed.addField("Date", `${matchDate.toString()}`, false);
-          embed.addField("Format", `${formatDictionary[match.format]}`, false);
-
-          var mapStr = "";
-
-          if (match.map != undefined)
+          for (var mapKey in match.map)
           {
-            var isMapArray = Array.isArray(match.map);
-            if (isMapArray)
-            {
-              for (var mapKey in match.map)
-              {
-                var currMap = mapDictionary[match.map[mapKey]]
-                if (currMap == undefined)
-                  mapStr += "Not Selected";
-                else
-                  mapStr += currMap;
-
-                if (mapKey != match.map.length - 1)
-                  mapStr += ", ";
-              }
-            }
-            else
-            {
-              var currMap = mapDictionary[match.map];
-              if (currMap == undefined)
-                mapStr += "Not Selected";
-              else
-                mapStr += currMap;
-            }
-          }
-          else if (match.maps != undefined)
-          {
-            var isMapArray = Array.isArray(match.maps);
-            if (isMapArray)
-            {
-              for (var mapKey in match.maps)
-              {
-                var currMap = mapDictionary[match.maps[mapKey]]
-                if (currMap == undefined)
-                  mapStr += "Not Selected";
-                else
-                  mapStr += currMap;
-
-                if (mapKey != match.maps.length - 1)
-                  mapStr += ", ";
-              }
-            }
-            else
-            {
-              var currMap = mapDictionary[match.maps];
-              if (currMap == undefined)
-                mapStr += "Not Selected";
-              else
-                mapStr += currMap;
-            }
-          }
-          else
+            var currMap = mapDictionary[match.map[mapKey]]
+            if (currMap == undefined)
               mapStr += "Not Selected";
+            else
+              mapStr += currMap;
 
-          embed.addField("Map", `${mapStr}`, false);
-          embed.addField("Event", `[${match.event.name}](https://www.hltv.org/events/${match.event.id}/${eventFormatted})`, false);
-
-          if(i != startIndex+2)
-            embed.addBlankField();
+            if (mapKey != match.map.length - 1)
+              mapStr += ", ";
+          }
+        }
+        else
+        {
+          var currMap = mapDictionary[match.map];
+          if (currMap == undefined)
+            mapStr += "Not Selected";
+          else
+            mapStr += currMap;
         }
       }
-      return embed;
+      else if (match.maps != undefined)
+      {
+        var isMapArray = Array.isArray(match.maps);
+        if (isMapArray)
+        {
+          for (var mapKey in match.maps)
+          {
+            var currMap = mapDictionary[match.maps[mapKey]]
+            if (currMap == undefined)
+              mapStr += "Not Selected";
+            else
+              mapStr += currMap;
+
+            if (mapKey != match.maps.length - 1)
+              mapStr += ", ";
+          }
+        }
+        else
+        {
+          var currMap = mapDictionary[match.maps];
+          if (currMap == undefined)
+            mapStr += "Not Selected";
+          else
+            mapStr += currMap;
+        }
+      }
+      else
+          mapStr += "Not Selected";
+
+      embed.addField("Map", `${mapStr}`, false);
+      embed.addField("Event", `[${match.event.name}](https://www.hltv.org/events/${match.event.id}/${eventFormatted})`, false);
+
+      if(code == "r")
+        embed.addField("Result", `${match.result}`, false);
+
+      if(i != startIndex+(pageSize - 1))
+        embed.addBlankField();
+    }
+    return embed;
 }
 
 client.on("ready", () =>
@@ -427,7 +417,7 @@ client.on("message", async message =>
     var livecount = 0;
     var liveArr = [];
     HLTV.getMatches().then((res) => {
-      console.log(res);
+      //console.log(res);
       for (var matchKey in res)
       {
         var match = res[matchKey];
@@ -561,7 +551,7 @@ client.on("message", async message =>
     {
       console.log(res);
       var currIndex = 0;
-      var embed = getResults(res, currIndex);
+      var embed = handlePages(res, currIndex, "r");
       var originalAuthor = message.author;
       message.channel.send({embed}).then((message) =>
       {
@@ -579,14 +569,14 @@ client.on("message", async message =>
               {
                   if (currIndex - 3 >= 0)
                     currIndex-=3;
-                  message.edit(getResults(res, currIndex));
+                  message.edit(handlePages(res, currIndex, "r"));
                   break;
               }
               case reactionControls.NEXT_PAGE:
               {
                   if (currIndex + 3 <= res.length)
                     currIndex+=3;
-                  message.edit(getResults(res, currIndex));
+                  message.edit(handlePages(res, currIndex, "r"));
                   break;
               }
               case reactionControls.STOP:
@@ -612,7 +602,7 @@ client.on("message", async message =>
     {
       //console.log(res);
       var currIndex = 0;
-      var embed = getMatches(res, currIndex);
+      var embed = handlePages(res, currIndex, "m");
       var originalAuthor = message.author;
       message.channel.send({embed}).then((message) =>
       {
@@ -630,14 +620,65 @@ client.on("message", async message =>
               {
                   if (currIndex - 3 >= 0)
                     currIndex-=3;
-                  message.edit(getMatches(res, currIndex));
+                  message.edit(handlePages(res, currIndex, "m"));
                   break;
               }
               case reactionControls.NEXT_PAGE:
               {
                   if (currIndex + 3 <= res.length)
                     currIndex+=3;
-                  message.edit(getMatches(res, currIndex));
+                  message.edit(handlePages(res, currIndex, "m"));
+                  break;
+              }
+              case reactionControls.STOP:
+              {
+                  // stop listening for reactions
+                  message.delete();
+                  collector.stop();
+                  break;
+              }
+          }
+        });
+
+        collector.on('stop', async () => {
+            await message.clearReactions();
+        });
+      });
+    });
+  }
+
+  if(command === "livematches")
+  {
+    HLTV.getMatches().then((res) =>
+    {
+      //console.log(res);
+      var currIndex = 0;
+      var embed = handlePages(res, currIndex, "lm");
+      var originalAuthor = message.author;
+      message.channel.send({embed}).then((message) =>
+      {
+        message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
+
+        const collector = new Discord.ReactionCollector(message, (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id), {
+          time: 60000, // stop automatically after one minute
+        });
+
+        collector.on('collect', (reaction, user) =>
+        {
+          switch (reaction.emoji.name)
+          {
+              case reactionControls.PREV_PAGE:
+              {
+                  if (currIndex - 5 >= 0)
+                    currIndex-=5;
+                  message.edit(handlePages(res, currIndex, "lm"));
+                  break;
+              }
+              case reactionControls.NEXT_PAGE:
+              {
+                  if (currIndex + 5 <= res.length)
+                    currIndex+=5;
+                  message.edit(handlePages(res, currIndex, "lm"));
                   break;
               }
               case reactionControls.STOP:
