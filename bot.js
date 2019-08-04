@@ -8,7 +8,7 @@ const teamDictionary = require("./teams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.2.9";
+const versionNumber = "1.3.0";
 
 var reverseTeamDictionary;
 
@@ -28,6 +28,139 @@ let getTime = (milli) => {
   let seconds = time.getUTCSeconds();
   let milliseconds = time.getUTCMilliseconds();
   return hours + "H " + minutes + "M " + seconds + "S";
+}
+
+var handlePages = (res, startIndex, code) => {
+  var pageSize = 0;
+  var embed = new Discord.RichEmbed()
+      .setColor(0x00AE86)
+      .setTimestamp();
+  var liveArr = [];
+  var livecount = 0;
+
+  if(code == "r")
+  {
+    pageSize = 3;
+    embed.setTitle("Match Results");
+  }
+  else if (code == "lm")
+  {
+    pageSize = 5;
+    embed.setTitle("Live Matches");
+
+    for (var matchKey in res)
+    {
+      var match = res[matchKey];
+      if (match.live == true)
+      {
+        liveArr[livecount] = match;
+        livecount++;
+      }
+    }
+  }
+  else if (code == "m")
+  {
+    pageSize = 3;
+    embed.setTitle("Scheduled Matches");
+  }
+
+  for (var i = startIndex; i < startIndex+pageSize; i++)
+    {
+      var match = res[i];
+      var pages = res.length/pageSize;
+
+      if(code == "lm")
+      {
+        match = liveArr[i];
+        pages = liveArr.length/pageSize;
+      }
+
+      if(match == null) //Error with live matches, assumes will have enough to fill 1 page so less than that throws an error
+        return embed;
+
+      // POPULATE EMBED 
+      var team1NameFormatted = match.team1.name.replace(/\s+/g, '-').toLowerCase();
+      var team2NameFormatted = match.team2.name.replace(/\s+/g, '-').toLowerCase();
+      var eventFormatted = match.event.name.replace(/\s+/g, '-').toLowerCase();
+
+      embed.setFooter(`Page ${startIndex/pageSize + 1} of ${Math.ceil(pages) + 1}`, client.user.avatarURL);
+      embed.addField(`Match`, `[${match.team1.name}](https://www.hltv.org/team/${match.team1.id}/${team1NameFormatted}) vs [${match.team2.name}](https://www.hltv.org/team/${match.team2.id}/${team2NameFormatted})`, false);
+      if(code == "m")
+      {
+        var matchDate = new Date(match.date);
+        if(match.live)
+          matchDate = "Live";
+        embed.addField("Date", `${matchDate.toString()}`, false);
+      }
+      embed.addField("Format", `${formatDictionary[match.format]}`, false);
+
+      var mapStr = "";
+
+      if (match.map != undefined)
+      {
+        var isMapArray = Array.isArray(match.map);
+        if (isMapArray)
+        {
+          for (var mapKey in match.map)
+          {
+            var currMap = mapDictionary[match.map[mapKey]]
+            if (currMap == undefined)
+              mapStr += "Not Selected";
+            else
+              mapStr += currMap;
+
+            if (mapKey != match.map.length - 1)
+              mapStr += ", ";
+          }
+        }
+        else
+        {
+          var currMap = mapDictionary[match.map];
+          if (currMap == undefined)
+            mapStr += "Not Selected";
+          else
+            mapStr += currMap;
+        }
+      }
+      else if (match.maps != undefined)
+      {
+        var isMapArray = Array.isArray(match.maps);
+        if (isMapArray)
+        {
+          for (var mapKey in match.maps)
+          {
+            var currMap = mapDictionary[match.maps[mapKey]]
+            if (currMap == undefined)
+              mapStr += "Not Selected";
+            else
+              mapStr += currMap;
+
+            if (mapKey != match.maps.length - 1)
+              mapStr += ", ";
+          }
+        }
+        else
+        {
+          var currMap = mapDictionary[match.maps];
+          if (currMap == undefined)
+            mapStr += "Not Selected";
+          else
+            mapStr += currMap;
+        }
+      }
+      else
+          mapStr += "Not Selected";
+
+      embed.addField("Map", `${mapStr}`, false);
+      embed.addField("Event", `[${match.event.name}](https://www.hltv.org/events/${match.event.id}/${eventFormatted})`, false);
+
+      if(code == "r")
+        embed.addField("Result", `${match.result}`, false);
+
+      if(i != startIndex+(pageSize - 1))
+        embed.addBlankField();
+    }
+    return embed;
 }
 
 client.on("ready", () =>
@@ -151,10 +284,10 @@ client.on("message", async message =>
       .setTimestamp()
       .setThumbnail(client.user.avatarURL)
       .setFooter("Sent by HLTVBot", client.user.avatarURL)
-      .addField("Server Count", servercount, true)
-      .addField("Channel Count", channelcount, true)
       .addField("User Count", usercount, true)
       .addField("Bot User Count", botcount, true)
+      .addField("Server Count", servercount, true)
+      .addField("Channel Count", channelcount, true)
       .addField("Version", versionNumber, true)
       .addField("Uptime", getTime(client.uptime), true)
       .addField("Invite Link", "[Invite](https://discordapp.com/oauth2/authorize?client_id=548165454158495745&scope=bot&permissions=330816)", true)
@@ -249,6 +382,9 @@ client.on("message", async message =>
             var map = res.mapStats[mapKey];
             var mapName = mapDictionary[mapKey];
 
+            if (mapName == undefined)
+              mapName = "Other";
+
             embed.addField(mapName, "==========================================================" , false);
             embed.addField("Wins", map.wins , true);
             embed.addField("Draws", map.draws , true);
@@ -281,6 +417,7 @@ client.on("message", async message =>
     var livecount = 0;
     var liveArr = [];
     HLTV.getMatches().then((res) => {
+      //console.log(res);
       for (var matchKey in res)
       {
         var match = res[matchKey];
@@ -311,8 +448,12 @@ client.on("message", async message =>
             .setFooter("Sent by HLTVBot", client.user.avatarURL)
           }
 
+          var team1NameFormatted = match.team1.name.replace(/\s+/g, '-').toLowerCase();
+          var team2NameFormatted = match.team2.name.replace(/\s+/g, '-').toLowerCase();
+          var eventFormatted = match.event.name.replace(/\s+/g, '-').toLowerCase();
+
           // POPULATE EMBED
-          embed.addField("Match", `${match.team1.name} vs ${match.team2.name}`, false);
+          embed.addField(`Match`, `[${match.team1.name}](https://www.hltv.org/team/${match.team1.id}/${team1NameFormatted}) vs [${match.team2.name}](https://www.hltv.org/team/${match.team2.id}/${team2NameFormatted})`, false);
           embed.addField("Format", `${match.format}`, false);
           var mapStr = "";
           for (var mapKey in match.maps)
@@ -327,7 +468,7 @@ client.on("message", async message =>
               mapStr += ", ";
           }
           embed.addField("Map", `${mapStr}`, false);
-          embed.addField("Event", `${match.event.name}`, false);
+          embed.addField("Event", `[${match.event.name}](https://www.hltv.org/events/${match.event.id}/${eventFormatted})`, false);
 
           // IF CURRENT MATCH IS NOT THE LAST ONE ADD A SEPERATOR (BLANK FIELD)
           if(matchKey != liveArr.length - 1)
@@ -337,144 +478,6 @@ client.on("message", async message =>
           // DUPLICATION BUG IF END % 5 == 0 as below is executed aswell
           if (loopcount % 5 == 0)
             message.channel.send({embed});
-        }
-      }
-      message.channel.send({embed});
-    });
-  }
-
-  if (command == "matches")
-  {
-    var matchcount = 0;
-    var matchArr = [];
-    HLTV.getMatches().then((res) => {
-      for (var matchKey in res)
-      {
-        var match = res[matchKey];
-        if (match.live != true)
-        {
-          matchArr[matchcount] = match;
-          matchcount++;
-          //console.log(match);
-          //console.log("\n");
-
-          // MAYBE INCLUDE LINKS TO TEAM / EVENT
-          if (matchcount == 4) // CAN ONLY HAVE 4 MATCHES PER EMBED, SO I ONLY SEND 1 EMBED
-            break;
-        }
-      }
-
-      if (matchcount == 0)
-        embed.addField("Matches", "There are currently no scheduled matches.", false);
-      else
-      {
-        var loopcount = 0;
-        var embed = new Discord.RichEmbed()
-        .setTitle("Scheduled Matches")
-        .setColor(0x00AE86)
-        .setTimestamp()
-        .setFooter("Sent by HLTVBot", client.user.avatarURL);
-        for (var matchKey in matchArr)
-        {
-          var match = matchArr[matchKey];
-          // POPULATE EMBED
-          var matchDate = new Date(match.date);
-          embed.addField("Match", `${match.team1.name} vs ${match.team2.name}`, false);
-          embed.addField("Date", `${matchDate.toString()}`, false);
-          embed.addField("Format", `${formatDictionary[match.format]}`, false);
-          var mapStr = "";
-          var isMapArray = Array.isArray(match.map);
-          if (isMapArray)
-          {
-            for (var mapKey in match.map)
-            {
-              var currMap = mapDictionary[match.map[mapKey]]
-              if (currMap == undefined)
-                mapStr += "Not Selected";
-              else
-                mapStr += currMap;
-
-              if (mapKey != match.map.length - 1)
-                mapStr += ", ";
-            }
-          }
-          else
-          {
-            var currMap = mapDictionary[match.map];
-            if (currMap == undefined)
-              mapStr += "Not Selected";
-            else
-              mapStr += currMap;
-          }
-          embed.addField("Map", `${mapStr}`, false);
-          embed.addField("Event", `${match.event.name}`, false);
-
-          // IF CURRENT MATCH IS NOT THE LAST ONE ADD A SEPERATOR (BLANK FIELD)
-          loopcount++;
-          if(loopcount <= 3)
-            embed.addBlankField();
-        }
-      }
-      message.channel.send({embed});
-    });
-  }
-
-  if(command === "results")
-  {
-    HLTV.getResults({pages: 1}).then((res) =>
-    {
-      if (matchcount == 0)
-        embed.addField("Results", "There are currently no match results available.", false);
-      else
-      {
-        var loopcount = 0;
-        var embed = new Discord.RichEmbed()
-        .setTitle("Recent Match Results")
-        .setColor(0x00AE86)
-        .setTimestamp()
-        .setFooter("Sent by HLTVBot", client.user.avatarURL);
-        for (var matchKey in res)
-        {
-          var match = res[matchKey];
-          // POPULATE EMBED
-          var matchDate = new Date(match.date);
-          embed.addField("Match", `${match.team1.name} vs ${match.team2.name}`, false);
-          embed.addField("Date", `${matchDate.toString()}`, false);
-          embed.addField("Format", `${formatDictionary[match.format]}`, false);
-          var mapStr = "";
-          var isMapArray = Array.isArray(match.map);
-          if (isMapArray)
-          {
-            for (var mapKey in match.map)
-            {
-              var currMap = mapDictionary[match.map[mapKey]]
-              if (currMap == undefined)
-                mapStr += "Unknown";
-              else
-                mapStr += currMap;
-
-              if (mapKey != match.map.length - 1)
-                mapStr += ", ";
-            }
-          }
-          else
-          {
-            mapStr += "Unknown";
-          }
-          embed.addField("Map", `${mapStr}`, false);
-          embed.addField("Event", `${match.event.name}`, false);
-          embed.addField("Result", `${match.result}`, false);
-
-          //console.log(match);
-          //console.log("\n\n\n ======================================================================== \n\n\n");
-
-          // IF CURRENT MATCH IS NOT THE LAST ONE ADD A SEPERATOR (BLANK FIELD)
-          loopcount++;
-          if(loopcount == 3)
-            break;
-
-          if(loopcount <= 3)
-            embed.addBlankField();
         }
       }
       message.channel.send({embed});
@@ -536,29 +539,164 @@ client.on("message", async message =>
     }
   }
 
-  if(command === "debugmatches")
-  {
-    var currDate = new Date();
-    var prevDate = new Date();
-    var currDateStr = currDate.toISOString().slice(0,10);
-    prevDate.setDate(currDate.getDate() - 1);
-    var prevDateStr = prevDate.toISOString().slice(0,10);
-    HLTV.getMatchesStats({startDate: `${prevDateStr}`, endDate: `${currDateStr}`}).then((res) =>
-    {
-      console.log(res);
-      console.log("\n\n\n ======================================================================== \n\n\n");
-    });
-  }
+  const reactionControls = {
+    PREV_PAGE: '⬅',
+    NEXT_PAGE: '➡',
+    STOP: '⏹',
+}
 
-  if(command === "debugresults")
+  if(command === "results")
   {
     HLTV.getResults({pages: 1}).then((res) =>
     {
       console.log(res);
-      console.log("\n\n\n ======================================================================== \n\n\n");
+      var currIndex = 0;
+      var embed = handlePages(res, currIndex, "r");
+      var originalAuthor = message.author;
+      message.channel.send({embed}).then((message) =>
+      {
+        message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
+
+        const collector = new Discord.ReactionCollector(message, (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id), {
+          time: 60000, // stop automatically after one minute
+        });
+
+        collector.on('collect', (reaction, user) =>
+        {
+          switch (reaction.emoji.name)
+          {
+              case reactionControls.PREV_PAGE:
+              {
+                  if (currIndex - 3 >= 0)
+                    currIndex-=3;
+                  message.edit(handlePages(res, currIndex, "r"));
+                  break;
+              }
+              case reactionControls.NEXT_PAGE:
+              {
+                  if (currIndex + 3 <= res.length)
+                    currIndex+=3;
+                  message.edit(handlePages(res, currIndex, "r"));
+                  break;
+              }
+              case reactionControls.STOP:
+              {
+                  // stop listening for reactions
+                  message.delete();
+                  collector.stop();
+                  break;
+              }
+          }
+        });
+
+        collector.on('stop', async () => {
+            await message.clearReactions();
+        });
+      });
     });
   }
 
+  if(command === "matches")
+  {
+    HLTV.getMatches().then((res) =>
+    {
+      //console.log(res);
+      var currIndex = 0;
+      var embed = handlePages(res, currIndex, "m");
+      var originalAuthor = message.author;
+      message.channel.send({embed}).then((message) =>
+      {
+        message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
+
+        const collector = new Discord.ReactionCollector(message, (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id), {
+          time: 60000, // stop automatically after one minute
+        });
+
+        collector.on('collect', (reaction, user) =>
+        {
+          switch (reaction.emoji.name)
+          {
+              case reactionControls.PREV_PAGE:
+              {
+                  if (currIndex - 3 >= 0)
+                    currIndex-=3;
+                  message.edit(handlePages(res, currIndex, "m"));
+                  break;
+              }
+              case reactionControls.NEXT_PAGE:
+              {
+                  if (currIndex + 3 <= res.length)
+                    currIndex+=3;
+                  message.edit(handlePages(res, currIndex, "m"));
+                  break;
+              }
+              case reactionControls.STOP:
+              {
+                  // stop listening for reactions
+                  message.delete();
+                  collector.stop();
+                  break;
+              }
+          }
+        });
+
+        collector.on('stop', async () => {
+            await message.clearReactions();
+        });
+      });
+    });
+  }
+
+  if(command === "livematches")
+  {
+    HLTV.getMatches().then((res) =>
+    {
+      //console.log(res);
+      var currIndex = 0;
+      var embed = handlePages(res, currIndex, "lm");
+      var originalAuthor = message.author;
+      message.channel.send({embed}).then((message) =>
+      {
+        message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
+
+        const collector = new Discord.ReactionCollector(message, (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id), {
+          time: 60000, // stop automatically after one minute
+        });
+
+        collector.on('collect', (reaction, user) =>
+        {
+          switch (reaction.emoji.name)
+          {
+              case reactionControls.PREV_PAGE:
+              {
+                  if (currIndex - 5 >= 0)
+                    currIndex-=5;
+                  message.edit(handlePages(res, currIndex, "lm"));
+                  break;
+              }
+              case reactionControls.NEXT_PAGE:
+              {
+                  if (currIndex + 5 <= res.length)
+                    currIndex+=5;
+                  message.edit(handlePages(res, currIndex, "lm"));
+                  break;
+              }
+              case reactionControls.STOP:
+              {
+                  // stop listening for reactions
+                  message.delete();
+                  collector.stop();
+                  break;
+              }
+          }
+        });
+
+        collector.on('stop', async () => {
+            await message.clearReactions();
+        });
+      });
+    });
+  }
 });
 
 client.login(config.token);
