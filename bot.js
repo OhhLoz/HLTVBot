@@ -8,7 +8,7 @@ const teamDictionary = require("./teams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.3.0";
+const versionNumber = "1.3.1";
 
 var reverseTeamDictionary;
 
@@ -410,78 +410,6 @@ client.on("message", async message =>
       message.channel.send("Invalid Command, use .hltv for commands");
     }
     //message.channel.send(command);
-  }
-
-  if (command == "livematches")
-  {
-    var livecount = 0;
-    var liveArr = [];
-    HLTV.getMatches().then((res) => {
-      //console.log(res);
-      for (var matchKey in res)
-      {
-        var match = res[matchKey];
-        if (match.live == true)
-        {
-          liveArr[livecount] = match;
-          livecount++;
-          // MAYBE INCLUDE LINKS TO TEAM / EVENT
-        }
-      }
-
-      if (livecount == 0)
-        embed.addField("Matches", "There are currently no live matches.", false);
-      else
-      {
-        var loopcount = 0;
-        var embed;
-        for (var matchKey in liveArr)
-        {
-          var match = liveArr[matchKey];
-          // CAN ONLY FIT 5 MATCHES PER EMBED MESSAGE
-          if (loopcount % 5 == 0)
-          {
-            embed = new Discord.RichEmbed()
-            .setTitle("Live Matches")
-            .setColor(0x00AE86)
-            .setTimestamp()
-            .setFooter("Sent by HLTVBot", client.user.avatarURL)
-          }
-
-          var team1NameFormatted = match.team1.name.replace(/\s+/g, '-').toLowerCase();
-          var team2NameFormatted = match.team2.name.replace(/\s+/g, '-').toLowerCase();
-          var eventFormatted = match.event.name.replace(/\s+/g, '-').toLowerCase();
-
-          // POPULATE EMBED
-          embed.addField(`Match`, `[${match.team1.name}](https://www.hltv.org/team/${match.team1.id}/${team1NameFormatted}) vs [${match.team2.name}](https://www.hltv.org/team/${match.team2.id}/${team2NameFormatted})`, false);
-          embed.addField("Format", `${match.format}`, false);
-          var mapStr = "";
-          for (var mapKey in match.maps)
-          {
-            var currMap = mapDictionary[match.maps[mapKey]]
-            if (currMap == undefined)
-              mapStr += match.maps[mapKey];
-            else
-              mapStr += currMap;
-
-            if (mapKey != match.maps.length - 1)
-              mapStr += ", ";
-          }
-          embed.addField("Map", `${mapStr}`, false);
-          embed.addField("Event", `[${match.event.name}](https://www.hltv.org/events/${match.event.id}/${eventFormatted})`, false);
-
-          // IF CURRENT MATCH IS NOT THE LAST ONE ADD A SEPERATOR (BLANK FIELD)
-          if(matchKey != liveArr.length - 1)
-            embed.addBlankField();
-
-          loopcount++;
-          // DUPLICATION BUG IF END % 5 == 0 as below is executed aswell
-          if (loopcount % 5 == 0)
-            message.channel.send({embed});
-        }
-      }
-      message.channel.send({embed});
-    });
   }
 
   if(command == "rankings")
