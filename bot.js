@@ -8,7 +8,7 @@ const teamDictionary = require("./teams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.3.1";
+const versionNumber = "1.3.2";
 
 var reverseTeamDictionary;
 
@@ -78,7 +78,7 @@ var handlePages = (res, startIndex, code) => {
       if(match == null) //Error with live matches, assumes will have enough to fill 1 page so less than that throws an error
         return embed;
 
-      // POPULATE EMBED 
+      // POPULATE EMBED
       var team1NameFormatted = match.team1.name.replace(/\s+/g, '-').toLowerCase();
       var team2NameFormatted = match.team2.name.replace(/\s+/g, '-').toLowerCase();
       var eventFormatted = match.event.name.replace(/\s+/g, '-').toLowerCase();
@@ -493,27 +493,27 @@ client.on("message", async message =>
         {
           switch (reaction.emoji.name)
           {
-              case reactionControls.PREV_PAGE:
-              {
-                  if (currIndex - 3 >= 0)
-                    currIndex-=3;
-                  message.edit(handlePages(res, currIndex, "r"));
-                  break;
-              }
-              case reactionControls.NEXT_PAGE:
-              {
-                  if (currIndex + 3 <= res.length)
-                    currIndex+=3;
-                  message.edit(handlePages(res, currIndex, "r"));
-                  break;
-              }
-              case reactionControls.STOP:
-              {
-                  // stop listening for reactions
-                  message.delete();
-                  collector.stop();
-                  break;
-              }
+            case reactionControls.PREV_PAGE:
+            {
+              if (currIndex - 3 >= 0)
+                currIndex-=3;
+              message.edit(handlePages(res, currIndex, "r"));
+              break;
+            }
+            case reactionControls.NEXT_PAGE:
+            {
+              if (currIndex + 3 <= res.length)
+                currIndex+=3;
+              message.edit(handlePages(res, currIndex, "r"));
+              break;
+            }
+            case reactionControls.STOP:
+            {
+              // stop listening for reactions
+              message.delete();
+              collector.stop();
+              break;
+            }
           }
         });
 
@@ -544,27 +544,27 @@ client.on("message", async message =>
         {
           switch (reaction.emoji.name)
           {
-              case reactionControls.PREV_PAGE:
-              {
-                  if (currIndex - 3 >= 0)
-                    currIndex-=3;
-                  message.edit(handlePages(res, currIndex, "m"));
-                  break;
-              }
-              case reactionControls.NEXT_PAGE:
-              {
-                  if (currIndex + 3 <= res.length)
-                    currIndex+=3;
-                  message.edit(handlePages(res, currIndex, "m"));
-                  break;
-              }
-              case reactionControls.STOP:
-              {
-                  // stop listening for reactions
-                  message.delete();
-                  collector.stop();
-                  break;
-              }
+            case reactionControls.PREV_PAGE:
+            {
+              if (currIndex - 3 >= 0)
+                currIndex-=3;
+              message.edit(handlePages(res, currIndex, "m"));
+              break;
+            }
+            case reactionControls.NEXT_PAGE:
+            {
+              if (currIndex + 3 <= res.length)
+                currIndex+=3;
+              message.edit(handlePages(res, currIndex, "m"));
+              break;
+            }
+            case reactionControls.STOP:
+            {
+              // stop listening for reactions
+              message.delete();
+              collector.stop();
+              break;
+            }
           }
         });
 
@@ -595,27 +595,27 @@ client.on("message", async message =>
         {
           switch (reaction.emoji.name)
           {
-              case reactionControls.PREV_PAGE:
-              {
-                  if (currIndex - 5 >= 0)
-                    currIndex-=5;
-                  message.edit(handlePages(res, currIndex, "lm"));
-                  break;
-              }
-              case reactionControls.NEXT_PAGE:
-              {
-                  if (currIndex + 5 <= res.length)
-                    currIndex+=5;
-                  message.edit(handlePages(res, currIndex, "lm"));
-                  break;
-              }
-              case reactionControls.STOP:
-              {
-                  // stop listening for reactions
-                  message.delete();
-                  collector.stop();
-                  break;
-              }
+            case reactionControls.PREV_PAGE:
+            {
+              if (currIndex - 5 >= 0)
+                currIndex-=5;
+              message.edit(handlePages(res, currIndex, "lm"));
+              break;
+            }
+            case reactionControls.NEXT_PAGE:
+            {
+              if (currIndex + 5 <= res.length)
+                currIndex+=5;
+              message.edit(handlePages(res, currIndex, "lm"));
+              break;
+            }
+            case reactionControls.STOP:
+            {
+              // stop listening for reactions
+              message.delete();
+              collector.stop();
+              break;
+            }
           }
         });
 
