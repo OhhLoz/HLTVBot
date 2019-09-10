@@ -1,7 +1,6 @@
 const Discord = require('discord.js');
 const client = new Discord.Client();
 
-const config = require("./config.json");
 const { HLTV } = require('hltv');
 
 const teamDictionary = require("./teams.json");
@@ -201,10 +200,10 @@ client.on("message", async message =>
   if(message.author.bot) return;
 
   // Ignore any message that does not start with our prefix
-  if(message.content.indexOf(config.prefix) !== 0) return;
+  if(message.content.indexOf(process.env.prefix) !== 0) return;
 
   // Separate our command names, and command arguments
-  const args = message.content.slice(config.prefix.length).trim().split(/ +/g);
+  const args = message.content.slice(process.env.prefix.length).trim().split(/ +/g);
   const command = args.shift().toLowerCase();
 
   // Outputs valid teams the user can use
@@ -627,4 +626,4 @@ client.on("message", async message =>
   }
 });
 
-client.login(config.token);
+client.login(process.env.BOT_TOKEN);
