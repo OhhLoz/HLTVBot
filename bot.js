@@ -163,6 +163,46 @@ var handlePages = (res, startIndex, code) => {
     return embed;
 }
 
+var handleMapPages = (res, startIndex, teamName, teamID, mapArr, mapNameArr) => {
+  var pageSize = 3;
+  var embed = new Discord.RichEmbed()
+      .setColor(0x00AE86)
+      .setTimestamp()
+      .setTitle(teamName + " Maps")
+      .setColor(0x00AE86)
+      .setTimestamp()
+      .setURL(`https://www.hltv.org/stats/teams/${teamID}/${teamName}`);
+
+
+  for (var i = startIndex; i < startIndex+pageSize; i++)
+    {
+      var map = mapArr[i];
+      //console.log(map);
+      var mapName = mapDictionary[mapNameArr[i]];
+      //console.log(mapName);
+      var pages = mapArr.length/pageSize;
+
+      // if(map == null) //Error with live matches, assumes will have enough to fill 1 page so less than that throws an error
+      //   return embed;
+
+      embed.setFooter(`Page ${startIndex/pageSize + 1} of ${Math.ceil(pages) + 1}`, client.user.avatarURL);
+
+      // if (mapName == undefined)
+      //   mapName = "Other";
+
+      embed.addField(mapName, "==========================================================" , false);
+      embed.addField("Wins", map.wins , true);
+      embed.addField("Draws", map.draws , true);
+      embed.addField("Losses", map.losses , true);
+      embed.addField("Win Rate", map.winRate , true);
+      embed.addField("Total Rounds", map.totalRounds , true);
+
+      if(i != startIndex+(pageSize - 1))
+        embed.addBlankField();
+    }
+    return embed;
+}
+
 client.on("ready", () =>
 {
   var servercount = 0;
@@ -358,47 +398,62 @@ client.on("message", async message =>
     {
       HLTV.getTeamStats({id: teamID}).then(res =>
         {
-          //console.log(res);
-          var embed = new Discord.RichEmbed()
-          .setTitle(teamName + " Maps")
-          .setColor(0x00AE86)
-          .setTimestamp()
-          .setFooter("Sent by HLTVBot", client.user.avatarURL)
-          .setURL(`https://www.hltv.org/stats/teams/${teamID}/${teamName}`);
-          var loopcount = 0;
+                    //console.log(res);
+          var currIndex = 0;
+          var mapArr = [];
+          var mapNameArr = [];
+          var mapcount = 0;
+
           for (var mapKey in res.mapStats)
           {
-            // CHECK IF VALID MAP
-            // TURN INTO FUNCTION?
-            if (loopcount % 3 == 0)
-            {
-              embed = new Discord.RichEmbed()
-              .setTitle(teamName + " Maps")
-              .setColor(0x00AE86)
-              .setTimestamp()
-              .setFooter("Sent by HLTVBot", client.user.avatarURL)
-              .setURL(`https://www.hltv.org/stats/teams/${teamID}/${teamName}`)
-            }
             var map = res.mapStats[mapKey];
-            var mapName = mapDictionary[mapKey];
-
-            if (mapName == undefined)
-              mapName = "Other";
-
-            embed.addField(mapName, "==========================================================" , false);
-            embed.addField("Wins", map.wins , true);
-            embed.addField("Draws", map.draws , true);
-            embed.addField("Losses", map.losses , true);
-            embed.addField("Win Rate", map.winRate , true);
-            embed.addField("Total Rounds", map.totalRounds , true);
-            embed.addBlankField();
-
-            loopcount++;
-            // DUPLICATION BUG IF END % 3 == 0 as below is executed aswell
-            if (loopcount % 3 == 0)
-              message.channel.send({embed});
+            mapArr[mapcount] = map;
+            mapNameArr[mapcount] = mapKey;
+            mapcount++;
           }
-          message.channel.send({embed});
+
+          var embed = handleMapPages(res, currIndex, teamName, teamID, mapArr, mapNameArr);
+          var originalAuthor = message.author;
+          message.channel.send({embed}).then((message) =>
+          {
+            message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
+
+            const collector = new Discord.ReactionCollector(message, (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id), {
+              time: 60000, // stop automatically after one minute
+            });
+
+            collector.on('collect', (reaction, user) =>
+            {
+              switch (reaction.emoji.name)
+              {
+                case reactionControls.PREV_PAGE:
+                {
+                  if (currIndex - 3 >= 0)
+                    currIndex-=3;
+                  message.edit(handleMapPages(res, currIndex, teamName, teamID, mapArr, mapNameArr));
+                  break;
+                }
+                case reactionControls.NEXT_PAGE:
+                {
+                  if (currIndex + 3 <= res.length)
+                    currIndex+=3;
+                  message.edit(handleMapPages(res, currIndex, teamName, teamID, mapArr, mapNameArr));
+                  break;
+                }
+                case reactionControls.STOP:
+                {
+                  // stop listening for reactions
+                  message.delete();
+                  collector.stop();
+                  break;
+                }
+              }
+            });
+
+            collector.on('stop', async () => {
+                await message.clearReactions();
+            });
+          });
         });
     }
     else if (args[0] == "link")     // If link after teamname send a link to the team page
