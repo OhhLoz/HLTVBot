@@ -7,7 +7,7 @@ const teamDictionary = require("./teams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.3.1";
+const versionNumber = "1.3.2";
 
 var reverseTeamDictionary;
 
@@ -309,9 +309,9 @@ client.on("message", async message =>
     {
       HLTV.getTeam({id: teamID}).then(res =>
         {
-          //console.log(res);
+          console.log(res);
           //console.log("\n\n\n ======================================================================== \n\n\n");
-          const embed = new Discord.RichEmbed()
+          var embed = new Discord.RichEmbed()
           .setTitle(teamName + " Profile")
           .setColor(0x00AE86)
           .setThumbnail(res.logo)
@@ -323,10 +323,16 @@ client.on("message", async message =>
           .addField("Facebook", res.facebook)
           .addField("Twitter", res.twitter)
           .addField("Players", `${res.players[0].name}, ${res.players[1].name}, ${res.players[2].name}, ${res.players[3].name}, ${res.players[4].name}`)
-          .addField("Rank", res.rank)
-          // MAYBE ADD BO1 OR BO3?
-          .addField("Recent Matches", `(${res.name} ${res.recentResults[0].result} ${res.recentResults[0].enemyTeam.name}) \n \t\t(${res.name} ${res.recentResults[1].result} ${res.recentResults[1].enemyTeam.name}) \n \t\t(${res.name} ${res.recentResults[2].result} ${res.recentResults[2].enemyTeam.name})`)
-          message.channel.send({embed});
+          .addField("Rank", res.rank);
+          if(res.recentResults === undefined || res.recentResults.length == 0)
+          {
+            message.channel.send({embed});
+          }
+          else
+          {
+            embed.addField("Recent Matches", `(${res.name} ${res.recentResults[0].result} ${res.recentResults[0].enemyTeam.name}) \n \t\t(${res.name} ${res.recentResults[1].result} ${res.recentResults[1].enemyTeam.name}) \n \t\t(${res.name} ${res.recentResults[2].result} ${res.recentResults[2].enemyTeam.name})`);
+            message.channel.send({embed});
+          }
         });
     }
     else if (args[0] == "stats")     // If stats after teamname display a team stats page
