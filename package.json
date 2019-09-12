@@ -5,7 +5,7 @@
   "main": "bot.js",
   "dependencies": {
     "discord.js": "^11.5.1",
-    "hltv": "^2.16.2"
+    "hltv": "^2.12.2"
   },
   "devDependencies": {},
   "scripts": {
