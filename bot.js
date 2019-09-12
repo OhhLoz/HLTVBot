@@ -3,9 +3,47 @@ const client = new Discord.Client();
 
 const { HLTV } = require('hltv');
 
-const teamDictionary = require("./teams.json");
-const mapDictionary = require("./maps.json");
-const formatDictionary = require("./formats.json");
+const teamDictionary = {
+  "NIP": 4411,
+  "ASTRALIS": 6665,
+  "LIQUID" : 5973,
+  "NAVI" : 4608,
+  "NRG" : 6673,
+  "FAZE" : 6667,
+  "CLOUD9" : 5752,
+  "RENEGADES" : 6211,
+  "ENCE" : 4869,
+  "NORTH" : 7533,
+  "MIBR" : 9215,
+  "VITALITY" : 9565,
+  "FNATIC" : 4991,
+  "BIG" : 7532,
+  "AVANGAR" : 8120,
+  "G2" : 5995,
+  "TYLOO" : 4863,
+  "HELLRAISERS" : 5310,
+  "COMPLEXITY" : 5005,
+  "FURIA": 8297,
+  "MOUSESPORTS": 4494
+};
+const mapDictionary = {
+  "inf" : "Inferno",
+  "d2" : "Dust 2",
+  "nuke" : "Nuke",
+  "trn" : "Train",
+  "mrg" : "Mirage",
+  "cch" : "Cache",
+  "ovp" : "Overpass",
+  "cbl" : "Cobblestone",
+  "vtg" : "Vertigo",
+  "-" : "Other"
+};
+const formatDictionary = {
+  "bo1" : "Best of 1",
+  "bo3" : "Best of 3",
+  "Best of 3" : "Best of 3",
+  "Best of 1" : "Best of 1"
+};
 
 const versionNumber = "1.3.1";
 
