@@ -5,10 +5,11 @@ const config = require("./config.json");
 const { HLTV } = require('hltv');
 
 const teamDictionary = require("./teams.json");
+const alternateTeamDictionary = require("./alternateteams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.3.2";
+const versionNumber = "1.4.0";
 
 var reverseTeamDictionary;
 
@@ -173,6 +174,10 @@ var handleMapPages = (res, startIndex, teamName, teamID, mapArr, mapNameArr) => 
       .setTimestamp()
       .setURL(`https://www.hltv.org/stats/teams/${teamID}/${teamName}`);
 
+      // console.log(`currIndex: ${startIndex}\n`);
+      // console.log(`mapArr: ${mapArr}\n`);
+      // console.log(`mapNameArr: ${mapNameArr}\n`);
+      // console.log(`res: ${res}\n`);
 
   for (var i = startIndex; i < startIndex+pageSize; i++)
     {
@@ -185,7 +190,7 @@ var handleMapPages = (res, startIndex, teamName, teamID, mapArr, mapNameArr) => 
       // if(map == null) //Error with live matches, assumes will have enough to fill 1 page so less than that throws an error
       //   return embed;
 
-      embed.setFooter(`Page ${startIndex/pageSize + 1} of ${Math.ceil(pages) + 1}`, client.user.avatarURL);
+      embed.setFooter(`Page ${startIndex/pageSize + 1} of ${Math.ceil(pages)}`, client.user.avatarURL);
 
       // if (mapName == undefined)
       //   mapName = "Other";
@@ -241,10 +246,10 @@ client.on("message", async message =>
   if(message.author.bot) return;
 
   // Ignore any message that does not start with our prefix
-  if(message.content.indexOf(config.prefix) !== 0) return;
+  if(message.content.indexOf(process.env.prefix) !== 0) return;
 
   // Separate our command names, and command arguments
-  const args = message.content.slice(config.prefix.length).trim().split(/ +/g);
+  const args = message.content.slice(process.env.prefix.length).trim().split(/ +/g);
   const command = args.shift().toLowerCase();
 
   // Outputs valid teams the user can use
@@ -291,8 +296,8 @@ client.on("message", async message =>
       .addField(".[teamname] link", "Displays a link to the input teams HLTV page", false)
       .addBlankField()
       .addField(".livematches", "Displays all currently live matches", false)
-      .addField(".matches", "Displays the next 4 scheduled matches", false)
-      .addField(".results", "Displays 3 most recent match results", false)
+      .addField(".matches", "Displays all known scheduled matches", false)
+      .addField(".results", "Displays the most recent match results", false)
 
       message.channel.send({embed});
     }
@@ -346,13 +351,14 @@ client.on("message", async message =>
     var teamName = command.toUpperCase();
     var teamID = teamDictionary[teamName];
 
-    if(args.length == 0)    // IF JUST TEAMNAME display a team overview
+    // IF JUST TEAMNAME display a team overview
+    if(args.length == 0)
     {
       HLTV.getTeam({id: teamID}).then(res =>
         {
           //console.log(res);
           //console.log("\n\n\n ======================================================================== \n\n\n");
-          const embed = new Discord.RichEmbed()
+          var embed = new Discord.RichEmbed()
           .setTitle(teamName + " Profile")
           .setColor(0x00AE86)
           .setThumbnail(res.logo)
@@ -363,11 +369,17 @@ client.on("message", async message =>
           .addField("Location", res.location)
           .addField("Facebook", res.facebook)
           .addField("Twitter", res.twitter)
-          .addField("Players", `${res.players[0].name}, ${res.players[1].name}, ${res.players[2].name}, ${res.players[3].name}, ${res.players[4].name}`)
-          .addField("Rank", res.rank)
-          // MAYBE ADD BO1 OR BO3?
-          .addField("Recent Matches", `(${res.name} ${res.recentResults[0].result} ${res.recentResults[0].enemyTeam.name}) \n \t\t(${res.name} ${res.recentResults[1].result} ${res.recentResults[1].enemyTeam.name}) \n \t\t(${res.name} ${res.recentResults[2].result} ${res.recentResults[2].enemyTeam.name})`)
-          message.channel.send({embed});
+          .addField("Players", `[${res.players[0].name}](https://www.hltv.org/stats/players/${res.players[0].id}/${res.players[0].name}), [${res.players[1].name}](https://www.hltv.org/stats/players/${res.players[1].id}/${res.players[1].name}), [${res.players[2].name}](https://www.hltv.org/stats/players/${res.players[2].id}/${res.players[2].name}), [${res.players[3].name}](https://www.hltv.org/stats/players/${res.players[3].id}/${res.players[3].name}), [${res.players[4].name}](https://www.hltv.org/stats/players/${res.players[4].id}/${res.players[4].name})`)
+          .addField("Rank", res.rank);
+          if(res.recentResults === undefined || res.recentResults.length == 0)
+          {
+            message.channel.send({embed});
+          }
+          else
+          {
+            embed.addField("Recent Matches", `(${res.name} ${res.recentResults[0].result} ${res.recentResults[0].enemyTeam.name}) \n \t\t(${res.name} ${res.recentResults[1].result} ${res.recentResults[1].enemyTeam.name}) \n \t\t(${res.name} ${res.recentResults[2].result} ${res.recentResults[2].enemyTeam.name})`);
+            message.channel.send({embed});
+          }
         });
     }
     else if (args[0] == "stats")     // If stats after teamname display a team stats page
@@ -398,7 +410,8 @@ client.on("message", async message =>
     {
       HLTV.getTeamStats({id: teamID}).then(res =>
         {
-                    //console.log(res);
+          // console.log(res);
+          // console.log("\n\n\n\n");
           var currIndex = 0;
           var mapArr = [];
           var mapNameArr = [];
@@ -435,7 +448,7 @@ client.on("message", async message =>
                 }
                 case reactionControls.NEXT_PAGE:
                 {
-                  if (currIndex + 3 <= res.length)
+                  if (currIndex + 3 <= mapArr.length - 1)
                     currIndex+=3;
                   message.edit(handleMapPages(res, currIndex, teamName, teamID, mapArr, mapNameArr));
                   break;
@@ -478,7 +491,9 @@ client.on("message", async message =>
         {
           var rankObj = res[rankObjKey];
           var teamStr = "";
-          if(teamDictionary.hasOwnProperty(rankObj.team.name.toUpperCase()))
+          if(alternateTeamDictionary.hasOwnProperty(rankObj.team.name.toUpperCase()))
+              teamStr = `[${rankObj.team.name}](https://www.hltv.org/team/${rankObj.team.id}/${reverseTeamDictionary[rankObj.team.id][0]})`
+          else if(teamDictionary.hasOwnProperty(rankObj.team.name.toUpperCase()))
               teamStr = `[${rankObj.team.name}](https://www.hltv.org/team/${rankObj.team.id}/${reverseTeamDictionary[rankObj.team.id][0]})`
           else
               teamStr = `${rankObj.team.name}`;
@@ -532,7 +547,7 @@ client.on("message", async message =>
   {
     HLTV.getResults({pages: 1}).then((res) =>
     {
-      console.log(res);
+      //console.log(res);
       var currIndex = 0;
       var embed = handlePages(res, currIndex, "r");
       var originalAuthor = message.author;
@@ -682,4 +697,4 @@ client.on("message", async message =>
   }
 });
 
-client.login(config.token);
+client.login(process.env.BOT_TOKEN);

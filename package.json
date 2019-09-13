@@ -4,8 +4,8 @@
   "description": "",
   "main": "bot.js",
   "dependencies": {
-    "discord.js": "^11.4.2",
-    "hltv": "^2.12.3",
+    "discord.js": "^11.5.1",
+    "hltv": "^^2.16.2",
   },
   "devDependencies": {},
   "scripts": {
