@@ -8,3 +8,5 @@ BOTCOMMANDS\.txt
 err.log
 out.log
 HLTVBot/
+
+package-lock.json

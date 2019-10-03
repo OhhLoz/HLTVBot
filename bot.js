@@ -8,9 +8,8 @@ const alternateTeamDictionary = require("./alternateteams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.4.0";
-
-var reverseTeamDictionary;
+const versionNumber = "1.4.1";
+const hltvURL = "https://www.hltv.org";
 
 var id = function(x) {return x;};
 
@@ -251,6 +250,54 @@ client.on("message", async message =>
   const args = message.content.slice(process.env.prefix.length).trim().split(/ +/g);
   const command = args.shift().toLowerCase();
 
+  if(command == "threads")
+  {
+    HLTV.getRecentThreads().then((res) =>
+    {
+      //console.log(res);
+      var embedcount = 0;
+      var embed = new Discord.RichEmbed()
+      .setTitle("Recent Threads")
+      .setColor(0xff8d00)
+      .setTimestamp()
+      .setFooter("Sent by HLTVBot", client.user.avatarURL);
+      for (index in res)
+      {
+        if(res[index].category == 'news' || res[index].category == 'match')
+          break;
+        embed.addField(`${res[index].title}`, `[Link](${hltvURL + res[index].link}) Replies: ${res[index].replies} Category: ${res[index].category}`);
+        embedcount++;
+        if(embedcount >= 24)
+          return;
+      }
+      message.channel.send({embed});
+    })
+  }
+
+  if(command == "news")
+  {
+    HLTV.getRecentThreads().then((res) =>
+    {
+      //console.log(res);
+      var embedcount = 0;
+      var embed = new Discord.RichEmbed()
+      .setTitle("Recent News")
+      .setColor(0xff8d00)
+      .setTimestamp()
+      .setFooter("Sent by HLTVBot", client.user.avatarURL);
+      for (index in res)
+      {
+        if(res[index].category == 'cs')
+          break;
+        embed.addField(`${res[index].title}`, `[Link](${hltvURL + res[index].link}) Replies: ${res[index].replies} Category: ${res[index].category}`);
+        embedcount++;
+        if(embedcount >= 24)
+          return;
+      }
+      message.channel.send({embed});
+    })
+  }
+
   // Outputs valid teams the user can use
   if(command == "teams")
   {
@@ -297,6 +344,8 @@ client.on("message", async message =>
       .addField(".livematches", "Displays all currently live matches", false)
       .addField(".matches", "Displays all known scheduled matches", false)
       .addField(".results", "Displays the most recent match results", false)
+      .addField(".threads", "Displays the most recent hltv user threads", false)
+      .addField(".news", "Displays the most recent hltv news & match info", false)
 
       message.channel.send({embed});
     }
@@ -335,7 +384,9 @@ client.on("message", async message =>
       .addField("Version", versionNumber, true)
       .addField("Uptime", getTime(client.uptime), true)
       .addField("Invite Link", "[Invite](https://discordapp.com/oauth2/authorize?client_id=548165454158495745&scope=bot&permissions=330816)", true)
-      .addField("Contact Link", "[GitHub](https://github.com/OhhLoz/HLTVBot)", true)
+      .addField("Support Link", "[GitHub](https://github.com/OhhLoz/HLTVBot)", true)
+      .addField("Bot Info", "[Discord Bot List](https://discordbots.org/bot/548165454158495745)", true)
+      .addField("Donate", "[Donatebot.io](https://donatebot.io/checkout/509391645226172420)", true)
       message.channel.send(embed);
     }
     else
@@ -355,12 +406,12 @@ client.on("message", async message =>
     {
       HLTV.getTeam({id: teamID}).then(res =>
         {
-          console.log(res);
+          //console.log(res);
           //console.log("\n\n\n ======================================================================== \n\n\n");
           var embed = new Discord.RichEmbed()
           .setTitle(teamName + " Profile")
           .setColor(0x00AE86)
-          .setThumbnail(res.logo)
+          //.setThumbnail(res.logo)
           //.setImage(res.coverImage)
           .setTimestamp()
           .setFooter("Sent by HLTVBot", client.user.avatarURL)
@@ -489,13 +540,7 @@ client.on("message", async message =>
         for (var rankObjKey in res)
         {
           var rankObj = res[rankObjKey];
-          var teamStr = "";
-          if(alternateTeamDictionary.hasOwnProperty(rankObj.team.name.toUpperCase()))
-              teamStr = `[${rankObj.team.name}](https://www.hltv.org/team/${rankObj.team.id}/${reverseTeamDictionary[rankObj.team.id][0]})`
-          else if(teamDictionary.hasOwnProperty(rankObj.team.name.toUpperCase()))
-              teamStr = `[${rankObj.team.name}](https://www.hltv.org/team/${rankObj.team.id}/${reverseTeamDictionary[rankObj.team.id][0]})`
-          else
-              teamStr = `${rankObj.team.name}`;
+          var teamStr = `[${rankObj.team.name}](https://www.hltv.org/team/${rankObj.team.id}/${rankObj.team.name.replace(/\s+/g, '')})`;
           outputStr += `${rankObj.place}. ${teamStr} (${rankObj.change})\n`
         }
         const embed = new Discord.RichEmbed()
@@ -522,7 +567,7 @@ client.on("message", async message =>
           count++;
         }
         const embed = new Discord.RichEmbed()
-        .setTitle("Team Rankings")
+        .setTitle("Player Rankings")
         .setColor(0x00AE86)
         .setTimestamp()
         .setFooter("Sent by HLTVBot", client.user.avatarURL)
