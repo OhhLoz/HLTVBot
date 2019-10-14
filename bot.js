@@ -8,7 +8,7 @@ const alternateTeamDictionary = require("./alternateteams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.4.2";
+const versionNumber = "1.4.3";
 const hltvURL = "https://www.hltv.org";
 
 var id = function(x) {return x;};
@@ -224,7 +224,7 @@ client.on("ready", () =>
   })
 
   console.log(`HLTVBot is currently serving ${usercount} users, in ${channelcount} channels of ${servercount} servers. Alongside ${botcount} bot brothers.`);
-  client.user.setActivity(`use .hltv`);
+  client.user.setActivity(`.hltv`, { type: 'LISTENING' });
   reverseTeamDictionary = reverseMapFromMap(teamDictionary);
 });
 
