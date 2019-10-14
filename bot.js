@@ -8,7 +8,7 @@ const alternateTeamDictionary = require("./alternateteams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.4.1";
+const versionNumber = "1.4.2";
 const hltvURL = "https://www.hltv.org";
 
 var id = function(x) {return x;};
@@ -263,13 +263,18 @@ client.on("message", async message =>
       .setFooter("Sent by HLTVBot", client.user.avatarURL);
       for (index in res)
       {
-        if(res[index].category == 'news' || res[index].category == 'match')
+        if(res[index].category == 'news' || res[index].category == 'match')//Filter out matches and news, only want user threads
           break;
-        embed.addField(`${res[index].title}`, `[Link](${hltvURL + res[index].link}) Replies: ${res[index].replies} Category: ${res[index].category}`);
-        embedcount++;
+        if(res[index].title != undefined)
+        {
+          embed.addField(`${res[index].title}`, `[Link](${hltvURL + res[index].link}) Replies: ${res[index].replies} Category: ${res[index].category}`);
+          embedcount++;
+        }
         if(embedcount >= 24)
           return;
       }
+      if (embedcount == 0)
+        embed.setDescription("No Threads found, please try again later.")
       message.channel.send({embed});
     })
   }
@@ -287,13 +292,18 @@ client.on("message", async message =>
       .setFooter("Sent by HLTVBot", client.user.avatarURL);
       for (index in res)
       {
-        if(res[index].category == 'cs')
+        if(res[index].category == 'cs') //Filter out user threads
           break;
-        embed.addField(`${res[index].title}`, `[Link](${hltvURL + res[index].link}) Replies: ${res[index].replies} Category: ${res[index].category}`);
-        embedcount++;
+        if(res[index].title != undefined)
+        {
+          embed.addField(`${res[index].title}`, `[Link](${hltvURL + res[index].link}) Replies: ${res[index].replies} Category: ${res[index].category}`);
+          embedcount++;
+        }
         if(embedcount >= 24)
           return;
       }
+      if (embedcount == 0)
+        embed.setDescription("No News found, please try again later.")
       message.channel.send({embed});
     })
   }
@@ -385,7 +395,7 @@ client.on("message", async message =>
       .addField("Uptime", getTime(client.uptime), true)
       .addField("Invite Link", "[Invite](https://discordapp.com/oauth2/authorize?client_id=548165454158495745&scope=bot&permissions=330816)", true)
       .addField("Support Link", "[GitHub](https://github.com/OhhLoz/HLTVBot)", true)
-      .addField("Bot Info", "[Discord Bot List](https://discordbots.org/bot/548165454158495745)", true)
+      .addField("Bot Page", "[Vote Here!](https://top.gg/bot/548165454158495745)", true)
       .addField("Donate", "[Donatebot.io](https://donatebot.io/checkout/509391645226172420)", true)
       message.channel.send(embed);
     }
