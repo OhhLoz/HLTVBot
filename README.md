@@ -1,5 +1,5 @@
 # HLTVBot
-A simple app to display stats and other tools in an efficient and free way, used as a complement to the game Rainbow Six Siege. Aimed at showing statistics, metrics and important information for players of the game.
+A simple app to display stats and other tools in an efficient and free way, used as a complement to the website HLTV. Aimed at showing statistics, metrics and important information for players of the game mainly geared towards the competitive scene.
 
 ## Getting Started
 
