@@ -1,5 +1,5 @@
 # HLTVBot
-A simple app to display stats and other tools in an efficient and free way, used as a complement to the game Rainbow Six Siege. Aimed at showing statistics, metrics and important information for players of the game.
+A simple app to display stats and other tools in an efficient and free way, used as a complement to the website HLTV. Aimed at showing statistics, metrics and important information for players of the game mainly geared towards the competitive scene.
 
 ## Getting Started
 
@@ -13,6 +13,7 @@ This bot can be accessed or invited to your discord server via the [DiscordBotLi
 
 * [VSCode](https://code.visualstudio.com/) - Used to code the whole project
 * [Discord.js](https://discord.js.org/#/) - Used to fetch images from URL's inside of the app.
+* [HLTV NPM Package](https://www.npmjs.com/package/hltv) - Used to fetch content from the HLTV site
 
 ## Authors
 

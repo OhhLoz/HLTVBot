@@ -1,11 +1,11 @@
 {
-  "name": "HLTV",
-  "version": "1.0.0",
+  "name": "HLTVBot",
+  "version": "1.4.3",
   "description": "",
   "main": "bot.js",
   "dependencies": {
     "discord.js": "^11.5.1",
-    "hltv": "^^2.16.2",
+    "hltv": "^2.16.2"
   },
   "devDependencies": {},
   "scripts": {
