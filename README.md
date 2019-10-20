@@ -3,11 +3,11 @@ A simple app to display stats and other tools in an efficient and free way, used
 
 ## Getting Started
 
-This bot can be accessed or invited to your discord server via the [DiscordBotList](https://discordbots.org/bot/548165454158495745)
+This bot can be accessed or invited to your discord server via the [Top.gg](https://top.gg/bot/548165454158495745)
 
 ## Documentation
 
-* [DBL](https://discordbots.org/bot/548165454158495745)
+* [Top.gg](https://top.gg/bot/548165454158495745)
 
 ## Built With
 
@@ -21,7 +21,7 @@ This bot can be accessed or invited to your discord server via the [DiscordBotLi
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details
 
 ## Acknowledgments
 
