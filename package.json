@@ -1,9 +1,10 @@
 {
   "name": "HLTVBot",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "description": "",
   "main": "bot.js",
   "dependencies": {
+    "dblapi.js": "^2.3.0",
     "discord.js": "^11.5.1",
     "hltv": "^2.16.2"
   },
