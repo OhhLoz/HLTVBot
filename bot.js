@@ -3,12 +3,16 @@ const client = new Discord.Client();
 
 const { HLTV } = require('hltv');
 
+const DBL = require("dblapi.js");
+const dbl = new DBL(process.env.DBL_TOKEN, client);
+
+
 const teamDictionary = require("./teams.json");
 const alternateTeamDictionary = require("./alternateteams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.4.3";
+const versionNumber = "1.4.4";
 const hltvURL = "https://www.hltv.org";
 
 var id = function(x) {return x;};
@@ -225,6 +229,8 @@ client.on("ready", () =>
 
   console.log(`HLTVBot is currently serving ${usercount} users, in ${channelcount} channels of ${servercount} servers. Alongside ${botcount} bot brothers.`);
   client.user.setActivity(`.hltv`, { type: 'LISTENING' });
+  setInterval(() => {
+    dbl.postStats(client.guilds.size, client.shards.Id, client.shards.total);}, 1800000);
   reverseTeamDictionary = reverseMapFromMap(teamDictionary);
 });
 
