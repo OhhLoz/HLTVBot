@@ -6,13 +6,12 @@ const { HLTV } = require('hltv');
 const DBL = require("dblapi.js");
 const dbl = new DBL(process.env.DBL_TOKEN, client);
 
-
 const teamDictionary = require("./teams.json");
 const alternateTeamDictionary = require("./alternateteams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.4.4";
+const versionNumber = "1.4.5";
 const hltvURL = "https://www.hltv.org";
 
 var id = function(x) {return x;};
@@ -309,15 +308,13 @@ client.on("message", async message =>
       .setFooter("Sent by HLTVBot", client.user.avatarURL);
       for (index in res)
       {
-        if(res[index].category == 'news' || res[index].category == 'match')//Filter out matches and news, only want user threads
-          break;
-        if(res[index].title != undefined)
+        if(res[index].title != undefined && res[index].category == 'cs')
         {
           embed.addField(`${res[index].title}`, `[Link](${hltvURL + res[index].link}) Replies: ${res[index].replies} Category: ${res[index].category}`);
           embedcount++;
         }
         if(embedcount >= 24)
-          return;
+          break;
       }
       if (embedcount == 0)
         embed.setDescription("No Threads found, please try again later.")
@@ -338,9 +335,7 @@ client.on("message", async message =>
       .setFooter("Sent by HLTVBot", client.user.avatarURL);
       for (index in res)
       {
-        if(res[index].category == 'cs') //Filter out user threads
-          break;
-        if(res[index].title != undefined)
+        if(res[index].title != undefined && ((res[index].category == 'news') || (res[index].category == 'match')))
         {
           embed.addField(`${res[index].title}`, `[Link](${hltvURL + res[index].link}) Replies: ${res[index].replies} Category: ${res[index].category}`);
           embedcount++;
