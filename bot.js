@@ -17,6 +17,14 @@ const hltvURL = "https://www.hltv.org";
 
 var id = function(x) {return x;};
 
+/**
+ * Returns a reversed hashmap from an input hashmap.
+ *
+ * @param {HashMap}   map           input hashmap to be reversed.
+ * @param {function}   [f]          optional function parameter.
+ *
+ * @return {HashMap}                Returns the reversed hashmap.
+ */
 var reverseMapFromMap = function(map, f) {
   return Object.keys(map).reduce(function(acc, k) {
     acc[map[k]] = (acc[map[k]] || []).concat((f || id)(k))
@@ -24,6 +32,13 @@ var reverseMapFromMap = function(map, f) {
   },{})
 }
 
+/**
+ * Formats the time given (in milliseconds) to a human readable string.
+ *
+ * @param {number}   milli           input time in milliseconds.
+ *
+ * @return {string}                  Returns the formatted time as a string.
+ */
 let getTime = (milli) => {
   let time = new Date(milli);
   let hours = time.getUTCHours();
@@ -33,6 +48,17 @@ let getTime = (milli) => {
   return hours + "H " + minutes + "M " + seconds + "S";
 }
 
+/**
+ * Aims to provide page functionality to the published Discord embeds.
+ * 
+ * Based on the 'code' parameter, the embed can only have a certain amount of results per page. startIndex is used to ensure a different startIndex can be provided to move along the pages. The res object is used to populated the pages alongside the other parameters.
+ *
+ * @param {Object}   res            Object containing the data to be formatted into pages.
+ * @param {int}      startIndex     Which index within the Object to start populating the pages with.
+ * @param {string}   code           An identifier used to determine where the function was called from and changes functionality accordingly.
+ *
+ * @return {Discord.RichEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
+ */
 var handlePages = (res, startIndex, code) => {
   var pageSize = 0;
   var embed = new Discord.RichEmbed()
@@ -166,6 +192,20 @@ var handlePages = (res, startIndex, code) => {
     return embed;
 }
 
+/**
+ * Aims to provide page functionality to the published Discord map embeds.
+ * 
+ * startIndex is used to ensure a different startIndex can be provided to move along the pages. The res object contains the data to be published. teamName, teamID, mapArr and mapNameArr
+ *
+ * @param {Object}   res            Object containing the data to be formatted into pages.
+ * @param {int}      startIndex     Which index within the Object to start populating the pages with.
+ * @param {string}   teamName       The name of the team that this command was called for.
+ * @param {int}      teamID         The ID of the team that this command was called for.
+ * @param {string[]}   mapArr       A string array containing all the map codes the team has played.
+ * @param {string[]}   mapNameArr   A string array containing all the map names the team has played.
+ *
+ * @return {Discord.RichEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
+ */
 var handleMapPages = (res, startIndex, teamName, teamID, mapArr, mapNameArr) => {
   var pageSize = 3;
   var embed = new Discord.RichEmbed()
