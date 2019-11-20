@@ -11,7 +11,7 @@ const alternateTeamDictionary = require("./alternateteams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.4.5";
+const versionNumber = "1.4.6";
 const hltvURL = "https://www.hltv.org";
 
 var id = function(x) {return x;};
@@ -126,7 +126,7 @@ var handlePages = (res, startIndex, code) => {
 
       if (match.map != undefined)
       {
-        var isMapArray = Array.isArray(match.map);
+        var isMapArray = Array.isArray(match.map); //Some HLTVAPI endpoints return a map array whereas others return a map string
         if (isMapArray)
         {
           for (var mapKey in match.map)
@@ -150,7 +150,7 @@ var handlePages = (res, startIndex, code) => {
             mapStr += currMap;
         }
       }
-      else if (match.maps != undefined)
+      else if (match.maps != undefined) //Some HLTVAPI endpoints return a OBJ.maps array as opposed to a OBJ.map array
       {
         var isMapArray = Array.isArray(match.maps);
         if (isMapArray)
@@ -346,30 +346,124 @@ client.on("message", async message =>
       if (embedcount == 0)
         embed.setDescription("No News found, please try again later.")
       message.channel.send({embed});
-    })
+    });
   }
 
-  // Outputs valid teams the user can use
+  // Outputs valid teams the user can use or the team rankings
   if(command == "teams")
   {
-    var embed = new Discord.RichEmbed()
+    var embed = new Discord.RichEmbed();
+    var outputStr = "";
+    if(args.length == 0) // if user has just entered .teams as opposed to .teams ranking
+    {
+      embed
       .setTitle("Valid Teams")
       .setColor(0xff8d00)
       .setTimestamp()
       .setFooter("Sent by HLTVBot", client.user.avatarURL)
-    var count = 1;
-    var outputMsg = "";
-    var teamKeysSorted = Object.keys(teamDictionary).sort();
-    for (i = 0; i < teamKeysSorted.length; i++)
-    {
-      outputMsg += teamKeysSorted[i];
-      if(count != Object.keys(teamDictionary).length)
-        outputMsg += "\n";
-      count++;
+      var count = 1;
+      var teamKeysSorted = Object.keys(teamDictionary).sort();
+      for (i = 0; i < teamKeysSorted.length; i++)
+      {
+        outputStr += teamKeysSorted[i];
+        if(count != Object.keys(teamDictionary).length)
+          outputStr += "\n";
+        count++;
+      }
+      embed.setDescription(outputStr);
+      message.channel.send({embed});
     }
-    embed.setDescription(outputMsg);
-    message.channel.send({embed});
+    else if(args[0] == "rankings" || args[0] == "ranking") // if user has entered ".teams rankings"
+    {
+      HLTV.getTeamRanking().then((res) => {
+        //console.log(res);
+        for (var rankObjKey in res)
+        {
+          var rankObj = res[rankObjKey];
+          var teamStr = `[${rankObj.team.name}](https://www.hltv.org/team/${rankObj.team.id}/${rankObj.team.name.replace(/\s+/g, '')})`;
+          outputStr += `${rankObj.place}. ${teamStr} (${rankObj.change})\n`
+        }
+        embed
+        .setTitle("Team Rankings")
+        .setColor(0x00AE86)
+        .setTimestamp()
+        .setFooter("Sent by HLTVBot", client.user.avatarURL)
+        .setDescription(outputStr);
+        message.channel.send({embed});
+      });
+    }
+    else
+    {
+      embed
+      .setTitle("Command Error")
+      .setColor(0x00AE86)
+      .setTimestamp()
+      .setFooter("Sent by HLTVBot", client.user.avatarURL)
+      .setDescription("Invalid Command, use .hltv for commands");
+      message.channel.send({embed});
+    }
   }
+
+    // Outputs player data or player rankings
+    if(command == "player")
+    {
+      var embed = new Discord.RichEmbed();
+      var outputStr = "";
+      if(args[0] == "rankings" || args[0] == "ranking") // if user has entered ".player rankings"
+      {
+        HLTV.getPlayerRanking({startDate: '', endDate: '', rankingFilter: 'Top30'}).then((res) => {
+          //console.log(res);
+          var count = 1;
+          for (var playerObjKey in res)
+          {
+            var playerObj = res[playerObjKey];
+            outputStr += `${count}. [${playerObj.name}](https://www.hltv.org/stats/players/${playerObj.id}/${playerObj.name}) (${playerObj.rating})\n`
+            if (count == 30)
+              break;
+            count++;
+          }
+          const embed = new Discord.RichEmbed()
+          .setTitle("Player Rankings")
+          .setColor(0x00AE86)
+          .setTimestamp()
+          .setFooter("Sent by HLTVBot", client.user.avatarURL)
+          .setDescription(outputStr);
+          message.channel.send({embed});
+        });
+      }
+      else
+      {
+        HLTV.getPlayerByName({name: args[0]}).then((res)=>
+        {
+          console.log(res);
+          var embed = new Discord.RichEmbed()
+          .setTitle(args[0] + "Player Profile")
+          .setColor(0x00AE86)
+          .setThumbnail(res.image)
+          .setTimestamp()
+          .setFooter("Sent by HLTVBot", client.user.avatarURL)
+          .setURL(`https://www.hltv.org/player/${res.id}/${res.ign}/`)
+          .addField("Name", res.name)
+          .addField("IGN", res.ign)
+          .addField("Age", res.age)
+          .addField("Country", res.country.name)
+          .addField("Facebook", res.facebook)
+          .addField("Twitch", res.twitch)
+          .addField("Twitter", res.twitter)
+          .addField("Team", `[${res.team.name}](https://www.hltv.org/team/${res.team.id}/${res.team.name.replace(/\s+/g, '')})`)
+          .addField("Rating", res.statistics.rating);
+          message.channel.send({embed});
+        }).catch(() => {
+          var embed = new Discord.RichEmbed()
+          .setTitle("Invalid Player")
+          .setColor(0x00AE86)
+          .setTimestamp()
+          .setFooter("Sent by HLTVBot", client.user.avatarURL)
+          .setDescription(`${args[0]} is not a valid playername. Please try again or visit hltv.org`);
+          message.channel.send({embed});
+        });
+      }
+    }
 
   // HLTV command represents commands pertinent to the actual bot, its functionality, diagnostics & statistics
   if(command === "hltv")
@@ -385,12 +479,15 @@ client.on("message", async message =>
       .addField(".hltv ping", "Displays the current ping to the bot & the API", false)
       .addField(".hltv stats", "Displays bot statistics, invite link and contact information", false)
       .addBlankField()
-      .addField(".rankings [team,player]", "Displays the top 30 players' or team rankings", false)
       .addField(".teams", "Lists all of the currently accepted teams", false)
+      .addField(".teams rankings", "Displays the top 30 team rankings & recent position changes. 'ranking' is also accepted.", false)
       .addField(".[teamname]", "Displays the profile related to the input team", false)
       .addField(".[teamname] stats", "Displays the statistics related to the input team", false)
       .addField(".[teamname] maps", "Displays the map statistics related to the input team", false)
       .addField(".[teamname] link", "Displays a link to the input teams HLTV page", false)
+      .addBlankField()
+      .addField(".player [playername]", "Displays player statistics from the given playername", false)
+      .addField(".player rankings", "Displays the top 30 player rankings & recent position changes. 'ranking' is also accepted.",false)
       .addBlankField()
       .addField(".livematches", "Displays all currently live matches", false)
       .addField(".matches", "Displays all known scheduled matches", false)
@@ -579,57 +676,6 @@ client.on("message", async message =>
       message.channel.send("Invalid Command, use .hltv for commands");
     }
     //message.channel.send(command);
-  }
-
-  if(command == "rankings")
-  {
-    if(args[0] == "team")
-    {
-      var outputStr = "";
-      HLTV.getTeamRanking().then((res) => {
-        //console.log(res);
-        for (var rankObjKey in res)
-        {
-          var rankObj = res[rankObjKey];
-          var teamStr = `[${rankObj.team.name}](https://www.hltv.org/team/${rankObj.team.id}/${rankObj.team.name.replace(/\s+/g, '')})`;
-          outputStr += `${rankObj.place}. ${teamStr} (${rankObj.change})\n`
-        }
-        const embed = new Discord.RichEmbed()
-        .setTitle("Team Rankings")
-        .setColor(0x00AE86)
-        .setTimestamp()
-        .setFooter("Sent by HLTVBot", client.user.avatarURL)
-        .setDescription(outputStr);
-        message.channel.send({embed});
-      });
-    }
-    else if(args[0] == "player")
-    {
-      HLTV.getPlayerRanking({startDate: '', endDate: '', rankingFilter: 'Top30'}).then((res) => {
-        //console.log(res);
-        var count = 1;
-        var outputStr = "";
-        for (var playerObjKey in res)
-        {
-          var playerObj = res[playerObjKey];
-          outputStr += `${count}. [${playerObj.name}](https://www.hltv.org/stats/players/${playerObj.id}/${playerObj.name}) (${playerObj.rating})\n`
-          if (count == 30)
-            break;
-          count++;
-        }
-        const embed = new Discord.RichEmbed()
-        .setTitle("Player Rankings")
-        .setColor(0x00AE86)
-        .setTimestamp()
-        .setFooter("Sent by HLTVBot", client.user.avatarURL)
-        .setDescription(outputStr);
-        message.channel.send({embed});
-      });
-    }
-    else
-    {
-      message.channel.send("Invalid Command, use .hltv for commands");
-    }
   }
 
   const reactionControls = {
