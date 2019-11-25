@@ -11,7 +11,7 @@ const alternateTeamDictionary = require("./alternateteams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.4.6";
+const versionNumber = "1.4.7";
 const hltvURL = "https://www.hltv.org";
 
 var id = function(x) {return x;};
@@ -435,9 +435,9 @@ client.on("message", async message =>
       {
         HLTV.getPlayerByName({name: args[0]}).then((res)=>
         {
-          console.log(res);
+          //console.log(res);
           var embed = new Discord.RichEmbed()
-          .setTitle(args[0] + "Player Profile")
+          .setTitle(args[0] + " Player Profile")
           .setColor(0x00AE86)
           .setThumbnail(res.image)
           .setTimestamp()
