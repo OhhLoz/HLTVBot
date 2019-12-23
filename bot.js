@@ -3,6 +3,9 @@ const client = new Discord.Client();
 
 const { HLTV } = require('hltv');
 
+process.env.BOT_TOKEN = 'NTk3MDk1MjM3MzQ0ODIxMjQ5.XgDipw.skBfEdUJfY63JOg7MdEEC05ZLSU'
+process.env.prefix = '.'
+
 const DBL = require("dblapi.js");
 const dbl = new DBL(process.env.DBL_TOKEN, client);
 
@@ -11,7 +14,7 @@ const alternateTeamDictionary = require("./alternateteams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.4.7";
+const versionNumber = "1.4.8";
 const hltvURL = "https://www.hltv.org";
 
 var id = function(x) {return x;};
@@ -834,6 +837,29 @@ client.on("message", async message =>
             await message.clearReactions();
         });
       });
+    });
+  }
+
+  if(command === "events")
+  {
+    HLTV.getEvents().then((res) =>
+    {
+      console.log(res[0].events);
+
+      for (var resKey in res)
+      {
+        if(res[resKey].month == 0)
+        {
+          for (var eventKey in res[resKey].events)
+          {
+            var currEvent = res[resKey].events[eventKey];
+            if(currEvent.name == undefined || currEvent.name == '')
+              break;
+            embed.addField("Name", currEvent.name);
+          }
+          return;
+        }
+      }
     });
   }
 });
