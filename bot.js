@@ -3,9 +3,6 @@ const client = new Discord.Client();
 
 const { HLTV } = require('hltv');
 
-process.env.BOT_TOKEN = 'NTk3MDk1MjM3MzQ0ODIxMjQ5.XgDipw.skBfEdUJfY63JOg7MdEEC05ZLSU'
-process.env.prefix = '.'
-
 const DBL = require("dblapi.js");
 const dbl = new DBL(process.env.DBL_TOKEN, client);
 
@@ -14,7 +11,7 @@ const alternateTeamDictionary = require("./alternateteams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.4.8";
+const versionNumber = "1.4.9";
 const hltvURL = "https://www.hltv.org";
 
 var id = function(x) {return x;};
@@ -52,7 +49,7 @@ let getTime = (milli) => {
 
 /**
  * Aims to provide page functionality to the published Discord embeds.
- * 
+ *
  * Based on the 'code' parameter, the embed can only have a certain amount of results per page. startIndex is used to ensure a different startIndex can be provided to move along the pages. The res object is used to populated the pages alongside the other parameters.
  *
  * @param {Object}   res            Object containing the data to be formatted into pages.
@@ -196,7 +193,7 @@ var handlePages = (res, startIndex, code) => {
 
 /**
  * Aims to provide page functionality to the published Discord map embeds.
- * 
+ *
  * startIndex is used to ensure a different startIndex can be provided to move along the pages. The res object contains the data to be published. teamName, teamID, mapArr and mapNameArr
  *
  * @param {Object}   res            Object containing the data to be formatted into pages.
@@ -497,6 +494,7 @@ client.on("message", async message =>
       .addField(".results", "Displays the most recent match results", false)
       .addField(".threads", "Displays the most recent hltv user threads", false)
       .addField(".news", "Displays the most recent hltv news & match info", false)
+      .addField(".events", "Displays info on the 3 most current events", false)
 
       message.channel.send({embed});
     }
@@ -842,24 +840,51 @@ client.on("message", async message =>
 
   if(command === "events")
   {
+    var embed = new Discord.RichEmbed()
+    .setTitle("Events this Month")
+    .setColor(0x00AE86)
+    .setTimestamp()
+    .setFooter("Sent by HLTVBot", client.user.avatarURL)
+    .setURL(`https://www.hltv.org/events`);
     HLTV.getEvents().then((res) =>
     {
-      console.log(res[0].events);
+      //console.log(res);
+      //console.log(res[0].events);
+      var eventArray = res[0].events;
+      var count = 0;
 
-      for (var resKey in res)
+      for (var eventKey in eventArray)
       {
-        if(res[resKey].month == 0)
-        {
-          for (var eventKey in res[resKey].events)
-          {
-            var currEvent = res[resKey].events[eventKey];
-            if(currEvent.name == undefined || currEvent.name == '')
-              break;
-            embed.addField("Name", currEvent.name);
-          }
-          return;
-        }
+        if(eventArray[eventKey] == undefined)
+          break;
+        var eventNameURLFormat = eventArray[eventKey].name.replace(/\s+/g, '-').toLowerCase();
+        var matchStartDate;
+        var matchEndDate;
+
+        if(eventArray[eventKey].dateStart != undefined)
+          matchStartDate = (new Date(eventArray[eventKey].dateStart)).toString();
+        else
+          matchStartDate = "Unknown"
+
+        if(eventArray[eventKey].dateEnd != undefined)
+          matchEndDate = (new Date(eventArray[eventKey].dateEnd)).toString();
+        else
+          matchEndDate = "Unknown"
+
+        embed.addField("Name", `[${eventArray[eventKey].name}](https://www.hltv.org/events/${eventArray[eventKey].id}/${eventNameURLFormat})`);
+        embed.addField("Start", matchStartDate);
+        embed.addField("End", matchEndDate);
+        embed.addField("Prize Pool", eventArray[eventKey].prizePool);
+        embed.addField("Teams", eventArray[eventKey].teams);
+        embed.addField("Location", eventArray[eventKey].location.name);
+        embed.addField("Event Type", eventArray[eventKey].type);
+        embed.addBlankField();
+        count++;
+        if (count == 3)
+          break;
+
       }
+      message.channel.send({embed});
     });
   }
 });
