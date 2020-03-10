@@ -11,7 +11,7 @@ const alternateTeamDictionary = require("./alternateteams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.4.9";
+const versionNumber = "1.4.10";
 const hltvURL = "https://www.hltv.org";
 
 var id = function(x) {return x;};
@@ -242,6 +242,68 @@ var handleMapPages = (res, startIndex, teamName, teamID, mapArr, mapNameArr) => 
       embed.addField("Losses", map.losses , true);
       embed.addField("Win Rate", map.winRate , true);
       embed.addField("Total Rounds", map.totalRounds , true);
+
+      if(i != startIndex+(pageSize - 1))
+        embed.addBlankField();
+    }
+    return embed;
+}
+
+/**
+ * Aims to provide page functionality to the published Discord map embeds.
+ *
+ * startIndex is used to ensure a different startIndex can be provided to move along the pages. The res object contains the data to be published. teamName, teamID, mapArr and mapNameArr
+ *
+ * @param {Object}   res            Object containing the data to be formatted into pages.
+ * @param {int}      startIndex     Which index within the Object to start populating the pages with.
+ * @param {string}   teamName       The name of the team that this command was called for.
+ * @param {int}      teamID         The ID of the team that this command was called for.
+ * @param {string[]}   mapArr       A string array containing all the map codes the team has played.
+ * @param {string[]}   mapNameArr   A string array containing all the map names the team has played.
+ *
+ * @return {Discord.RichEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
+ */
+var handleEventPages = (eventArray, startIndex) => {
+  var pageSize = 3;
+  var embed = new Discord.RichEmbed()
+      .setColor(0x00AE86)
+      .setTimestamp()
+      .setTitle("Events")
+      .setColor(0x00AE86)
+      .setTimestamp()
+      .setURL(`https://www.hltv.org/events`);
+
+  for (var i = startIndex; i < startIndex+pageSize; i++)
+    {
+      var event = eventArray[i];
+      //console.log(event);
+      var pages = eventArray.length/pageSize;
+
+      embed.setFooter(`Page ${startIndex/pageSize + 1} of ${Math.ceil(pages)}`, client.user.avatarURL);
+
+      if(event == undefined)
+        break;
+      var eventNameURLFormat = event.name.replace(/\s+/g, '-').toLowerCase();
+      var matchStartDate;
+      var matchEndDate;
+
+      if(event.dateStart != undefined)
+        matchStartDate = (new Date(event.dateStart)).toString();
+      else
+        matchStartDate = "Unknown";
+
+      if(event.dateEnd != undefined)
+        matchEndDate = (new Date(event.dateEnd)).toString();
+      else
+        matchEndDate = "Unknown";
+
+      embed.addField("Name", `[${event.name}](https://www.hltv.org/events/${event.id}/${eventNameURLFormat})`);
+      embed.addField("Start", matchStartDate);
+      embed.addField("End", matchEndDate);
+      embed.addField("Prize Pool", event.prizePool);
+      embed.addField("Teams", event.teams);
+      embed.addField("Location", event.location.name);
+      embed.addField("Event Type", event.type);
 
       if(i != startIndex+(pageSize - 1))
         embed.addBlankField();
@@ -494,7 +556,7 @@ client.on("message", async message =>
       .addField(".results", "Displays the most recent match results", false)
       .addField(".threads", "Displays the most recent hltv user threads", false)
       .addField(".news", "Displays the most recent hltv news & match info", false)
-      .addField(".events", "Displays info on the 3 most current events", false)
+      .addField(".events", "Displays info on current & upcoming events", false)
 
       message.channel.send({embed});
     }
@@ -849,42 +911,51 @@ client.on("message", async message =>
     HLTV.getEvents().then((res) =>
     {
       //console.log(res);
-      //console.log(res[0].events);
+      console.log(res[0].events);
       var eventArray = res[0].events;
-      var count = 0;
-
-      for (var eventKey in eventArray)
+      var currIndex = 0;
+      var embed = handleEventPages(eventArray, currIndex);
+      var originalAuthor = message.author;
+      message.channel.send({embed}).then((message) =>
       {
-        if(eventArray[eventKey] == undefined)
-          break;
-        var eventNameURLFormat = eventArray[eventKey].name.replace(/\s+/g, '-').toLowerCase();
-        var matchStartDate;
-        var matchEndDate;
+        message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
 
-        if(eventArray[eventKey].dateStart != undefined)
-          matchStartDate = (new Date(eventArray[eventKey].dateStart)).toString();
-        else
-          matchStartDate = "Unknown"
+        const collector = new Discord.ReactionCollector(message, (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id), {
+          time: 60000, // stop automatically after one minute
+        });
 
-        if(eventArray[eventKey].dateEnd != undefined)
-          matchEndDate = (new Date(eventArray[eventKey].dateEnd)).toString();
-        else
-          matchEndDate = "Unknown"
+        collector.on('collect', (reaction, user) =>
+        {
+          switch (reaction.emoji.name)
+          {
+            case reactionControls.PREV_PAGE:
+            {
+              if (currIndex - 3 >= 0)
+                currIndex-=3;
+              message.edit(handleEventPages(eventArray, currIndex));
+              break;
+            }
+            case reactionControls.NEXT_PAGE:
+            {
+              if (currIndex + 3 <= eventArray.length)
+                currIndex+=3;
+              message.edit(handleEventPages(eventArray, currIndex));
+              break;
+            }
+            case reactionControls.STOP:
+            {
+              // stop listening for reactions
+              message.delete();
+              collector.stop();
+              break;
+            }
+          }
+        });
 
-        embed.addField("Name", `[${eventArray[eventKey].name}](https://www.hltv.org/events/${eventArray[eventKey].id}/${eventNameURLFormat})`);
-        embed.addField("Start", matchStartDate);
-        embed.addField("End", matchEndDate);
-        embed.addField("Prize Pool", eventArray[eventKey].prizePool);
-        embed.addField("Teams", eventArray[eventKey].teams);
-        embed.addField("Location", eventArray[eventKey].location.name);
-        embed.addField("Event Type", eventArray[eventKey].type);
-        embed.addBlankField();
-        count++;
-        if (count == 3)
-          break;
-
-      }
-      message.channel.send({embed});
+        collector.on('stop', async () => {
+            await message.clearReactions();
+        });
+      })
     });
   }
 });
