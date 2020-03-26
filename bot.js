@@ -11,8 +11,20 @@ const alternateTeamDictionary = require("./alternateteams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.4.10";
+const versionNumber = "1.4.11";
 const hltvURL = "https://www.hltv.org";
+
+const COMMANDCODE = {
+  RESULTS: 0,
+  MATCHES: 1,
+  LIVEMATCHES: 2,
+}
+
+const reactionControls = {
+  PREV_PAGE: '⬅',
+  NEXT_PAGE: '➡',
+  STOP: '⏹',
+}
 
 var id = function(x) {return x;};
 
@@ -63,30 +75,18 @@ var handlePages = (res, startIndex, code) => {
   var embed = new Discord.RichEmbed()
       .setColor(0x00AE86)
       .setTimestamp();
-  var liveArr = [];
-  var livecount = 0;
 
-  if(code == "r")
+  if(code == COMMANDCODE.RESULTS)
   {
     pageSize = 3;
     embed.setTitle("Match Results");
   }
-  else if (code == "lm")
+  else if (code == COMMANDCODE.LIVEMATCHES)
   {
     pageSize = 5;
     embed.setTitle("Live Matches");
-
-    for (var matchKey in res)
-    {
-      var match = res[matchKey];
-      if (match.live == true)
-      {
-        liveArr[livecount] = match;
-        livecount++;
-      }
-    }
   }
-  else if (code == "m")
+  else if (code == COMMANDCODE.MATCHES)
   {
     pageSize = 3;
     embed.setTitle("Scheduled Matches");
@@ -96,12 +96,6 @@ var handlePages = (res, startIndex, code) => {
     {
       var match = res[i];
       var pages = res.length/pageSize;
-
-      if(code == "lm")
-      {
-        match = liveArr[i];
-        pages = liveArr.length/pageSize;
-      }
 
       if(match == null) //Error with live matches, assumes will have enough to fill 1 page so less than that throws an error
         return embed;
@@ -113,7 +107,8 @@ var handlePages = (res, startIndex, code) => {
 
       embed.setFooter(`Page ${startIndex/pageSize + 1} of ${Math.ceil(pages) + 1}`, client.user.avatarURL);
       embed.addField(`Match`, `[${match.team1.name}](https://www.hltv.org/team/${match.team1.id}/${team1NameFormatted}) vs [${match.team2.name}](https://www.hltv.org/team/${match.team2.id}/${team2NameFormatted})`, false);
-      if(code == "m")
+      
+      if(code == COMMANDCODE.MATCHES)
       {
         var matchDate = new Date(match.date);
         if(match.live)
@@ -182,7 +177,7 @@ var handlePages = (res, startIndex, code) => {
       embed.addField("Map", `${mapStr}`, false);
       embed.addField("Event", `[${match.event.name}](https://www.hltv.org/events/${match.event.id}/${eventFormatted})`, false);
 
-      if(code == "r")
+      if(code == COMMANDCODE.RESULTS)
         embed.addField("Result", `${match.result}`, false);
 
       if(i != startIndex+(pageSize - 1))
@@ -741,19 +736,13 @@ client.on("message", async message =>
     //message.channel.send(command);
   }
 
-  const reactionControls = {
-    PREV_PAGE: '⬅',
-    NEXT_PAGE: '➡',
-    STOP: '⏹',
-}
-
   if(command === "results")
   {
     HLTV.getResults({pages: 1}).then((res) =>
     {
       //console.log(res);
       var currIndex = 0;
-      var embed = handlePages(res, currIndex, "r");
+      var embed = handlePages(res, currIndex, COMMANDCODE.RESULTS);
       var originalAuthor = message.author;
       message.channel.send({embed}).then((message) =>
       {
@@ -771,14 +760,14 @@ client.on("message", async message =>
             {
               if (currIndex - 3 >= 0)
                 currIndex-=3;
-              message.edit(handlePages(res, currIndex, "r"));
+              message.edit(handlePages(res, currIndex, COMMANDCODE.RESULTS));
               break;
             }
             case reactionControls.NEXT_PAGE:
             {
               if (currIndex + 3 <= res.length)
                 currIndex+=3;
-              message.edit(handlePages(res, currIndex, "r"));
+              message.edit(handlePages(res, currIndex, COMMANDCODE.RESULTS));
               break;
             }
             case reactionControls.STOP:
@@ -804,7 +793,7 @@ client.on("message", async message =>
     {
       //console.log(res);
       var currIndex = 0;
-      var embed = handlePages(res, currIndex, "m");
+      var embed = handlePages(res, currIndex, COMMANDCODE.MATCHES);
       var originalAuthor = message.author;
       message.channel.send({embed}).then((message) =>
       {
@@ -822,14 +811,14 @@ client.on("message", async message =>
             {
               if (currIndex - 3 >= 0)
                 currIndex-=3;
-              message.edit(handlePages(res, currIndex, "m"));
+              message.edit(handlePages(res, currIndex, COMMANDCODE.MATCHES));
               break;
             }
             case reactionControls.NEXT_PAGE:
             {
               if (currIndex + 3 <= res.length)
                 currIndex+=3;
-              message.edit(handlePages(res, currIndex, "m"));
+              message.edit(handlePages(res, currIndex, COMMANDCODE.MATCHES));
               break;
             }
             case reactionControls.STOP:
@@ -853,9 +842,22 @@ client.on("message", async message =>
   {
     HLTV.getMatches().then((res) =>
     {
+      var liveArr = [];
+      var livecount = 0;
+
+      for (var matchKey in res)
+      {
+        var match = res[matchKey];
+        if (match.live == true)
+        {
+          liveArr[livecount] = match;
+          livecount++;
+        }
+      }
+
       //console.log(res);
       var currIndex = 0;
-      var embed = handlePages(res, currIndex, "lm");
+      var embed = handlePages(res, currIndex, COMMANDCODE.LIVEMATCHES);
       var originalAuthor = message.author;
       message.channel.send({embed}).then((message) =>
       {
@@ -873,14 +875,14 @@ client.on("message", async message =>
             {
               if (currIndex - 5 >= 0)
                 currIndex-=5;
-              message.edit(handlePages(res, currIndex, "lm"));
+              message.edit(handlePages(liveArr, currIndex, COMMANDCODE.LIVEMATCHES));
               break;
             }
             case reactionControls.NEXT_PAGE:
             {
-              if (currIndex + 5 <= res.length)
+              if (currIndex + 5 <= liveArr.length)
                 currIndex+=5;
-              message.edit(handlePages(res, currIndex, "lm"));
+              message.edit(handlePages(liveArr, currIndex, COMMANDCODE.LIVEMATCHES));
               break;
             }
             case reactionControls.STOP:
