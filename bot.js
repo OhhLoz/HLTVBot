@@ -14,9 +14,6 @@ const formatDictionary = require("./formats.json");
 const versionNumber = "1.4.12";
 const hltvURL = "https://www.hltv.org";
 
-process.env.BOT_TOKEN = 'NTk3MDk1MjM3MzQ0ODIxMjQ5.Xn5iiQ.jETlCZdAVHWJOeneBqQ8QoVQlTc'
-process.env.prefix = '.'
-
 const COMMANDCODE = {
   RESULTS: 0,
   MATCHES: 1,
