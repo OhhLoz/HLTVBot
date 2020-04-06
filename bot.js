@@ -11,8 +11,11 @@ const alternateTeamDictionary = require("./alternateteams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.4.11";
+const versionNumber = "1.4.12";
 const hltvURL = "https://www.hltv.org";
+
+process.env.BOT_TOKEN = 'NTk3MDk1MjM3MzQ0ODIxMjQ5.Xn5iiQ.jETlCZdAVHWJOeneBqQ8QoVQlTc'
+process.env.prefix = '.'
 
 const COMMANDCODE = {
   RESULTS: 0,
@@ -93,97 +96,97 @@ var handlePages = (res, startIndex, code) => {
   }
 
   for (var i = startIndex; i < startIndex+pageSize; i++)
+  {
+    var match = res[i];
+    var pages = res.length/pageSize;
+
+    if(match == null) //Error with live matches, assumes will have enough to fill 1 page so less than that throws an error
+      return embed;
+
+    // POPULATE EMBED
+    var team1NameFormatted = match.team1.name.replace(/\s+/g, '-').toLowerCase();
+    var team2NameFormatted = match.team2.name.replace(/\s+/g, '-').toLowerCase();
+    var eventFormatted = match.event.name.replace(/\s+/g, '-').toLowerCase();
+
+    embed.setFooter(`Page ${startIndex/pageSize + 1} of ${Math.ceil(pages) + 1}`, client.user.avatarURL);
+    embed.addField(`Match`, `[${match.team1.name}](https://www.hltv.org/team/${match.team1.id}/${team1NameFormatted}) vs [${match.team2.name}](https://www.hltv.org/team/${match.team2.id}/${team2NameFormatted})`, false);
+
+    if(code == COMMANDCODE.MATCHES)
     {
-      var match = res[i];
-      var pages = res.length/pageSize;
+      var matchDate = new Date(match.date);
+      if(match.live)
+        matchDate = "Live";
+      embed.addField("Date", `${matchDate.toString()}`, false);
+    }
+    embed.addField("Format", `${formatDictionary[match.format]}`, false);
 
-      if(match == null) //Error with live matches, assumes will have enough to fill 1 page so less than that throws an error
-        return embed;
+    var mapStr = "";
 
-      // POPULATE EMBED
-      var team1NameFormatted = match.team1.name.replace(/\s+/g, '-').toLowerCase();
-      var team2NameFormatted = match.team2.name.replace(/\s+/g, '-').toLowerCase();
-      var eventFormatted = match.event.name.replace(/\s+/g, '-').toLowerCase();
-
-      embed.setFooter(`Page ${startIndex/pageSize + 1} of ${Math.ceil(pages) + 1}`, client.user.avatarURL);
-      embed.addField(`Match`, `[${match.team1.name}](https://www.hltv.org/team/${match.team1.id}/${team1NameFormatted}) vs [${match.team2.name}](https://www.hltv.org/team/${match.team2.id}/${team2NameFormatted})`, false);
-      
-      if(code == COMMANDCODE.MATCHES)
+    if (match.map != undefined)
+    {
+      var isMapArray = Array.isArray(match.map); //Some HLTVAPI endpoints return a map array whereas others return a map string
+      if (isMapArray)
       {
-        var matchDate = new Date(match.date);
-        if(match.live)
-          matchDate = "Live";
-        embed.addField("Date", `${matchDate.toString()}`, false);
-      }
-      embed.addField("Format", `${formatDictionary[match.format]}`, false);
-
-      var mapStr = "";
-
-      if (match.map != undefined)
-      {
-        var isMapArray = Array.isArray(match.map); //Some HLTVAPI endpoints return a map array whereas others return a map string
-        if (isMapArray)
+        for (var mapKey in match.map)
         {
-          for (var mapKey in match.map)
-          {
-            var currMap = mapDictionary[match.map[mapKey]]
-            if (currMap == undefined)
-              mapStr += "Not Selected";
-            else
-              mapStr += currMap;
-
-            if (mapKey != match.map.length - 1)
-              mapStr += ", ";
-          }
-        }
-        else
-        {
-          var currMap = mapDictionary[match.map];
+          var currMap = mapDictionary[match.map[mapKey]]
           if (currMap == undefined)
             mapStr += "Not Selected";
           else
             mapStr += currMap;
-        }
-      }
-      else if (match.maps != undefined) //Some HLTVAPI endpoints return a OBJ.maps array as opposed to a OBJ.map array
-      {
-        var isMapArray = Array.isArray(match.maps);
-        if (isMapArray)
-        {
-          for (var mapKey in match.maps)
-          {
-            var currMap = mapDictionary[match.maps[mapKey]]
-            if (currMap == undefined)
-              mapStr += "Not Selected";
-            else
-              mapStr += currMap;
 
-            if (mapKey != match.maps.length - 1)
-              mapStr += ", ";
-          }
-        }
-        else
-        {
-          var currMap = mapDictionary[match.maps];
-          if (currMap == undefined)
-            mapStr += "Not Selected";
-          else
-            mapStr += currMap;
+          if (mapKey != match.map.length - 1)
+            mapStr += ", ";
         }
       }
       else
+      {
+        var currMap = mapDictionary[match.map];
+        if (currMap == undefined)
           mapStr += "Not Selected";
-
-      embed.addField("Map", `${mapStr}`, false);
-      embed.addField("Event", `[${match.event.name}](https://www.hltv.org/events/${match.event.id}/${eventFormatted})`, false);
-
-      if(code == COMMANDCODE.RESULTS)
-        embed.addField("Result", `${match.result}`, false);
-
-      if(i != startIndex+(pageSize - 1))
-        embed.addBlankField();
+        else
+          mapStr += currMap;
+      }
     }
-    return embed;
+    else if (match.maps != undefined) //Some HLTVAPI endpoints return a OBJ.maps array as opposed to a OBJ.map array
+    {
+      var isMapArray = Array.isArray(match.maps);
+      if (isMapArray)
+      {
+        for (var mapKey in match.maps)
+        {
+          var currMap = mapDictionary[match.maps[mapKey]]
+          if (currMap == undefined)
+            mapStr += "Not Selected";
+          else
+            mapStr += currMap;
+
+          if (mapKey != match.maps.length - 1)
+            mapStr += ", ";
+        }
+      }
+      else
+      {
+        var currMap = mapDictionary[match.maps];
+        if (currMap == undefined)
+          mapStr += "Not Selected";
+        else
+          mapStr += currMap;
+      }
+    }
+    else
+        mapStr += "Not Selected";
+
+    embed.addField("Map", `${mapStr}`, false);
+    embed.addField("Event", `[${match.event.name}](https://www.hltv.org/events/${match.event.id}/${eventFormatted})`, false);
+
+    if(code == COMMANDCODE.RESULTS)
+      embed.addField("Result", `${match.result}`, false);
+
+    if(i != startIndex+(pageSize - 1))
+      embed.addBlankField();
+  }
+  return embed;
 }
 
 /**
@@ -200,7 +203,8 @@ var handlePages = (res, startIndex, code) => {
  *
  * @return {Discord.RichEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
  */
-var handleMapPages = (res, startIndex, teamName, teamID, mapArr, mapNameArr) => {
+var handleMapPages = (res, startIndex, teamName, teamID, mapArr, mapNameArr) =>
+{
   var pageSize = 3;
   var embed = new Discord.RichEmbed()
       .setColor(0x00AE86)
@@ -245,20 +249,17 @@ var handleMapPages = (res, startIndex, teamName, teamID, mapArr, mapNameArr) => 
 }
 
 /**
- * Aims to provide page functionality to the published Discord map embeds.
+ * Aims to provide page functionality to the published Discord event embeds.
  *
  * startIndex is used to ensure a different startIndex can be provided to move along the pages. The res object contains the data to be published. teamName, teamID, mapArr and mapNameArr
  *
- * @param {Object}   res            Object containing the data to be formatted into pages.
+ * @param {Object}   eventArray     Object containing the events to be formatted into pages.
  * @param {int}      startIndex     Which index within the Object to start populating the pages with.
- * @param {string}   teamName       The name of the team that this command was called for.
- * @param {int}      teamID         The ID of the team that this command was called for.
- * @param {string[]}   mapArr       A string array containing all the map codes the team has played.
- * @param {string[]}   mapNameArr   A string array containing all the map names the team has played.
  *
  * @return {Discord.RichEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
  */
-var handleEventPages = (eventArray, startIndex) => {
+var handleEventPages = (eventArray, startIndex) =>
+{
   var pageSize = 3;
   var embed = new Discord.RichEmbed()
       .setColor(0x00AE86)
@@ -904,16 +905,10 @@ client.on("message", async message =>
 
   if(command === "events")
   {
-    var embed = new Discord.RichEmbed()
-    .setTitle("Events this Month")
-    .setColor(0x00AE86)
-    .setTimestamp()
-    .setFooter("Sent by HLTVBot", client.user.avatarURL)
-    .setURL(`https://www.hltv.org/events`);
     HLTV.getEvents().then((res) =>
     {
       //console.log(res);
-      console.log(res[0].events);
+      //console.log(res[0].events);
       var eventArray = res[0].events;
       var currIndex = 0;
       var embed = handleEventPages(eventArray, currIndex);
