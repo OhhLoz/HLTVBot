@@ -11,7 +11,7 @@ const alternateTeamDictionary = require("./alternateteams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.4.12";
+const versionNumber = "1.4.13";
 const hltvURL = "https://www.hltv.org";
 
 const COMMANDCODE = {
@@ -610,8 +610,8 @@ client.on("message", async message =>
     {
       HLTV.getTeam({id: teamID}).then(res =>
         {
-          //console.log(res);
-          //console.log("\n\n\n ======================================================================== \n\n\n");
+          // console.log(res);
+          // console.log("\n\n\n ======================================================================== \n\n\n");
           var embed = new Discord.RichEmbed()
           .setTitle(teamName + " Profile")
           .setColor(0x00AE86)
@@ -631,8 +631,19 @@ client.on("message", async message =>
           }
           else
           {
-            embed.addField("Recent Matches", `(${res.name} ${res.recentResults[0].result} ${res.recentResults[0].enemyTeam.name}) \n \t\t(${res.name} ${res.recentResults[1].result} ${res.recentResults[1].enemyTeam.name}) \n \t\t(${res.name} ${res.recentResults[2].result} ${res.recentResults[2].enemyTeam.name})`);
-            message.channel.send({embed});
+            for (var i = 0; i < res.recentResults.length; i++)
+            {
+              //console.log(res.recentResults[i]);
+              if(i >= 20)
+                return;
+
+              if (res.recentResults[i].result != '-:-')
+              {
+                embed.addField("Recent Matches", `(${res.name} ${res.recentResults[i].result} ${res.recentResults[i].enemyTeam.name}) \n \t\t(${res.name} ${res.recentResults[i+1].result} ${res.recentResults[i+1].enemyTeam.name}) \n \t\t(${res.name} ${res.recentResults[i+2].result} ${res.recentResults[i+2].enemyTeam.name})`);
+                message.channel.send({embed});
+                return;
+              }
+            }
           }
         });
     }
