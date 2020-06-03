@@ -11,7 +11,7 @@ const alternateTeamDictionary = require("./alternateteams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.4.13";
+const versionNumber = "1.4.14";
 const hltvURL = "https://www.hltv.org";
 
 const COMMANDCODE = {
