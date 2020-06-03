@@ -1,6 +1,6 @@
 {
   "name": "HLTVBot",
-  "version": "1.4.13",
+  "version": "1.4.14",
   "description": "",
   "main": "bot.js",
   "dependencies": {
@@ -14,5 +14,13 @@
   },
   "keywords": [],
   "author": "Laurence Ure",
-  "license": "GNU General Public License v3.0"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OhhLoz/HLTVBot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/OhhLoz/HLTVBot/issues"
+  },
+  "homepage": "https://github.com/OhhLoz/HLTVBot#readme",
+  "license": "GPL-3.0"
 }
