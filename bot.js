@@ -590,7 +590,7 @@ client.on("message", async message =>
       .addField("Invite Link", "[Invite](https://discordapp.com/oauth2/authorize?client_id=548165454158495745&scope=bot&permissions=330816)", true)
       .addField("Support Link", "[GitHub](https://github.com/OhhLoz/HLTVBot)", true)
       .addField("Bot Page", "[Vote Here!](https://top.gg/bot/548165454158495745)", true)
-      .addField("Donate", "[PayPal](paypal.me/LaurenceUre)", true)
+      .addField("Donate", "[PayPal](https://www.paypal.me/LaurenceUre)", true)
       message.channel.send(embed);
     }
     else
