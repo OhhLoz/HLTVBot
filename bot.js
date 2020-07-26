@@ -11,7 +11,7 @@ const alternateTeamDictionary = require("./alternateteams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.4.14";
+const versionNumber = "1.5.0";
 const hltvURL = "https://www.hltv.org";
 
 const COMMANDCODE = {
@@ -68,11 +68,11 @@ let getTime = (milli) => {
  * @param {int}      startIndex     Which index within the Object to start populating the pages with.
  * @param {string}   code           An identifier used to determine where the function was called from and changes functionality accordingly.
  *
- * @return {Discord.RichEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
+ * @return {Discord.MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
  */
 var handlePages = (res, startIndex, code) => {
   var pageSize = 0;
-  var embed = new Discord.RichEmbed()
+  var embed = new Discord.MessageEmbed()
       .setColor(0x00AE86)
       .setTimestamp();
 
@@ -145,7 +145,7 @@ var handlePages = (res, startIndex, code) => {
           mapStr += currMap;
       }
     }
-    else if (match.maps != undefined) //Some HLTVAPI endpoints return a OBJ.maps array as opposed to a OBJ.map array
+    else if (match.maps != undefined) //Some HLTVAPI endpoints return a OBJ.maps array as opposed to a OBJ.map array, needs verification on newest version 2.20.0 to see if this fallback code is necessary
     {
       var isMapArray = Array.isArray(match.maps);
       if (isMapArray)
@@ -181,7 +181,7 @@ var handlePages = (res, startIndex, code) => {
       embed.addField("Result", `${match.result}`, false);
 
     if(i != startIndex+(pageSize - 1))
-      embed.addBlankField();
+      embed.addField('\u200b', '\u200b');
   }
   return embed;
 }
@@ -198,12 +198,12 @@ var handlePages = (res, startIndex, code) => {
  * @param {string[]}   mapArr       A string array containing all the map codes the team has played.
  * @param {string[]}   mapNameArr   A string array containing all the map names the team has played.
  *
- * @return {Discord.RichEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
+ * @return {Discord.MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
  */
 var handleMapPages = (res, startIndex, teamName, teamID, mapArr, mapNameArr) =>
 {
   var pageSize = 3;
-  var embed = new Discord.RichEmbed()
+  var embed = new Discord.MessageEmbed()
       .setColor(0x00AE86)
       .setTimestamp()
       .setTitle(teamName + " Maps")
@@ -240,7 +240,7 @@ var handleMapPages = (res, startIndex, teamName, teamID, mapArr, mapNameArr) =>
       embed.addField("Total Rounds", map.totalRounds , true);
 
       if(i != startIndex+(pageSize - 1))
-        embed.addBlankField();
+        embed.addField('\u200b', '\u200b');
     }
     return embed;
 }
@@ -253,12 +253,12 @@ var handleMapPages = (res, startIndex, teamName, teamID, mapArr, mapNameArr) =>
  * @param {Object}   eventArray     Object containing the events to be formatted into pages.
  * @param {int}      startIndex     Which index within the Object to start populating the pages with.
  *
- * @return {Discord.RichEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
+ * @return {Discord.MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
  */
 var handleEventPages = (eventArray, startIndex) =>
 {
   var pageSize = 3;
-  var embed = new Discord.RichEmbed()
+  var embed = new Discord.MessageEmbed()
       .setColor(0x00AE86)
       .setTimestamp()
       .setTitle("Events")
@@ -279,6 +279,7 @@ var handleEventPages = (eventArray, startIndex) =>
       var eventNameURLFormat = event.name.replace(/\s+/g, '-').toLowerCase();
       var matchStartDate;
       var matchEndDate;
+      var prizePool;
 
       if(event.dateStart != undefined)
         matchStartDate = (new Date(event.dateStart)).toString();
@@ -299,7 +300,7 @@ var handleEventPages = (eventArray, startIndex) =>
       embed.addField("Event Type", event.type);
 
       if(i != startIndex+(pageSize - 1))
-        embed.addBlankField();
+        embed.addField('\u200b', '\u200b');
     }
     return embed;
 }
@@ -310,15 +311,15 @@ client.on("ready", () =>
   var usercount = 0;
   var botcount = 0;
   var channelcount = 0;
-  client.guilds.forEach((guild) =>
+  client.guilds.cache.forEach((guild) =>
   {
     if (guild.id == "264445053596991498")
       return;
 
     servercount += 1;
-    channelcount += guild.channels.filter(channel => channel.type != 'category').size;
-    usercount += guild.members.filter(member => !member.user.bot).size;
-    botcount += guild.members.filter(member => member.user.bot).size;
+    channelcount += guild.channels.cache.filter(channel => channel.type != 'category').size;
+    usercount += guild.members.cache.filter(member => !member.user.bot).size;
+    botcount += guild.members.cache.filter(member => member.user.bot).size;
   })
 
   console.log(`HLTVBot is currently serving ${usercount} users, in ${channelcount} channels of ${servercount} servers. Alongside ${botcount} bot brothers.`);
@@ -356,7 +357,7 @@ client.on("message", async message =>
     {
       //console.log(res);
       var embedcount = 0;
-      var embed = new Discord.RichEmbed()
+      var embed = new Discord.MessageEmbed()
       .setTitle("Recent Threads")
       .setColor(0xff8d00)
       .setTimestamp()
@@ -383,7 +384,7 @@ client.on("message", async message =>
     {
       //console.log(res);
       var embedcount = 0;
-      var embed = new Discord.RichEmbed()
+      var embed = new Discord.MessageEmbed()
       .setTitle("Recent News")
       .setColor(0xff8d00)
       .setTimestamp()
@@ -407,7 +408,7 @@ client.on("message", async message =>
   // Outputs valid teams the user can use or the team rankings
   if(command == "teams")
   {
-    var embed = new Discord.RichEmbed();
+    var embed = new Discord.MessageEmbed();
     var outputStr = "";
     if(args.length == 0) // if user has just entered .teams as opposed to .teams ranking
     {
@@ -462,7 +463,7 @@ client.on("message", async message =>
     // Outputs player data or player rankings
     if(command == "player")
     {
-      var embed = new Discord.RichEmbed();
+      var embed = new Discord.MessageEmbed();
       var outputStr = "";
       if(args[0] == "rankings" || args[0] == "ranking") // if user has entered ".player rankings"
       {
@@ -477,7 +478,7 @@ client.on("message", async message =>
               break;
             count++;
           }
-          const embed = new Discord.RichEmbed()
+          const embed = new Discord.MessageEmbed()
           .setTitle("Player Rankings")
           .setColor(0x00AE86)
           .setTimestamp()
@@ -490,8 +491,8 @@ client.on("message", async message =>
       {
         HLTV.getPlayerByName({name: args[0]}).then((res)=>
         {
-          //console.log(res);
-          var embed = new Discord.RichEmbed()
+          console.log(res);
+          var embed = new Discord.MessageEmbed()
           .setTitle(args[0] + " Player Profile")
           .setColor(0x00AE86)
           .setThumbnail(res.image)
@@ -502,14 +503,14 @@ client.on("message", async message =>
           .addField("IGN", res.ign)
           .addField("Age", res.age)
           .addField("Country", res.country.name)
-          .addField("Facebook", res.facebook)
-          .addField("Twitch", res.twitch)
-          .addField("Twitter", res.twitter)
+          .addField("Facebook", res.facebook == undefined ? "Not Available" : res.facebook)
+          .addField("Twitch", res.twitch == undefined ? "Not Available" : res.twitch)
+          .addField("Twitter", res.twitter == undefined ? "Not Available" : res.facebook)
           .addField("Team", `[${res.team.name}](https://www.hltv.org/team/${res.team.id}/${res.team.name.replace(/\s+/g, '')})`)
           .addField("Rating", res.statistics.rating);
           message.channel.send({embed});
         }).catch(() => {
-          var embed = new Discord.RichEmbed()
+          var embed = new Discord.MessageEmbed()
           .setTitle("Invalid Player")
           .setColor(0x00AE86)
           .setTimestamp()
@@ -525,7 +526,7 @@ client.on("message", async message =>
   {
     if (args.length == 0)
     {
-      var embed = new Discord.RichEmbed()
+      var embed = new Discord.MessageEmbed()
       .setTitle("Help")
       .setColor(0xff8d00)
       .setTimestamp()
@@ -533,17 +534,16 @@ client.on("message", async message =>
       .addField(".hltv", "Lists all current commands", false)
       .addField(".hltv ping", "Displays the current ping to the bot & the API", false)
       .addField(".hltv stats", "Displays bot statistics, invite link and contact information", false)
-      .addBlankField()
+      .addField('\u200b', '\u200b')
       .addField(".teams", "Lists all of the currently accepted teams", false)
       .addField(".teams rankings", "Displays the top 30 team rankings & recent position changes. 'ranking' is also accepted.", false)
       .addField(".[teamname]", "Displays the profile related to the input team", false)
       .addField(".[teamname] stats", "Displays the statistics related to the input team", false)
       .addField(".[teamname] maps", "Displays the map statistics related to the input team", false)
-      .addField(".[teamname] link", "Displays a link to the input teams HLTV page", false)
-      .addBlankField()
+      .addField('\u200b', '\u200b')
       .addField(".player [playername]", "Displays player statistics from the given playername", false)
       .addField(".player rankings", "Displays the top 30 player rankings & recent position changes. 'ranking' is also accepted.",false)
-      .addBlankField()
+      .addField('\u200b', '\u200b')
       .addField(".livematches", "Displays all currently live matches", false)
       .addField(".matches", "Displays all known scheduled matches", false)
       .addField(".results", "Displays the most recent match results", false)
@@ -575,7 +575,7 @@ client.on("message", async message =>
         usercount += guild.members.filter(member => !member.user.bot).size;
         botcount += guild.members.filter(member => member.user.bot).size;
       })
-      var embed = new Discord.RichEmbed()
+      var embed = new Discord.MessageEmbed()
       .setTitle("Bot Stats")
       .setColor(0xff8d00)
       .setTimestamp()
@@ -610,9 +610,10 @@ client.on("message", async message =>
     {
       HLTV.getTeam({id: teamID}).then(res =>
         {
-          // console.log(res);
+          //console.log(res);
+          var playerRosterOutputStr = '';
           // console.log("\n\n\n ======================================================================== \n\n\n");
-          var embed = new Discord.RichEmbed()
+          var embed = new Discord.MessageEmbed()
           .setTitle(teamName + " Profile")
           .setColor(0x00AE86)
           //.setThumbnail(res.logo)
@@ -620,11 +621,19 @@ client.on("message", async message =>
           .setTimestamp()
           .setFooter("Sent by HLTVBot", client.user.avatarURL)
           .setURL(`https://www.hltv.org/team/${teamID}/${teamName}`)
-          .addField("Location", res.location)
-          .addField("Facebook", res.facebook)
-          .addField("Twitter", res.twitter)
-          .addField("Players", `[${res.players[0].name}](https://www.hltv.org/stats/players/${res.players[0].id}/${res.players[0].name}), [${res.players[1].name}](https://www.hltv.org/stats/players/${res.players[1].id}/${res.players[1].name}), [${res.players[2].name}](https://www.hltv.org/stats/players/${res.players[2].id}/${res.players[2].name}), [${res.players[3].name}](https://www.hltv.org/stats/players/${res.players[3].id}/${res.players[3].name}), [${res.players[4].name}](https://www.hltv.org/stats/players/${res.players[4].id}/${res.players[4].name})`)
-          .addField("Rank", res.rank);
+          .addField("Location", res.location == undefined ? "Not Available" : res.location)
+          .addField("Facebook", res.facebook == undefined ? "Not Available" : res.facebook)
+          .addField("Twitter",  res.twitter == undefined ? "Not Available" : res.twitter)
+          for (var i = 0; i < res.players.length; i++)
+          {
+            playerRosterOutputStr += `[${res.players[i].name}](https://www.hltv.org/stats/players/${res.players[i].id}/${res.players[i].name})`
+            if(i != res.players.length - 1)
+              playerRosterOutputStr += ', ';
+          }
+          embed.addField("Players", playerRosterOutputStr);
+          embed.addField("Rank", res.rank);
+
+
           if(res.recentResults === undefined || res.recentResults.length == 0)
           {
             message.channel.send({embed});
@@ -653,7 +662,7 @@ client.on("message", async message =>
         {
           //console.log(res);
           //console.log("\n\n\n ======================================================================== \n\n\n");
-          const embed = new Discord.RichEmbed()
+          const embed = new Discord.MessageEmbed()
           .setTitle(teamName + " Stats")
           .setColor(0x00AE86)
           .setTimestamp()
@@ -733,10 +742,6 @@ client.on("message", async message =>
             });
           });
         });
-    }
-    else if (args[0] == "link")     // If link after teamname send a link to the team page
-    {
-      message.channel.send(`https://www.hltv.org/team/${teamID}/${teamName}`);
     }
     else  // Error catching for incorrect command
     {
@@ -866,7 +871,7 @@ client.on("message", async message =>
 
       //console.log(res);
       var currIndex = 0;
-      var embed = handlePages(res, currIndex, COMMANDCODE.LIVEMATCHES);
+      var embed = handlePages(liveArr, currIndex, COMMANDCODE.LIVEMATCHES);
       var originalAuthor = message.author;
       message.channel.send({embed}).then((message) =>
       {
@@ -915,8 +920,9 @@ client.on("message", async message =>
   {
     HLTV.getEvents().then((res) =>
     {
-      //console.log(res);
-      //console.log(res[0].events);
+      // console.log(res);
+      // console.log('\n\n\n ============================================ \n\n\n');
+      // console.log(res[0].events);
       var eventArray = res[0].events;
       var currIndex = 0;
       var embed = handleEventPages(eventArray, currIndex);
