@@ -11,7 +11,7 @@ const alternateTeamDictionary = require("./alternateteams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.5.0";
+const versionNumber = "1.5.1";
 const hltvURL = "https://www.hltv.org";
 
 const COMMANDCODE = {
@@ -566,14 +566,14 @@ client.on("message", async message =>
       var usercount = 0;
       var botcount = 0;
       var channelcount = 0;
-      client.guilds.forEach((guild) =>
+      client.guilds.cache.forEach((guild) =>
       {
         if (guild.id == "264445053596991498")
           return;
         servercount += 1;
-        channelcount += guild.channels.filter(channel => channel.type != 'category').size;
-        usercount += guild.members.filter(member => !member.user.bot).size;
-        botcount += guild.members.filter(member => member.user.bot).size;
+        channelcount += guild.channels.cache.filter(channel => channel.type != 'category').size;
+        usercount += guild.members.cache.filter(member => !member.user.bot).size;
+        botcount += guild.members.cache.filter(member => member.user.bot).size;
       })
       var embed = new Discord.MessageEmbed()
       .setTitle("Bot Stats")
