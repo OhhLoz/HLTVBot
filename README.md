@@ -14,6 +14,7 @@ This bot can be accessed or invited to your discord server via the [Top.gg](http
 * [VSCode](https://code.visualstudio.com/) - Used to code the whole project
 * [Discord.js](https://discord.js.org/#/) - Used to fetch images from URL's inside of the app.
 * [HLTV NPM Package](https://www.npmjs.com/package/hltv) - Used to fetch content from the HLTV site
+* [HLTVAPI NPM Package](https://www.npmjs.com/package/hltv-api) - Currently used to fetch news from the HLTV site
 
 ## Authors
 
