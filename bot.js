@@ -2,6 +2,7 @@ const Discord = require('discord.js');
 const client = new Discord.Client();
 
 const { HLTV } = require('hltv');
+const HLTVAPI = require('hltv-api').default;
 
 const DBL = require("dblapi.js");
 const dbl = new DBL(process.env.DBL_TOKEN, client);
@@ -11,7 +12,7 @@ const alternateTeamDictionary = require("./alternateteams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.5.1";
+const versionNumber = "1.5.2";
 const hltvURL = "https://www.hltv.org";
 
 const COMMANDCODE = {
@@ -380,27 +381,23 @@ client.on("message", async message =>
 
   if(command == "news")
   {
-    HLTV.getRecentThreads().then((res) =>
+    var embed = new Discord.MessageEmbed()
+    .setTitle("News")
+    .setColor(0xff8d00)
+    .setTimestamp()
+    .setFooter("Sent by HLTVBot", client.user.avatarURL);
+
+    HLTVAPI.getNews().then((res) =>
     {
       //console.log(res);
-      var embedcount = 0;
-      var embed = new Discord.MessageEmbed()
-      .setTitle("Recent News")
-      .setColor(0xff8d00)
-      .setTimestamp()
-      .setFooter("Sent by HLTVBot", client.user.avatarURL);
       for (index in res)
       {
-        if(res[index].title != undefined && ((res[index].category == 'news') || (res[index].category == 'match')))
-        {
-          embed.addField(`${res[index].title}`, `[Link](${hltvURL + res[index].link}) Replies: ${res[index].replies} Category: ${res[index].category}`);
-          embedcount++;
-        }
-        if(embedcount >= 24)
-          return;
+        var newsObj = res[index];
+        // console.log(newsObj);
+        embed.addField(`${newsObj.title}`, newsObj.description);
+        embed.addField("Date", `[${newsObj.date}](${newsObj.link})`);
+        embed.addField('\u200b','\u200b');
       }
-      if (embedcount == 0)
-        embed.setDescription("No News found, please try again later.")
       message.channel.send({embed});
     });
   }
