@@ -12,7 +12,7 @@ const alternateTeamDictionary = require("./alternateteams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.5.3";
+const versionNumber = "1.5.4";
 const hltvURL = "https://www.hltv.org";
 
 const COMMANDCODE = {
@@ -249,7 +249,7 @@ var handleMapPages = (res, startIndex, teamName, teamID, mapArr, mapNameArr) =>
 /**
  * Aims to provide page functionality to the published Discord event embeds.
  *
- * startIndex is used to ensure a different startIndex can be provided to move along the pages. The res object contains the data to be published. teamName, teamID, mapArr and mapNameArr
+ * startIndex is used to ensure a different startIndex can be provided to move along the pages.
  *
  * @param {Object}   eventArray     Object containing the events to be formatted into pages.
  * @param {int}      startIndex     Which index within the Object to start populating the pages with.
@@ -299,6 +299,47 @@ var handleEventPages = (eventArray, startIndex) =>
       embed.addField("Teams", event.teams);
       embed.addField("Location", event.location.name);
       embed.addField("Event Type", event.type);
+
+      if(i != startIndex+(pageSize - 1))
+        embed.addField('\u200b', '\u200b');
+    }
+    return embed;
+}
+
+/**
+ * Aims to provide page functionality to the published Discord news embeds.
+ *
+ * startIndex is used to ensure a different startIndex can be provided to move along the pages.
+ *
+ * @param {Object}   newsArray     Object containing the news to be formatted into pages.
+ * @param {int}      startIndex     Which index within the Object to start populating the pages with.
+ *
+ * @return {Discord.MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
+ */
+var handleNewsPages = (newsArray, startIndex) =>
+{
+  var pageSize = 8;
+  var embed = new Discord.MessageEmbed()
+      .setColor(0x00AE86)
+      .setTimestamp()
+      .setTitle("News")
+      .setColor(0x00AE86)
+      .setTimestamp()
+      .setURL(`https://www.hltv.org`);
+
+  for (var i = startIndex; i < startIndex+pageSize; i++)
+    {
+      var newsObj = newsArray[i];
+      //console.log(newsObj);
+      var pages = newsArray.length/pageSize;
+
+      embed.setFooter(`Page ${startIndex/pageSize + 1} of ${Math.ceil(pages)}`, client.user.avatarURL);
+
+      if(newsObj == undefined)
+        break;
+
+      embed.addField(`${newsObj.title}`, newsObj.description != '' ? newsObj.description : "No Description");
+      embed.addField("Date", `[${newsObj.date}](${newsObj.link})`);
 
       if(i != startIndex+(pageSize - 1))
         embed.addField('\u200b', '\u200b');
@@ -381,24 +422,51 @@ client.on("message", async message =>
 
   if(command == "news")
   {
-    var embed = new Discord.MessageEmbed()
-    .setTitle("News")
-    .setColor(0xff8d00)
-    .setTimestamp()
-    .setFooter("Sent by HLTVBot", client.user.avatarURL);
-
     HLTVAPI.getNews().then((res) =>
     {
-      //console.log(res);
-      for (index in res)
+      var currIndex = 0;
+      var embed = handleNewsPages(res, currIndex);
+      var originalAuthor = message.author;
+      message.channel.send({embed}).then((message) =>
       {
-        var newsObj = res[index];
-        // console.log(newsObj);
-        embed.addField(`${newsObj.title}`, newsObj.description != '' ? newsObj.description : "No Description");
-        embed.addField("Date", `[${newsObj.date}](${newsObj.link})`);
-        embed.addField('\u200b','\u200b');
-      }
-      message.channel.send({embed});
+        message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
+
+        const collector = new Discord.ReactionCollector(message, (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id), {
+          time: 60000, // stop automatically after one minute
+        });
+
+        collector.on('collect', (reaction, user) =>
+        {
+          switch (reaction.emoji.name)
+          {
+            case reactionControls.PREV_PAGE:
+            {
+              if (currIndex - 8 >= 0)
+                currIndex-=8;
+              message.edit(handleNewsPages(res, currIndex));
+              break;
+            }
+            case reactionControls.NEXT_PAGE:
+            {
+              if (currIndex + 8 <= res.length - 1)
+                currIndex+=8;
+              message.edit(handleNewsPages(res, currIndex));
+              break;
+            }
+            case reactionControls.STOP:
+            {
+              // stop listening for reactions
+              message.delete();
+              collector.stop();
+              break;
+            }
+          }
+        });
+
+        collector.on('stop', async () => {
+            await message.clearReactions();
+        });
+      });
     });
   }
 
