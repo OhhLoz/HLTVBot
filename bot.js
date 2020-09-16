@@ -12,7 +12,7 @@ const alternateTeamDictionary = require("./alternateteams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.5.2";
+const versionNumber = "1.5.3";
 const hltvURL = "https://www.hltv.org";
 
 const COMMANDCODE = {
@@ -394,7 +394,7 @@ client.on("message", async message =>
       {
         var newsObj = res[index];
         // console.log(newsObj);
-        embed.addField(`${newsObj.title}`, newsObj.description);
+        embed.addField(`${newsObj.title}`, newsObj.description != '' ? newsObj.description : "No Description");
         embed.addField("Date", `[${newsObj.date}](${newsObj.link})`);
         embed.addField('\u200b','\u200b');
       }
