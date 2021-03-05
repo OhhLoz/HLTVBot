@@ -12,8 +12,13 @@ const alternateTeamDictionary = require("./alternateteams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.5.4";
+const versionNumber = "1.5.5";
 const hltvURL = "https://www.hltv.org";
+
+var servercount = 0;
+var usercount = 0;
+var botcount = 0;
+var channelcount = 0;
 
 const COMMANDCODE = {
   RESULTS: 0,
@@ -349,10 +354,10 @@ var handleNewsPages = (newsArray, startIndex) =>
 
 client.on("ready", () =>
 {
-  var servercount = 0;
-  var usercount = 0;
-  var botcount = 0;
-  var channelcount = 0;
+  servercount = 0;
+  usercount = 0;
+  botcount = 0;
+  channelcount = 0;
   client.guilds.cache.forEach((guild) =>
   {
     if (guild.id == "264445053596991498")
@@ -360,7 +365,8 @@ client.on("ready", () =>
 
     servercount += 1;
     channelcount += guild.channels.cache.filter(channel => channel.type != 'category').size;
-    usercount += guild.members.cache.filter(member => !member.user.bot).size;
+    //usercount += guild.members.cache.filter(member => !member.user.bot).size;
+    usercount += guild.memberCount;
     botcount += guild.members.cache.filter(member => member.user.bot).size;
   })
 
@@ -627,19 +633,6 @@ client.on("message", async message =>
     }
     else if (args[0] == "stats")
     {
-      var servercount = 0;
-      var usercount = 0;
-      var botcount = 0;
-      var channelcount = 0;
-      client.guilds.cache.forEach((guild) =>
-      {
-        if (guild.id == "264445053596991498")
-          return;
-        servercount += 1;
-        channelcount += guild.channels.cache.filter(channel => channel.type != 'category').size;
-        usercount += guild.members.cache.filter(member => !member.user.bot).size;
-        botcount += guild.members.cache.filter(member => member.user.bot).size;
-      })
       var embed = new Discord.MessageEmbed()
       .setTitle("Bot Stats")
       .setColor(0xff8d00)
