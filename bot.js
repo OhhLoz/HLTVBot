@@ -12,7 +12,7 @@ const alternateTeamDictionary = require("./alternateteams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 
-const versionNumber = "1.5.5";
+const versionNumber = "1.5.6";
 const hltvURL = "https://www.hltv.org";
 
 var servercount = 0;
@@ -181,7 +181,11 @@ var handlePages = (res, startIndex, code) => {
         mapStr += "Not Selected";
 
     embed.addField("Map", `${mapStr}`, false);
-    embed.addField("Event", `[${match.event.name}](https://www.hltv.org/events/${match.event.id}/${eventFormatted})`, false);
+
+    if (match.event.id != undefined)
+        embed.addField("Event", `[${match.event.name}](https://www.hltv.org/events/${match.event.id}/${eventFormatted})`, false);
+    else
+        embed.addField("Event", `${match.event.name}`, false);
 
     if(code == COMMANDCODE.RESULTS)
       embed.addField("Result", `${match.result}`, false);
