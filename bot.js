@@ -1,18 +1,17 @@
+const { Client, Intents } = require('discord.js');
 const Discord = require('discord.js');
-const client = new Discord.Client();
+
+const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 
 const { HLTV } = require('hltv');
 const HLTVAPI = require('hltv-api').default;
-
-const DBL = require("dblapi.js");
-const dbl = new DBL(process.env.DBL_TOKEN, client);
 
 const teamDictionary = require("./teams.json");
 const alternateTeamDictionary = require("./alternateteams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
+const package = require("./package.json")
 
-const versionNumber = "1.5.6";
 const hltvURL = "https://www.hltv.org";
 
 var servercount = 0;
@@ -376,8 +375,6 @@ client.on("ready", () =>
 
   console.log(`HLTVBot is currently serving ${usercount} users, in ${channelcount} channels of ${servercount} servers. Alongside ${botcount} bot brothers.`);
   client.user.setActivity(`.hltv`, { type: 'LISTENING' });
-  setInterval(() => {
-    dbl.postStats(client.guilds.size, client.shards.Id, client.shards.total);}, 1800000);
   reverseTeamDictionary = reverseMapFromMap(teamDictionary);
 });
 
@@ -647,7 +644,7 @@ client.on("message", async message =>
       .addField("Bot User Count", botcount, true)
       .addField("Server Count", servercount, true)
       .addField("Channel Count", channelcount, true)
-      .addField("Version", versionNumber, true)
+      .addField("Version", package.version, true)
       .addField("Uptime", getTime(client.uptime), true)
       .addField("Invite Link", "[Invite](https://discordapp.com/oauth2/authorize?client_id=548165454158495745&scope=bot&permissions=330816)", true)
       .addField("Support Link", "[GitHub](https://github.com/OhhLoz/HLTVBot)", true)
@@ -672,13 +669,15 @@ client.on("message", async message =>
     {
       HLTV.getTeam({id: teamID}).then(res =>
         {
-          //console.log(res);
+          // console.log(res);
+
           var playerRosterOutputStr = '';
           // console.log("\n\n\n ======================================================================== \n\n\n");
+
           var embed = new Discord.MessageEmbed()
           .setTitle(teamName + " Profile")
           .setColor(0x00AE86)
-          //.setThumbnail(res.logo)
+          // .setThumbnail(thumbnailBuffer)
           //.setImage(res.coverImage)
           .setTimestamp()
           .setFooter("Sent by HLTVBot", client.user.avatarURL)
