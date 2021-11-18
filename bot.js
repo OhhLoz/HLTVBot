@@ -7,12 +7,16 @@ const HLTVAPI = require('hltv-api').default;
 const DBL = require("dblapi.js");
 const dbl = new DBL(process.env.DBL_TOKEN, client);
 
+const { svgtopng } = require('svg-png-converter')
+
+process.env.prefix = '.'
+
 const teamDictionary = require("./teams.json");
 const alternateTeamDictionary = require("./alternateteams.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
+const package = require("./package.json")
 
-const versionNumber = "1.5.6";
 const hltvURL = "https://www.hltv.org";
 
 var servercount = 0;
@@ -369,8 +373,8 @@ client.on("ready", () =>
 
     servercount += 1;
     channelcount += guild.channels.cache.filter(channel => channel.type != 'category').size;
-    //usercount += guild.members.cache.filter(member => !member.user.bot).size;
-    usercount += guild.memberCount;
+    usercount += guild.members.cache.filter(member => !member.user.bot).size;
+    //usercount += guild.memberCount;
     botcount += guild.members.cache.filter(member => member.user.bot).size;
   })
 
@@ -647,7 +651,7 @@ client.on("message", async message =>
       .addField("Bot User Count", botcount, true)
       .addField("Server Count", servercount, true)
       .addField("Channel Count", channelcount, true)
-      .addField("Version", versionNumber, true)
+      .addField("Version", package.version, true)
       .addField("Uptime", getTime(client.uptime), true)
       .addField("Invite Link", "[Invite](https://discordapp.com/oauth2/authorize?client_id=548165454158495745&scope=bot&permissions=330816)", true)
       .addField("Support Link", "[GitHub](https://github.com/OhhLoz/HLTVBot)", true)
@@ -672,13 +676,21 @@ client.on("message", async message =>
     {
       HLTV.getTeam({id: teamID}).then(res =>
         {
-          //console.log(res);
+          console.log(res);
+
+          const thumbnailBuffer = await svgtopng({
+            input: `<svg xmlns="${res.logo}" width="500" height="500" viewBox="0 0 350 136"></svg>`,
+            encoding: 'buffer',
+            format: 'png',
+            quality: 1
+          })
           var playerRosterOutputStr = '';
           // console.log("\n\n\n ======================================================================== \n\n\n");
+
           var embed = new Discord.MessageEmbed()
           .setTitle(teamName + " Profile")
           .setColor(0x00AE86)
-          //.setThumbnail(res.logo)
+          // .setThumbnail(thumbnailBuffer)
           //.setImage(res.coverImage)
           .setTimestamp()
           .setFooter("Sent by HLTVBot", client.user.avatarURL)
