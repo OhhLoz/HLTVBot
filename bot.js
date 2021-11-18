@@ -1,14 +1,12 @@
+const { Client, Intents } = require('discord.js');
 const Discord = require('discord.js');
-const client = new Discord.Client();
+
+const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 
 const { HLTV } = require('hltv');
 const HLTVAPI = require('hltv-api').default;
 
-const DBL = require("dblapi.js");
-const dbl = new DBL(process.env.DBL_TOKEN, client);
-
-const { svgtopng } = require('svg-png-converter')
-
+process.env.BOT_TOKEN = 'NTk3MDk1MjM3MzQ0ODIxMjQ5.XSDGRg.f3ZufS9dUil8kIRFEEz9ghBgV2I'
 process.env.prefix = '.'
 
 const teamDictionary = require("./teams.json");
@@ -373,15 +371,13 @@ client.on("ready", () =>
 
     servercount += 1;
     channelcount += guild.channels.cache.filter(channel => channel.type != 'category').size;
-    usercount += guild.members.cache.filter(member => !member.user.bot).size;
-    //usercount += guild.memberCount;
+    //usercount += guild.members.cache.filter(member => !member.user.bot).size;
+    usercount += guild.memberCount;
     botcount += guild.members.cache.filter(member => member.user.bot).size;
   })
 
   console.log(`HLTVBot is currently serving ${usercount} users, in ${channelcount} channels of ${servercount} servers. Alongside ${botcount} bot brothers.`);
   client.user.setActivity(`.hltv`, { type: 'LISTENING' });
-  setInterval(() => {
-    dbl.postStats(client.guilds.size, client.shards.Id, client.shards.total);}, 1800000);
   reverseTeamDictionary = reverseMapFromMap(teamDictionary);
 });
 
@@ -676,14 +672,8 @@ client.on("message", async message =>
     {
       HLTV.getTeam({id: teamID}).then(res =>
         {
-          console.log(res);
+          // console.log(res);
 
-          const thumbnailBuffer = await svgtopng({
-            input: `<svg xmlns="${res.logo}" width="500" height="500" viewBox="0 0 350 136"></svg>`,
-            encoding: 'buffer',
-            format: 'png',
-            quality: 1
-          })
           var playerRosterOutputStr = '';
           // console.log("\n\n\n ======================================================================== \n\n\n");
 
