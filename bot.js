@@ -6,9 +6,6 @@ const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_
 const { HLTV } = require('hltv');
 const HLTVAPI = require('hltv-api').default;
 
-process.env.BOT_TOKEN = 'NTk3MDk1MjM3MzQ0ODIxMjQ5.XSDGRg.f3ZufS9dUil8kIRFEEz9ghBgV2I'
-process.env.prefix = '.'
-
 const teamDictionary = require("./teams.json");
 const alternateTeamDictionary = require("./alternateteams.json");
 const mapDictionary = require("./maps.json");
