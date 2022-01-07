@@ -3,6 +3,8 @@ const Discord = require('discord.js');
 
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 
+process.env.prefix = '.'
+
 const { HLTV } = require('hltv');
 const HLTVAPI = require('hltv-api').default;
 
@@ -84,7 +86,7 @@ var handlePages = (res, startIndex, code) => {
   if(code == COMMANDCODE.RESULTS)
   {
     pageSize = 3;
-    embed.setTitle("Match Results");
+    embed.setTitle("Match Results from the Last Week");
   }
   else if (code == COMMANDCODE.LIVEMATCHES)
   {
@@ -108,7 +110,10 @@ var handlePages = (res, startIndex, code) => {
     // POPULATE EMBED
     var team1NameFormatted = match.team1.name.replace(/\s+/g, '-').toLowerCase();
     var team2NameFormatted = match.team2.name.replace(/\s+/g, '-').toLowerCase();
-    var eventFormatted = match.event.name.replace(/\s+/g, '-').toLowerCase();
+    var eventFormatted;
+
+    if(code == COMMANDCODE.MATCHES || COMMANDCODE.LIVEMATCHES)
+       eventFormatted = match.event.name.replace(/\s+/g, '-').toLowerCase();
 
     embed.setFooter(`Page ${startIndex/pageSize + 1} of ${Math.ceil(pages) + 1}`, client.user.avatarURL);
     embed.addField(`Match`, `[${match.team1.name}](https://www.hltv.org/team/${match.team1.id}/${team1NameFormatted}) vs [${match.team2.name}](https://www.hltv.org/team/${match.team2.id}/${team2NameFormatted})`, false);
@@ -220,17 +225,17 @@ var handleMapPages = (res, startIndex, teamName, teamID, mapArr, mapNameArr) =>
       .setTimestamp()
       .setURL(`https://www.hltv.org/stats/teams/${teamID}/${teamName}`);
 
-      // console.log(`currIndex: ${startIndex}\n`);
-      // console.log(`mapArr: ${mapArr}\n`);
-      // console.log(`mapNameArr: ${mapNameArr}\n`);
-      // console.log(`res: ${res}\n`);
+      //console.log(`currIndex: ${startIndex}\n`);
+      //console.log(`mapArr: ${mapArr}\n`);
+      //console.log(`mapNameArr: ${mapNameArr}\n`);
+      //console.log(`res: ${res}\n`);
 
   for (var i = startIndex; i < startIndex+pageSize; i++)
     {
       var map = mapArr[i];
-      //console.log(map);
+      console.log(map);
       var mapName = mapDictionary[mapNameArr[i]];
-      //console.log(mapName);
+      console.log(mapName);
       var pages = mapArr.length/pageSize;
 
       // if(map == null) //Error with live matches, assumes will have enough to fill 1 page so less than that throws an error
@@ -242,11 +247,11 @@ var handleMapPages = (res, startIndex, teamName, teamID, mapArr, mapNameArr) =>
       //   mapName = "Other";
 
       embed.addField(mapName, "==========================================================" , false);
-      embed.addField("Wins", map.wins , true);
-      embed.addField("Draws", map.draws , true);
-      embed.addField("Losses", map.losses , true);
-      embed.addField("Win Rate", map.winRate , true);
-      embed.addField("Total Rounds", map.totalRounds , true);
+      embed.addField("Wins", map.wins.toString() , true);
+      embed.addField("Draws", map.draws.toString() , true);
+      embed.addField("Losses", map.losses.toString() , true);
+      embed.addField("Win Rate", map.winRate.toString() , true);
+      embed.addField("Total Rounds", map.totalRounds.toString() , true);
 
       if(i != startIndex+(pageSize - 1))
         embed.addField('\u200b', '\u200b');
@@ -303,10 +308,9 @@ var handleEventPages = (eventArray, startIndex) =>
       embed.addField("Name", `[${event.name}](https://www.hltv.org/events/${event.id}/${eventNameURLFormat})`);
       embed.addField("Start", matchStartDate);
       embed.addField("End", matchEndDate);
-      embed.addField("Prize Pool", event.prizePool);
-      embed.addField("Teams", event.teams);
-      embed.addField("Location", event.location.name);
-      embed.addField("Event Type", event.type);
+      embed.addField("Prize Pool", event.prizePool == undefined ? "Not Available" : event.prizePool);
+      embed.addField("Number of Teams", event.numberOfTeams == undefined ? "Not Available" : event.numberOfTeams.toString());
+      embed.addField("Location", event.location.name == undefined ? "Not Available" : event.location.name);
 
       if(i != startIndex+(pageSize - 1))
         embed.addField('\u200b', '\u200b');
@@ -347,7 +351,7 @@ var handleNewsPages = (newsArray, startIndex) =>
         break;
 
       embed.addField(`${newsObj.title}`, newsObj.description != '' ? newsObj.description : "No Description");
-      embed.addField("Date", `[${newsObj.date}](${newsObj.link})`);
+      embed.addField("Date", `[${(new Date(newsObj.time)).toString()}](${newsObj.link})`);
 
       if(i != startIndex+(pageSize - 1))
         embed.addField('\u200b', '\u200b');
@@ -388,7 +392,7 @@ client.on("guildDelete", guild =>
   console.log(`I have been removed from: ${guild.name} (id: ${guild.id})`);
 });
 
-client.on("message", async message =>
+client.on("messageCreate", async message =>
 {
   // Ignore other bots.
   if(message.author.bot) return;
@@ -423,7 +427,7 @@ client.on("message", async message =>
       }
       if (embedcount == 0)
         embed.setDescription("No Threads found, please try again later.")
-      message.channel.send({embed});
+      message.channel.send({ embeds: [embed] });
     })
   }
 
@@ -431,10 +435,11 @@ client.on("message", async message =>
   {
     HLTVAPI.getNews().then((res) =>
     {
+      console.log(res);
       var currIndex = 0;
       var embed = handleNewsPages(res, currIndex);
       var originalAuthor = message.author;
-      message.channel.send({embed}).then((message) =>
+      message.channel.send({ embeds: [embed] }).then((message) =>
       {
         message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
 
@@ -499,7 +504,7 @@ client.on("message", async message =>
         count++;
       }
       embed.setDescription(outputStr);
-      message.channel.send({embed});
+      message.channel.send({ embeds: [embed] });
     }
     else if(args[0] == "rankings" || args[0] == "ranking") // if user has entered ".teams rankings"
     {
@@ -517,7 +522,7 @@ client.on("message", async message =>
         .setTimestamp()
         .setFooter("Sent by HLTVBot", client.user.avatarURL)
         .setDescription(outputStr);
-        message.channel.send({embed});
+        message.channel.send({ embeds: [embed] });
       });
     }
     else
@@ -528,14 +533,13 @@ client.on("message", async message =>
       .setTimestamp()
       .setFooter("Sent by HLTVBot", client.user.avatarURL)
       .setDescription("Invalid Command, use .hltv for commands");
-      message.channel.send({embed});
+      message.channel.send({ embeds: [embed] });
     }
   }
 
     // Outputs player data or player rankings
     if(command == "player")
     {
-      var embed = new Discord.MessageEmbed();
       var outputStr = "";
       if(args[0] == "rankings" || args[0] == "ranking") // if user has entered ".player rankings"
       {
@@ -545,7 +549,8 @@ client.on("message", async message =>
           for (var playerObjKey in res)
           {
             var playerObj = res[playerObjKey];
-            outputStr += `${count}. [${playerObj.name}](https://www.hltv.org/stats/players/${playerObj.id}/${playerObj.name}) (${playerObj.rating})\n`
+            //console.log(playerObj);
+            outputStr += `${count}. [${playerObj.player.name}](https://www.hltv.org/stats/players/${playerObj.player.id}/${playerObj.player.name}) (${playerObj.rating1})\n`
             if (count == 30)
               break;
             count++;
@@ -556,14 +561,14 @@ client.on("message", async message =>
           .setTimestamp()
           .setFooter("Sent by HLTVBot", client.user.avatarURL)
           .setDescription(outputStr);
-          message.channel.send({embed});
+          message.channel.send({ embeds: [embed] });
         });
       }
       else
       {
         HLTV.getPlayerByName({name: args[0]}).then((res)=>
         {
-          console.log(res);
+          //console.log(res);
           var embed = new Discord.MessageEmbed()
           .setTitle(args[0] + " Player Profile")
           .setColor(0x00AE86)
@@ -571,24 +576,25 @@ client.on("message", async message =>
           .setTimestamp()
           .setFooter("Sent by HLTVBot", client.user.avatarURL)
           .setURL(`https://www.hltv.org/player/${res.id}/${res.ign}/`)
-          .addField("Name", res.name)
-          .addField("IGN", res.ign)
-          .addField("Age", res.age)
-          .addField("Country", res.country.name)
+          .addField("Name", res.name == undefined ? "Not Available" : res.name)
+          .addField("IGN", res.ign == undefined ? "Not Available" : res.ign)
+          .addField("Age", res.age == undefined ? "Not Available" : res.age.toString())
+          .addField("Country", res.country.name == undefined ? "Not Available" : res.country.name)
           .addField("Facebook", res.facebook == undefined ? "Not Available" : res.facebook)
           .addField("Twitch", res.twitch == undefined ? "Not Available" : res.twitch)
-          .addField("Twitter", res.twitter == undefined ? "Not Available" : res.facebook)
+          .addField("Twitter", res.twitter == undefined ? "Not Available" : res.twitter)
           .addField("Team", `[${res.team.name}](https://www.hltv.org/team/${res.team.id}/${res.team.name.replace(/\s+/g, '')})`)
-          .addField("Rating", res.statistics.rating);
-          message.channel.send({embed});
-        }).catch(() => {
+          .addField("Rating", res.statistics.rating == undefined ? "Not Available" : res.statistics.rating.toString());
+          message.channel.send({ embeds: [embed] });
+        }).catch((err) => {
+          //console.log(err);
           var embed = new Discord.MessageEmbed()
           .setTitle("Invalid Player")
           .setColor(0x00AE86)
           .setTimestamp()
           .setFooter("Sent by HLTVBot", client.user.avatarURL)
           .setDescription(`${args[0]} is not a valid playername. Please try again or visit hltv.org`);
-          message.channel.send({embed});
+          message.channel.send({ embeds: [embed] });
         });
       }
     }
@@ -623,7 +629,7 @@ client.on("message", async message =>
       .addField(".news", "Displays the most recent hltv news & match info", false)
       .addField(".events", "Displays info on current & upcoming events", false)
 
-      message.channel.send({embed});
+      message.channel.send({ embeds: [embed] });
     }
     else if (args[0] == "ping")
     {
@@ -640,17 +646,17 @@ client.on("message", async message =>
       .setTimestamp()
       .setThumbnail(client.user.avatarURL)
       .setFooter("Sent by HLTVBot", client.user.avatarURL)
-      .addField("User Count", usercount, true)
-      .addField("Bot User Count", botcount, true)
-      .addField("Server Count", servercount, true)
-      .addField("Channel Count", channelcount, true)
-      .addField("Version", package.version, true)
+      .addField("User Count", usercount.toString(), true)
+      .addField("Bot User Count", botcount.toString(), true)
+      .addField("Server Count", servercount.toString(), true)
+      .addField("Channel Count", channelcount.toString(), true)
+      .addField("Version", package.version.toString(), true)
       .addField("Uptime", getTime(client.uptime), true)
       .addField("Invite Link", "[Invite](https://discordapp.com/oauth2/authorize?client_id=548165454158495745&scope=bot&permissions=330816)", true)
       .addField("Support Link", "[GitHub](https://github.com/OhhLoz/HLTVBot)", true)
       .addField("Bot Page", "[Vote Here!](https://top.gg/bot/548165454158495745)", true)
       .addField("Donate", "[PayPal](https://www.paypal.me/LaurenceUre)", true)
-      message.channel.send(embed);
+      message.channel.send({ embeds: [embed] });
     }
     else
     {
@@ -669,7 +675,7 @@ client.on("message", async message =>
     {
       HLTV.getTeam({id: teamID}).then(res =>
         {
-          // console.log(res);
+          //console.log(res);
 
           var playerRosterOutputStr = '';
           // console.log("\n\n\n ======================================================================== \n\n\n");
@@ -682,9 +688,10 @@ client.on("message", async message =>
           .setTimestamp()
           .setFooter("Sent by HLTVBot", client.user.avatarURL)
           .setURL(`https://www.hltv.org/team/${teamID}/${teamName}`)
-          .addField("Location", res.location == undefined ? "Not Available" : res.location)
+          .addField("Location", res.country.name == undefined ? "Not Available" : res.country.name)
           .addField("Facebook", res.facebook == undefined ? "Not Available" : res.facebook)
           .addField("Twitter",  res.twitter == undefined ? "Not Available" : res.twitter)
+          .addField("Instagram",  res.instagram == undefined ? "Not Available" : res.instagram)
           for (var i = 0; i < res.players.length; i++)
           {
             playerRosterOutputStr += `[${res.players[i].name}](https://www.hltv.org/stats/players/${res.players[i].id}/${res.players[i].name})`
@@ -692,29 +699,9 @@ client.on("message", async message =>
               playerRosterOutputStr += ', ';
           }
           embed.addField("Players", playerRosterOutputStr);
-          embed.addField("Rank", res.rank);
+          embed.addField("Rank", res.rank.toString());
 
-
-          if(res.recentResults === undefined || res.recentResults.length == 0)
-          {
-            message.channel.send({embed});
-          }
-          else
-          {
-            for (var i = 0; i < res.recentResults.length; i++)
-            {
-              //console.log(res.recentResults[i]);
-              if(i >= 20)
-                return;
-
-              if (res.recentResults[i].result != '-:-')
-              {
-                embed.addField("Recent Matches", `(${res.name} ${res.recentResults[i].result} ${res.recentResults[i].enemyTeam.name}) \n \t\t(${res.name} ${res.recentResults[i+1].result} ${res.recentResults[i+1].enemyTeam.name}) \n \t\t(${res.name} ${res.recentResults[i+2].result} ${res.recentResults[i+2].enemyTeam.name})`);
-                message.channel.send({embed});
-                return;
-              }
-            }
-          }
+          message.channel.send({ embeds: [embed] });
         });
     }
     else if (args[0] == "stats")     // If stats after teamname display a team stats page
@@ -729,24 +716,24 @@ client.on("message", async message =>
           .setTimestamp()
           .setFooter("Sent by HLTVBot", client.user.avatarURL)
           .setURL(`https://www.hltv.org/stats/teams/${teamID}/${teamName}`)
-          .addField("Maps Played", res.overview.mapsPlayed, true)
-          .addField("Rounds Played", res.overview.roundsPlayed, true)
-          .addField("Wins", res.overview.wins, true)
-          .addField("Losses", res.overview.losses, true)
-          .addField("Kills", res.overview.totalKills, true)
-          .addField("Deaths", res.overview.totalDeaths, true)
-          .addField("KD Ratio", res.overview.kdRatio, true)
-          .addField("Average Kills Per Round", Math.round(res.overview.totalKills / res.overview.roundsPlayed * 100) / 100, true)
-          .addField("Win%", Math.round(res.overview.wins / (res.overview.losses + res.overview.wins) * 10000) / 100, true)
-          message.channel.send({embed});
+          .addField("Maps Played", res.overview.mapsPlayed.toString(), true)
+          .addField("Wins", res.overview.wins.toString(), true)
+          .addField("Losses", res.overview.losses.toString(), true)
+          .addField("Kills", res.overview.totalKills.toString(), true)
+          .addField("Deaths", res.overview.totalDeaths.toString(), true)
+          .addField("KD Ratio", res.overview.kdRatio.toString(), true)
+          .addField("Average Kills Per Round", (Math.round(res.overview.totalKills / res.overview.roundsPlayed * 100) / 100).toString(), true)
+          .addField("Rounds Played", res.overview.roundsPlayed.toString(), true)
+          .addField("Overall Win%", (Math.round(res.overview.wins / (res.overview.losses + res.overview.wins) * 10000) / 100).toString(), true)
+          message.channel.send({ embeds: [embed] });
         });
     }
     else if (args[0] == "maps")     // If maps after teamname display a team maps page
     {
       HLTV.getTeamStats({id: teamID}).then(res =>
         {
-          // console.log(res);
-          // console.log("\n\n\n\n");
+           console.log(res);
+           console.log("\n\n\n\n");
           var currIndex = 0;
           var mapArr = [];
           var mapNameArr = [];
@@ -762,7 +749,7 @@ client.on("message", async message =>
 
           var embed = handleMapPages(res, currIndex, teamName, teamID, mapArr, mapNameArr);
           var originalAuthor = message.author;
-          message.channel.send({embed}).then((message) =>
+          message.channel.send({ embeds: [embed] }).then((message) =>
           {
             message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
 
@@ -813,13 +800,18 @@ client.on("message", async message =>
 
   if(command === "results")
   {
-    HLTV.getResults({pages: 1}).then((res) =>
+    var currDate = new Date();
+    var prevDate = new Date();
+    prevDate.setDate(currDate.getDate() - 7); // last 7 days
+
+    //console.log("currDate: " + currDate.toISOString().substring(0, 10) + ", prevDate: " + prevDate.toISOString().substring(0, 10));
+    HLTV.getResults({startDate: prevDate.toISOString().substring(0, 10), endDate: currDate.toISOString().substring(0, 10)}).then((res) =>
     {
-      //console.log(res);
+      console.log(res);
       var currIndex = 0;
       var embed = handlePages(res, currIndex, COMMANDCODE.RESULTS);
       var originalAuthor = message.author;
-      message.channel.send({embed}).then((message) =>
+      message.channel.send({ embeds: [embed] }).then((message) =>
       {
         message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
 
@@ -866,11 +858,11 @@ client.on("message", async message =>
   {
     HLTV.getMatches().then((res) =>
     {
-      //console.log(res);
+      console.log(res);
       var currIndex = 0;
       var embed = handlePages(res, currIndex, COMMANDCODE.MATCHES);
       var originalAuthor = message.author;
-      message.channel.send({embed}).then((message) =>
+      message.channel.send({ embeds: [embed] }).then((message) =>
       {
         message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
 
@@ -934,7 +926,7 @@ client.on("message", async message =>
       var currIndex = 0;
       var embed = handlePages(liveArr, currIndex, COMMANDCODE.LIVEMATCHES);
       var originalAuthor = message.author;
-      message.channel.send({embed}).then((message) =>
+      message.channel.send({ embeds: [embed] }).then((message) =>
       {
         message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
 
@@ -981,14 +973,10 @@ client.on("message", async message =>
   {
     HLTV.getEvents().then((res) =>
     {
-      // console.log(res);
-      // console.log('\n\n\n ============================================ \n\n\n');
-      // console.log(res[0].events);
-      var eventArray = res[0].events;
       var currIndex = 0;
-      var embed = handleEventPages(eventArray, currIndex);
+      var embed = handleEventPages(res, currIndex);
       var originalAuthor = message.author;
-      message.channel.send({embed}).then((message) =>
+      message.channel.send({ embeds: [embed] }).then((message) =>
       {
         message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
 
