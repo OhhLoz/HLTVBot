@@ -1,5 +1,5 @@
 # HLTVBot
-A simple app to display stats and other tools in an efficient and free way, used as a complement to the website HLTV. Aimed at showing statistics, metrics and important information for players of the game mainly geared towards the competitive scene.
+A simple app to display stats and other tools in an efficient and free way, used as a complement to the website HLTV. Aimed at showing statistics, metrics and important information for players of the game CS:GO mainly geared towards the competitive esports scene.
 
 ## Getting Started
 
@@ -25,4 +25,4 @@ This project is licensed under the GNU General Public License v3.0 - see the [LI
 
 ## Acknowledgments
 
-* Discord Bot List for approving my bot
+* Top.gg for approving my bot
