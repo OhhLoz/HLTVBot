@@ -1,9 +1,7 @@
 const { Client, Intents } = require('discord.js');
 const Discord = require('discord.js');
 
-const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
-
-process.env.prefix = '.'
+const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_REACTIONS] });
 
 const { HLTV } = require('hltv');
 
@@ -181,7 +179,7 @@ var handlePages = (res, startIndex, code) => {
 
     embed.addField("Map", `${mapStr}`, false);
 
-      
+
     if (code == COMMANDCODE.MATCHES || COMMANDCODE.LIVEMATCHES)
     {
       if (match.event != undefined)
@@ -247,11 +245,11 @@ var handleMapPages = (res, startIndex, teamName, teamID, mapArr, mapNameArr) =>
          mapName = "Other";
 
       embed.addField(mapName, "=========================================================" , false);
-      embed.addField("Wins", map.wins.toString() , true);
-      embed.addField("Draws", map.draws.toString() , true);
-      embed.addField("Losses", map.losses.toString() , true);
-      embed.addField("Win Rate", map.winRate.toString() + "%" , true);
-      embed.addField("Total Rounds", map.totalRounds.toString() , true);
+      embed.addField("Wins", map.wins == undefined ? "Not Available" : map.wins.toString() , true);
+      embed.addField("Draws", map.draws == undefined ? "Not Available" : map.draws.toString() , true);
+      embed.addField("Losses", map.losses == undefined ? "Not Available" : map.losses.toString() , true);
+      embed.addField("Win Rate", map.winRate == undefined ? "Not Available" : map.winRate.toString() + "%" , true);
+      embed.addField("Total Rounds", map.totalRounds == undefined ? "Not Available" : map.totalRounds.toString() , true);
 
       if(i != startIndex+(pageSize - 1))
         embed.addField('\u200b', '\u200b');
@@ -348,7 +346,7 @@ var handleNewsPages = (newsArray, startIndex) =>
       if(newsObj == undefined)
         break;
 
-        
+
       embed.addField('\u200b', newsObj.title == undefined || newsObj.link == undefined ? "Not Available" : `[${newsObj.title}](${hltvURL}${newsObj.link})`);
       embed.addField("Date", newsObj.date == undefined ? "Not Available" : `${(new Date(newsObj.date)).toString()}`);
       embed.addField("Country", newsObj.country == undefined ? "Not Available" : newsObj.country.name);
@@ -699,21 +697,22 @@ client.on("messageCreate", async message =>
     {
       HLTV.getTeamStats({id: teamID}).then(res =>
         {
+          console.log(res);
           const embed = new Discord.MessageEmbed()
           .setTitle(teamName + " Stats")
           .setColor(0x00AE86)
           .setTimestamp()
           .setFooter("Sent by HLTVBot", client.user.avatarURL)
           .setURL(`https://www.hltv.org/stats/teams/${teamID}/${teamName}`)
-          .addField("Maps Played", res.overview.mapsPlayed.toString(), true)
-          .addField("Wins", res.overview.wins.toString(), true)
-          .addField("Losses", res.overview.losses.toString(), true)
-          .addField("Kills", res.overview.totalKills.toString(), true)
-          .addField("Deaths", res.overview.totalDeaths.toString(), true)
-          .addField("KD Ratio", res.overview.kdRatio.toString(), true)
-          .addField("Average Kills Per Round", (Math.round(res.overview.totalKills / res.overview.roundsPlayed * 100) / 100).toString(), true)
-          .addField("Rounds Played", res.overview.roundsPlayed.toString(), true)
-          .addField("Overall Win%", (Math.round(res.overview.wins / (res.overview.losses + res.overview.wins) * 10000) / 100).toString() + "%", true)
+          .addField("Maps Played", res.overview.mapsPlayed == undefined ? "Not Available" : res.overview.mapsPlayed.toString(), true)
+          .addField("Wins", res.overview.wins == undefined ? "Not Available" : res.overview.wins.toString(), true)
+          .addField("Losses", res.overview.losses == undefined ? "Not Available" : res.overview.losses.toString(), true)
+          .addField("Kills", res.overview.totalKills == undefined ? "Not Available" : res.overview.totalKills.toString(), true)
+          .addField("Deaths", res.overview.totalDeaths == undefined ? "Not Available" : res.overview.totalDeaths.toString(), true)
+          .addField("KD Ratio", res.overview.kdRatio == undefined ? "Not Available" : res.overview.kdRatio.toString(), true)
+          .addField("Average Kills Per Round", res.overview.totalKills == undefined || res.overview.roundsPlayed == undefined ? "Not Available" : (Math.round(res.overview.totalKills / res.overview.roundsPlayed * 100) / 100).toString(), true)
+          .addField("Rounds Played", res.overview.roundsPlayed == undefined ? "Not Available" : res.overview.roundsPlayed.toString(), true)
+          .addField("Overall Win%", res.overview.wins == undefined || res.overview.losses == undefined ? "Not Available" : (Math.round(res.overview.wins / (res.overview.losses + res.overview.wins) * 10000) / 100).toString() + "%", true)
           message.channel.send({ embeds: [embed] });
         });
     }
@@ -740,11 +739,10 @@ client.on("messageCreate", async message =>
           {
             message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
 
-            const collector = new Discord.ReactionCollector(message, (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id), {
-              time: 60000, // stop automatically after one minute
-            });
+            const filter = (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id);
+            const collector = message.createReactionCollector({filter, time: 60000});
 
-            collector.on('collect', (reaction, user) =>
+            collector.on('collect', (reaction) =>
             {
               switch (reaction.emoji.name)
               {
@@ -752,28 +750,27 @@ client.on("messageCreate", async message =>
                 {
                   if (currIndex - 3 >= 0)
                     currIndex-=3;
-                  message.edit(handleMapPages(res, currIndex, teamName, teamID, mapArr, mapNameArr));
+                  message.edit({embeds: [handleMapPages(res, currIndex, teamName, teamID, mapArr, mapNameArr)]});
                   break;
                 }
                 case reactionControls.NEXT_PAGE:
                 {
                   if (currIndex + 3 <= mapArr.length - 1)
                     currIndex+=3;
-                  message.edit(handleMapPages(res, currIndex, teamName, teamID, mapArr, mapNameArr));
+                  message.edit({embeds: [handleMapPages(res, currIndex, teamName, teamID, mapArr, mapNameArr)]});
                   break;
                 }
                 case reactionControls.STOP:
                 {
                   // stop listening for reactions
-                  message.delete();
                   collector.stop();
                   break;
                 }
               }
             });
 
-            collector.on('stop', async () => {
-                await message.clearReactions();
+            collector.on('end', async () => {
+                message.delete();
             });
           });
         });
@@ -801,11 +798,10 @@ client.on("messageCreate", async message =>
       {
         message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
 
-        const collector = new Discord.ReactionCollector(message, (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id), {
-          time: 60000, // stop automatically after one minute
-        });
+        const filter = (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id);
+        const collector = message.createReactionCollector({filter, time: 60000});
 
-        collector.on('collect', (reaction, user) =>
+        collector.on('collect', (reaction) =>
         {
           switch (reaction.emoji.name)
           {
@@ -813,28 +809,27 @@ client.on("messageCreate", async message =>
             {
               if (currIndex - 3 >= 0)
                 currIndex-=3;
-              message.edit(handlePages(res, currIndex, COMMANDCODE.RESULTS));
+              message.edit({embeds: [handlePages(res, currIndex, COMMANDCODE.RESULTS)]});
               break;
             }
             case reactionControls.NEXT_PAGE:
             {
               if (currIndex + 3 <= res.length)
                 currIndex+=3;
-              message.edit(handlePages(res, currIndex, COMMANDCODE.RESULTS));
+              message.edit({embeds: [handlePages(res, currIndex, COMMANDCODE.RESULTS)]});
               break;
             }
             case reactionControls.STOP:
             {
               // stop listening for reactions
-              message.delete();
               collector.stop();
               break;
             }
           }
         });
 
-        collector.on('stop', async () => {
-            await message.clearReactions();
+        collector.on('end', async () => {
+            message.delete();
         });
       });
     });
@@ -850,12 +845,10 @@ client.on("messageCreate", async message =>
       message.channel.send({ embeds: [embed] }).then((message) =>
       {
         message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
+        const filter = (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id);
+        const collector = message.createReactionCollector({filter, time: 60000});
 
-        const collector = new Discord.ReactionCollector(message, (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id), {
-          time: 60000, // stop automatically after one minute
-        });
-
-        collector.on('collect', (reaction, user) =>
+        collector.on('collect', (reaction) =>
         {
           switch (reaction.emoji.name)
           {
@@ -863,28 +856,29 @@ client.on("messageCreate", async message =>
             {
               if (currIndex - 3 >= 0)
                 currIndex-=3;
-              message.edit(handlePages(res, currIndex, COMMANDCODE.MATCHES));
+              message.edit({embeds: [handlePages(res, currIndex, COMMANDCODE.MATCHES)]});
               break;
             }
             case reactionControls.NEXT_PAGE:
             {
               if (currIndex + 3 <= res.length)
                 currIndex+=3;
-              message.edit(handlePages(res, currIndex, COMMANDCODE.MATCHES));
+              message.edit({embeds: [handlePages(res, currIndex, COMMANDCODE.MATCHES)]});
               break;
             }
             case reactionControls.STOP:
             {
               // stop listening for reactions
-              message.delete();
+              //message.reactions.removeAll().catch(error => console.error('Failed to clear reactions: ', error));
               collector.stop();
               break;
             }
           }
         });
 
-        collector.on('stop', async () => {
-            await message.clearReactions();
+        collector.on('end', async () => {
+          message.delete();
+            //message.reactions.removeAll().catch(error => console.error('Failed to clear reactions: ', error));
         });
       });
     });
@@ -925,11 +919,9 @@ client.on("messageCreate", async message =>
         message.channel.send({ embeds: [embed] }).then((message) =>
         {
           message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
-  
-          const collector = new Discord.ReactionCollector(message, (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id), {
-            time: 60000, // stop automatically after one minute
-          });
-  
+          const filter = (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id);
+          const collector = message.createReactionCollector({filter, time: 60000});
+
           collector.on('collect', (reaction, user) =>
           {
             switch (reaction.emoji.name)
@@ -938,28 +930,27 @@ client.on("messageCreate", async message =>
               {
                 if (currIndex - 5 >= 0)
                   currIndex-=5;
-                message.edit(handlePages(liveArr, currIndex, COMMANDCODE.LIVEMATCHES));
+                message.edit({embeds: [handlePages(liveArr, currIndex, COMMANDCODE.LIVEMATCHES)]});
                 break;
               }
               case reactionControls.NEXT_PAGE:
               {
                 if (currIndex + 5 <= liveArr.length)
                   currIndex+=5;
-                message.edit(handlePages(liveArr, currIndex, COMMANDCODE.LIVEMATCHES));
+                message.edit({embeds: [handlePages(liveArr, currIndex, COMMANDCODE.LIVEMATCHES)]});
                 break;
               }
               case reactionControls.STOP:
               {
                 // stop listening for reactions
-                message.delete();
                 collector.stop();
                 break;
               }
             }
           });
-  
-          collector.on('stop', async () => {
-              await message.clearReactions();
+
+          collector.on('end', async () => {
+              message.delete();
           });
         });
       }
@@ -973,13 +964,12 @@ client.on("messageCreate", async message =>
       var currIndex = 0;
       var embed = handleEventPages(res, currIndex);
       var originalAuthor = message.author;
+      //console.log(res);
       message.channel.send({ embeds: [embed] }).then((message) =>
       {
         message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
-
-        const collector = new Discord.ReactionCollector(message, (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id), {
-          time: 60000, // stop automatically after one minute
-        });
+        const filter = (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id);
+        const collector = message.createReactionCollector({filter, time: 60000});
 
         collector.on('collect', (reaction, user) =>
         {
@@ -989,28 +979,27 @@ client.on("messageCreate", async message =>
             {
               if (currIndex - 3 >= 0)
                 currIndex-=3;
-              message.edit(handleEventPages(eventArray, currIndex));
+              message.edit({embeds: [handleEventPages(res, currIndex)]});
               break;
             }
             case reactionControls.NEXT_PAGE:
             {
-              if (currIndex + 3 <= eventArray.length)
+              if (currIndex + 3 <= res.length)
                 currIndex+=3;
-              message.edit(handleEventPages(eventArray, currIndex));
+              message.edit({embeds: [handleEventPages(res, currIndex)]});
               break;
             }
             case reactionControls.STOP:
             {
               // stop listening for reactions
-              message.delete();
               collector.stop();
               break;
             }
           }
         });
 
-        collector.on('stop', async () => {
-            await message.clearReactions();
+        collector.on('end', async () => {
+            message.delete();
         });
       })
     });
@@ -1018,3 +1007,15 @@ client.on("messageCreate", async message =>
 });
 
 client.login(process.env.BOT_TOKEN);
+
+
+// h:\Documents\Apps\HLTVBot\node_modules\hltv\lib\utils.js:78
+//                     throw new Error('Access denied | www.hltv.org used Cloudflare to restrict access');
+//                           ^
+
+// Error: Access denied | www.hltv.org used Cloudflare to restrict access
+//     at h:\Documents\Apps\HLTVBot\node_modules\hltv\lib\utils.js:78:27
+//     at step (h:\Documents\Apps\HLTVBot\node_modules\hltv\lib\utils.js:56:23)
+//     at Object.next (h:\Documents\Apps\HLTVBot\node_modules\hltv\lib\utils.js:37:53)
+//     at fulfilled (h:\Documents\Apps\HLTVBot\node_modules\hltv\lib\utils.js:28:58)
+//     at processTicksAndRejections (node:internal/process/task_queues:96:5)
