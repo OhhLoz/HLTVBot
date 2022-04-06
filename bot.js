@@ -5,10 +5,6 @@ const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_
 
 const { HLTV } = require('hltv');
 
-const testConfig = require('./config.json');
-process.env.prefix = testConfig.prefix;
-process.env.BOT_TOKEN = testConfig.token;
-
 const teamDictionary = require("./teams.json");
 const alternateTeamDictionary = require("./alternateteams.json");
 const mapDictionary = require("./maps.json");
