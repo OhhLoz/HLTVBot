@@ -1,12 +1,11 @@
 {
   "name": "HLTVBot",
-  "version": "1.5.7",
+  "version": "1.5.8",
   "description": "",
   "main": "bot.js",
   "dependencies": {
     "discord.js": "^13.6.0",
-    "hltv": "^3.4.0",
-    "jshint": "^2.13.4"
+    "hltv": "^3.4.0"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

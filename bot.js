@@ -440,9 +440,8 @@ client.on("messageCreate", async message =>
       {
         message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
 
-        const collector = new Discord.ReactionCollector(message, (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id), {
-          time: 60000, // stop automatically after one minute
-        });
+        const filter = (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id);
+        const collector = message.createReactionCollector({filter, time: 60000});
 
         collector.on('collect', (reaction, user) =>
         {
@@ -452,28 +451,27 @@ client.on("messageCreate", async message =>
             {
               if (currIndex - 8 >= 0)
                 currIndex-=8;
-              message.edit(handleNewsPages(res, currIndex));
+              message.edit({embeds: [handleNewsPages(res, currIndex)]});
               break;
             }
             case reactionControls.NEXT_PAGE:
             {
               if (currIndex + 8 <= res.length - 1)
                 currIndex+=8;
-              message.edit(handleNewsPages(res, currIndex));
+              message.edit({embeds: [handleNewsPages(res, currIndex)]});
               break;
             }
             case reactionControls.STOP:
             {
               // stop listening for reactions
-              message.delete();
               collector.stop();
               break;
             }
           }
         });
 
-        collector.on('stop', async () => {
-            await message.clearReactions();
+        collector.on('end', async () => {
+            message.delete();
         });
       });
     });
@@ -1007,15 +1005,3 @@ client.on("messageCreate", async message =>
 });
 
 client.login(process.env.BOT_TOKEN);
-
-
-// h:\Documents\Apps\HLTVBot\node_modules\hltv\lib\utils.js:78
-//                     throw new Error('Access denied | www.hltv.org used Cloudflare to restrict access');
-//                           ^
-
-// Error: Access denied | www.hltv.org used Cloudflare to restrict access
-//     at h:\Documents\Apps\HLTVBot\node_modules\hltv\lib\utils.js:78:27
-//     at step (h:\Documents\Apps\HLTVBot\node_modules\hltv\lib\utils.js:56:23)
-//     at Object.next (h:\Documents\Apps\HLTVBot\node_modules\hltv\lib\utils.js:37:53)
-//     at fulfilled (h:\Documents\Apps\HLTVBot\node_modules\hltv\lib\utils.js:28:58)
-//     at processTicksAndRejections (node:internal/process/task_queues:96:5)
