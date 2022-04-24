@@ -5,6 +5,10 @@ const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_
 
 const { HLTV } = require('hltv');
 
+const testConfig = require('./config.json');
+process.env.prefix = testConfig.prefix;
+process.env.BOT_TOKEN = testConfig.token;
+
 const teamDictionary = require("./teams.json");
 const alternateTeamDictionary = require("./alternateteams.json");
 const mapDictionary = require("./maps.json");
@@ -963,15 +967,34 @@ client.on("messageCreate", async message =>
       var embed = handleEventPages(res, currIndex);
       var originalAuthor = message.author;
       //console.log(res);
-      message.channel.send({ embeds: [embed] }).then((message) =>
-      {
-        message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
-        const filter = (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id);
-        const collector = message.createReactionCollector({filter, time: 60000});
+      const row = new Discord.MessageActionRow()
+			.addComponents(
+				new Discord.MessageButton()
+        .setCustomId(reactionControls.PREV_PAGE)
+        .setStyle('PRIMARY')
+        .setLabel(" ")
+        .setEmoji(reactionControls.PREV_PAGE),
+        new Discord.MessageButton()
+        .setCustomId(reactionControls.STOP)
+        .setStyle('SECONDARY')
+        .setLabel(" ")
+        .setEmoji(reactionControls.STOP),
+        new Discord.MessageButton()
+        .setCustomId(reactionControls.NEXT_PAGE)
+        .setStyle('PRIMARY')
+        .setLabel(" ")
+        .setEmoji(reactionControls.NEXT_PAGE)
+			);
 
-        collector.on('collect', (reaction, user) =>
+      message.channel.send({ embeds: [embed], components: [row]}).then((message) =>
+      {
+        const filter = (user) => user.id == originalAuthor.id;
+        const collector = message.createMessageComponentCollector({filter, componentType: 'BUTTON', time: 60000});
+
+        collector.on('collect', (button) =>
         {
-          switch (reaction.emoji.name)
+          console.log(button);
+          switch (button.customId)
           {
             case reactionControls.PREV_PAGE:
             {
