@@ -364,6 +364,7 @@ var handleNewsPages = (newsArray, startIndex) =>
 
 client.on("ready", () =>
 {
+  //  STATISTICS GATHERING
   servercount = 0;
   usercount = 0;
   botcount = 0;
@@ -372,12 +373,34 @@ client.on("ready", () =>
   {
     if (guild.id == "264445053596991498")
       return;
-
     servercount += 1;
     channelcount += guild.channels.cache.filter(channel => channel.type != 'category').size;
     //usercount += guild.members.cache.filter(member => !member.user.bot).size;
     usercount += guild.memberCount;
     botcount += guild.members.cache.filter(member => member.user.bot).size;
+  })
+
+  const guild = client.guilds.cache.get(testConfig.testguildID);
+  let commands;
+
+  if(guild)
+    commands = guild.commands;
+  else
+    commands = client.application?.commands;
+
+  commands?.create({
+    name: 'commands',
+    description: 'Lists possible bot commands',
+  })
+
+  commands?.create({
+    name: 'ping',
+    description: 'Lists bots current ping',
+  })
+
+  commands?.create({
+    name: 'stats',
+    description: 'Lists bots current stats',
   })
 
   console.log(`HLTVBot is currently serving ${usercount} users, in ${channelcount} channels of ${servercount} servers. Alongside ${botcount} bot brothers.`);
@@ -394,6 +417,90 @@ client.on("guildDelete", guild =>
 {
   console.log(`I have been removed from: ${guild.name} (id: ${guild.id})`);
 });
+
+client.on("interactionCreate", async (interaction) =>
+{
+  if(!interaction.isCommand())
+    return;
+
+  const {commandName, options} = interaction;
+
+  if (commandName === 'commands')
+  {
+    var embed = new Discord.MessageEmbed()
+    .setTitle("Help")
+    .setColor(0xff8d00)
+    .setTimestamp()
+    .setFooter("Sent by HLTVBot", client.user.avatarURL)
+    .addField("/commands", "Lists all current commands", false)
+    .addField("/ping", "Displays the current ping to the bot & the API", false)
+    .addField("/stats", "Displays bot statistics, invite link and contact information", false)
+    .addField('\u200b', '\u200b')
+    .addField(".teams", "Lists all of the currently accepted teams", false)
+    .addField(".teams rankings", "Displays the top 30 team rankings & recent position changes. 'ranking' is also accepted.", false)
+    .addField(".[teamname]", "Displays the profile related to the input team", false)
+    .addField(".[teamname] stats", "Displays the statistics related to the input team", false)
+    .addField(".[teamname] maps", "Displays the map statistics related to the input team", false)
+    .addField('\u200b', '\u200b')
+    .addField(".player [playername]", "Displays player statistics from the given playername", false)
+    .addField(".player rankings", "Displays the top 30 player rankings & recent position changes. 'ranking' is also accepted.",false)
+    .addField('\u200b', '\u200b')
+    .addField(".livematches", "Displays all currently live matches", false)
+    .addField(".matches", "Displays all known scheduled matches", false)
+    .addField(".results", "Displays the most recent match results", false)
+    .addField(".threads", "Displays the most recent hltv user threads", false)
+    .addField(".news", "Displays the most recent hltv news & match info", false)
+    .addField(".events", "Displays info on current & upcoming events", false)
+
+    interaction.reply({
+      embeds: [embed],
+      ephemeral: true
+    })
+  }
+
+  if (commandName === 'ping')
+  {
+    try
+    {
+      const message = await interaction.reply({ content: "Pong!", fetchReply: true, ephemeral: true });
+
+      await interaction.editReply(
+      {
+        content: `Bot Latency: \`${message.createdTimestamp - interaction.createdTimestamp}ms\`, Websocket Latency: \`${client.ws.ping}ms\``,
+        ephemeral: true
+      });
+    }
+    catch (err)
+    {
+      console.log("Exception caught at /ping => ", err);
+    }
+  }
+
+  if (commandName === 'stats')
+  {
+    var embed = new Discord.MessageEmbed()
+    .setTitle("Bot Stats")
+    .setColor(0xff8d00)
+    .setTimestamp()
+    .setThumbnail(client.user.avatarURL)
+    .setFooter("Sent by HLTVBot", client.user.avatarURL)
+    .addField("User Count", usercount.toString(), true)
+    .addField("Bot User Count", botcount.toString(), true)
+    .addField("Server Count", servercount.toString(), true)
+    .addField("Channel Count", channelcount.toString(), true)
+    .addField("Version", package.version.toString(), true)
+    .addField("Uptime", getTime(client.uptime), true)
+    .addField("Invite Link", "[Invite](https://discordapp.com/oauth2/authorize?client_id=548165454158495745&scope=bot&permissions=330816)", true)
+    .addField("Support Link", "[GitHub](https://github.com/OhhLoz/HLTVBot)", true)
+    .addField("Bot Page", "[Vote Here!](https://top.gg/bot/548165454158495745)", true)
+    .addField("Donate", "[PayPal](https://www.paypal.me/LaurenceUre)", true)
+
+    interaction.reply({
+      embeds: [embed],
+      ephemeral: false
+    })
+  }
+})
 
 client.on("messageCreate", async message =>
 {
