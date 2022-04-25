@@ -34,6 +34,25 @@ const reactionControls = {
   STOP: '⏹',
 }
 
+const row = new Discord.MessageActionRow()
+.addComponents(
+  new Discord.MessageButton()
+  .setCustomId(reactionControls.PREV_PAGE)
+  .setStyle('SECONDARY')
+  .setLabel(" ")
+  .setEmoji(reactionControls.PREV_PAGE),
+  new Discord.MessageButton()
+  .setCustomId(reactionControls.STOP)
+  .setStyle('SECONDARY')
+  .setLabel(" ")
+  .setEmoji(reactionControls.STOP),
+  new Discord.MessageButton()
+  .setCustomId(reactionControls.NEXT_PAGE)
+  .setStyle('SECONDARY')
+  .setLabel(" ")
+  .setEmoji(reactionControls.NEXT_PAGE)
+);
+
 var id = function(x) {return x;};
 
 /**
@@ -371,7 +390,7 @@ client.on("ready", () =>
   channelcount = 0;
   client.guilds.cache.forEach((guild) =>
   {
-    if (guild.id == "264445053596991498")
+    if (guild.id == "264445053596991498") //top.gg discord guildId, ignored since it isn't "real" users for statistics
       return;
     servercount += 1;
     channelcount += guild.channels.cache.filter(channel => channel.type != 'category').size;
@@ -403,6 +422,42 @@ client.on("ready", () =>
     description: 'Lists bots current stats',
   })
 
+  commands?.create({
+    name: 'teams',
+    description: 'Lists valid teams or the teams rankings',
+    options:
+    [
+      {
+        name: 'rankings',
+        description: 'Display the top30 teams?',
+        required: false,
+        type: Discord.Constants.ApplicationCommandOptionTypes.BOOLEAN
+      }
+    ]
+  })
+
+  commands?.create({
+    name: 'threads',
+    description: 'Lists recent CS related hltv threads',
+  })
+
+  commands?.create({
+    name: 'news',
+    description: 'Lists recent hltv news stories',
+  })
+
+  commands?.create({
+    name: 'player',
+    description: 'Lists statistics of a specified player',
+    options:
+    [{
+      name: 'player',
+      description: 'Player to display statistics for',
+      required: true,
+      type: Discord.Constants.ApplicationCommandOptionTypes.STRING
+    }]
+  })
+
   console.log(`HLTVBot is currently serving ${usercount} users, in ${channelcount} channels of ${servercount} servers. Alongside ${botcount} bot brothers.`);
   client.user.setActivity(`.hltv`, { type: 'LISTENING' });
   reverseTeamDictionary = reverseMapFromMap(teamDictionary);
@@ -420,7 +475,7 @@ client.on("guildDelete", guild =>
 
 client.on("interactionCreate", async (interaction) =>
 {
-  if(!interaction.isCommand())
+  if (!interaction.isCommand())
     return;
 
   const {commandName, options} = interaction;
@@ -436,23 +491,24 @@ client.on("interactionCreate", async (interaction) =>
     .addField("/ping", "Displays the current ping to the bot & the API", false)
     .addField("/stats", "Displays bot statistics, invite link and contact information", false)
     .addField('\u200b', '\u200b')
-    .addField(".teams", "Lists all of the currently accepted teams", false)
-    .addField(".teams rankings", "Displays the top 30 team rankings & recent position changes. 'ranking' is also accepted.", false)
+    .addField("/teams", "Lists all of the currently accepted teams", false)
+    .addField("/teams rankings", "Displays the top 30 team rankings & recent position changes", false)
     .addField(".[teamname]", "Displays the profile related to the input team", false)
     .addField(".[teamname] stats", "Displays the statistics related to the input team", false)
     .addField(".[teamname] maps", "Displays the map statistics related to the input team", false)
     .addField('\u200b', '\u200b')
-    .addField(".player [playername]", "Displays player statistics from the given playername", false)
+    .addField("/player [player]", "Displays player statistics from the given player", false)
     .addField(".player rankings", "Displays the top 30 player rankings & recent position changes. 'ranking' is also accepted.",false)
     .addField('\u200b', '\u200b')
     .addField(".livematches", "Displays all currently live matches", false)
     .addField(".matches", "Displays all known scheduled matches", false)
     .addField(".results", "Displays the most recent match results", false)
-    .addField(".threads", "Displays the most recent hltv user threads", false)
+    .addField("/threads", "Displays the most recent hltv user threads", false)
     .addField(".news", "Displays the most recent hltv news & match info", false)
     .addField(".events", "Displays info on current & upcoming events", false)
 
-    interaction.reply({
+    interaction.reply
+    ({
       embeds: [embed],
       ephemeral: true
     })
@@ -495,10 +551,184 @@ client.on("interactionCreate", async (interaction) =>
     .addField("Bot Page", "[Vote Here!](https://top.gg/bot/548165454158495745)", true)
     .addField("Donate", "[PayPal](https://www.paypal.me/LaurenceUre)", true)
 
-    interaction.reply({
+    interaction.reply
+    ({
       embeds: [embed],
       ephemeral: false
     })
+  }
+
+  if (commandName === 'teams')
+  {
+    var isTop30 = options.getBoolean('rankings');
+    var embed = new Discord.MessageEmbed();
+    var outputStr = "";
+    if (!isTop30)
+    {
+      var outputStr = "";
+      embed = new Discord.MessageEmbed()
+      .setTitle("Valid Teams")
+      .setColor(0xff8d00)
+      .setTimestamp()
+      .setFooter("Sent by HLTVBot", client.user.avatarURL);
+
+      var count = 1;
+      var teamKeysSorted = Object.keys(teamDictionary).sort();
+      for (i = 0; i < teamKeysSorted.length; i++)
+      {
+        outputStr += teamKeysSorted[i];
+        if(count != Object.keys(teamDictionary).length)
+          outputStr += "\n";
+        count++;
+      }
+      embed.setDescription(outputStr);
+      interaction.reply
+      ({
+        embeds: [embed],
+        ephemeral: false
+      })
+    }
+    else
+    {
+      embed
+      .setTitle("Team Rankings")
+      .setColor(0x00AE86)
+      .setTimestamp()
+      .setFooter("Sent by HLTVBot", client.user.avatarURL)
+
+      HLTV.getTeamRanking().then((res) =>
+      {
+        for (var rankObjKey in res)
+        {
+          var rankObj = res[rankObjKey];
+          var teamStr = `[${rankObj.team.name}](https://www.hltv.org/team/${rankObj.team.id}/${rankObj.team.name.replace(/\s+/g, '')})`;
+          outputStr += `${rankObj.place}. ${teamStr} (${rankObj.change})\n`
+        }
+        embed.setDescription(outputStr);
+
+        interaction.reply
+        ({
+          embeds: [embed],
+          ephemeral: false
+        })
+      });
+    }
+  }
+
+  if (commandName === "threads")
+  {
+    HLTV.getRecentThreads().then((res) =>
+    {
+      var embedcount = 0;
+      var embed = new Discord.MessageEmbed()
+      .setTitle("Recent Threads")
+      .setColor(0xff8d00)
+      .setTimestamp()
+      .setFooter("Sent by HLTVBot", client.user.avatarURL);
+      for (index in res)
+      {
+        if(res[index].title != undefined && res[index].category == 'cs')
+        {
+          embed.addField(`${res[index].title}`, `[Link](${hltvURL + res[index].link}) Replies: ${res[index].replies} Category: ${res[index].category}`);
+          embedcount++;
+        }
+        if(embedcount >= 24)
+          break;
+      }
+      if (embedcount == 0)
+        embed.setDescription("No Threads found, please try again later.")
+
+      interaction.reply
+      ({
+        embeds: [embed],
+        ephemeral: false
+      })
+    })
+  }
+
+  if (commandName === 'news')
+  {
+    HLTV.getNews().then((res) =>
+    {
+      var currIndex = 0;
+      var embed = handleNewsPages(res, currIndex);
+      var originalMember = interaction.user;
+      interaction.reply({ embeds: [embed], ephemeral: false, components: [row] });
+
+      const filter = (user) =>
+      {
+        user.deferUpdate();
+        return user.member.id === originalMember.id;
+      }
+      const collector = interaction.channel.createMessageComponentCollector({filter, componentType: 'BUTTON', time: 60000});
+
+      collector.on('collect', (button) =>
+      {
+        switch (button.customId)
+        {
+          case reactionControls.PREV_PAGE:
+          {
+            if (currIndex - 8 >= 0)
+              currIndex-=8;
+              interaction.editReply({embeds: [handleNewsPages(res, currIndex)]});
+            break;
+          }
+          case reactionControls.NEXT_PAGE:
+          {
+            if (currIndex + 8 <= res.length - 1)
+              currIndex+=8;
+              interaction.editReply({embeds: [handleNewsPages(res, currIndex)]});
+            break;
+          }
+          case reactionControls.STOP:
+          {
+            // stop listening for reactions
+            collector.stop();
+            break;
+          }
+        }
+      });
+
+      collector.on('end', async () => {
+        interaction.deleteReply();
+      });
+    });
+  }
+
+  if (commandName === 'player')
+  {
+    var playerName = options.getString('player');
+
+    HLTV.getPlayerByName({name: playerName}).then((res)=>
+    {
+      var embed = new Discord.MessageEmbed()
+      .setTitle(playerName + " Player Profile")
+      .setColor(0x00AE86)
+      .setThumbnail(res.image)
+      .setTimestamp()
+      .setFooter("Sent by HLTVBot", client.user.avatarURL)
+      .setURL(`https://www.hltv.org/player/${res.id}/${res.ign}/`)
+      .addField("Name", res.name == undefined ? "Not Available" : res.name)
+      .addField("IGN", res.ign == undefined ? "Not Available" : res.ign)
+      .addField("Age", res.age == undefined ? "Not Available" : res.age.toString())
+      .addField("Country", res.country.name == undefined ? "Not Available" : res.country.name)
+      .addField("Facebook", res.facebook == undefined ? "Not Available" : res.facebook)
+      .addField("Twitch", res.twitch == undefined ? "Not Available" : res.twitch)
+      .addField("Twitter", res.twitter == undefined ? "Not Available" : res.twitter)
+      .addField("Team", `[${res.team.name}](https://www.hltv.org/team/${res.team.id}/${res.team.name.replace(/\s+/g, '')})`)
+      .addField("Rating", res.statistics.rating == undefined ? "Not Available" : res.statistics.rating.toString());
+      interaction.reply({ embeds: [embed] });
+    }).catch((err) =>
+    {
+      console.log(err);
+      var embed = new Discord.MessageEmbed()
+      .setTitle("Invalid Player")
+      .setColor(0x00AE86)
+      .setTimestamp()
+      .setFooter("Sent by HLTVBot", client.user.avatarURL)
+      .setDescription(`${playerName} is not a valid playername. Please try again or visit hltv.org`);
+      interaction.reply({ embeds: [embed] });
+    });
   }
 })
 
@@ -1078,7 +1308,7 @@ client.on("messageCreate", async message =>
 			.addComponents(
 				new Discord.MessageButton()
         .setCustomId(reactionControls.PREV_PAGE)
-        .setStyle('PRIMARY')
+        .setStyle('SECONDARY')
         .setLabel(" ")
         .setEmoji(reactionControls.PREV_PAGE),
         new Discord.MessageButton()
@@ -1088,7 +1318,7 @@ client.on("messageCreate", async message =>
         .setEmoji(reactionControls.STOP),
         new Discord.MessageButton()
         .setCustomId(reactionControls.NEXT_PAGE)
-        .setStyle('PRIMARY')
+        .setStyle('SECONDARY')
         .setLabel(" ")
         .setEmoji(reactionControls.NEXT_PAGE)
 			);
