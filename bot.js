@@ -4,10 +4,12 @@ const Discord = require('discord.js');
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_REACTIONS] });
 
 const { HLTV } = require('hltv');
+const { AutoPoster } = require('topgg-autoposter');
 
 const testConfig = require('./config.json');
 process.env.prefix = testConfig.prefix;
 process.env.BOT_TOKEN = testConfig.token;
+const ap = AutoPoster(testConfig.topggAPItoken, client);
 
 const teamDictionary = require("./teams.json");
 const alternateTeamDictionary = require("./alternateteams.json");
@@ -267,12 +269,15 @@ var handleMapPages = (res, startIndex, teamName, teamID, mapArr, mapNameArr) =>
       if (mapName == undefined)
          mapName = "Other";
 
-      embed.addField(mapName, "=========================================================" , false);
-      embed.addField("Wins", map.wins == undefined ? "Not Available" : map.wins.toString() , true);
-      embed.addField("Draws", map.draws == undefined ? "Not Available" : map.draws.toString() , true);
-      embed.addField("Losses", map.losses == undefined ? "Not Available" : map.losses.toString() , true);
-      embed.addField("Win Rate", map.winRate == undefined ? "Not Available" : map.winRate.toString() + "%" , true);
-      embed.addField("Total Rounds", map.totalRounds == undefined ? "Not Available" : map.totalRounds.toString() , true);
+      if (map != null)
+      {
+        embed.addField(mapName, "=========================================================" , false);
+        embed.addField("Wins", map.wins == undefined ? "Not Available" : map.wins.toString() , true);
+        embed.addField("Draws", map.draws == undefined ? "Not Available" : map.draws.toString() , true);
+        embed.addField("Losses", map.losses == undefined ? "Not Available" : map.losses.toString() , true);
+        embed.addField("Win Rate", map.winRate == undefined ? "Not Available" : map.winRate.toString() + "%" , true);
+        embed.addField("Total Rounds", map.totalRounds == undefined ? "Not Available" : map.totalRounds.toString() , true);
+      }
 
       if(i != startIndex+(pageSize - 1))
         embed.addField('\u200b', '\u200b');
@@ -380,6 +385,11 @@ var handleNewsPages = (newsArray, startIndex) =>
     }
     return embed;
 }
+
+ap.on('posted', (stats) =>
+{
+  console.log(`Posted stats to Top.gg | ${stats.serverCount} servers`)
+})
 
 client.on("ready", () =>
 {
