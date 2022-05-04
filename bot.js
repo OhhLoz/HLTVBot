@@ -409,7 +409,7 @@ client.on("ready", () =>
     botcount += guild.members.cache.filter(member => member.user.bot).size;
   })
 
-  const guild = client.guilds.cache.get(testConfig.testguildID);
+  const guild = client.guilds.cache.get('509391645226172420'); //development server guildid
   let commands;
 
   if(guild)
