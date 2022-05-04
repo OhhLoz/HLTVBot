@@ -6,10 +6,10 @@ const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_
 const { HLTV } = require('hltv');
 const { AutoPoster } = require('topgg-autoposter');
 
-const testConfig = require('./config.json');
-process.env.prefix = testConfig.prefix;
-process.env.BOT_TOKEN = testConfig.token;
-const ap = AutoPoster(testConfig.topggAPItoken, client);
+// const testConfig = require('./config.json');
+// process.env.prefix = testConfig.prefix;
+// process.env.BOT_TOKEN = testConfig.token;
+const ap = AutoPoster(process.env.TOPGG_TOKEN, client);
 
 const teamDictionary = require("./teams.json");
 const alternateTeamDictionary = require("./alternateteams.json");
@@ -418,8 +418,8 @@ client.on("ready", () =>
     commands = client.application?.commands;
 
   commands?.create({
-    name: 'commands',
-    description: 'Lists possible bot commands',
+    name: 'help',
+    description: 'Lists all bot commands',
   })
 
   commands?.create({
@@ -525,7 +525,7 @@ client.on("ready", () =>
   })
 
   console.log(`HLTVBot is currently serving ${usercount} users, in ${channelcount} channels of ${servercount} servers. Alongside ${botcount} bot brothers.`);
-  client.user.setActivity(`.hltv`, { type: 'LISTENING' });
+  client.user.setActivity(`${servercount} servers | /help | .hltv`, { type: 'WATCHING' });
   reverseTeamDictionary = reverseMapFromMap(teamDictionary);
 });
 
@@ -546,7 +546,7 @@ client.on("interactionCreate", async (interaction) =>
 
   const {commandName, options} = interaction;
 
-  if (commandName === 'commands')
+  if (commandName === 'help')
   {
     var embed = new Discord.MessageEmbed()
     .setTitle("Help")
@@ -554,7 +554,7 @@ client.on("interactionCreate", async (interaction) =>
     .setTimestamp()
     .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
     .addField('\u200b', 'Bot Commands')
-    .addField("/commands", "Lists all current commands", false)
+    .addField("/help", "Lists all current commands", false)
     .addField("/ping", "Displays the current ping to the bot & the API", false)
     .addField("/stats", "Displays bot statistics, invite link and contact information", false)
     .addField('\u200b', 'Team Commands')
