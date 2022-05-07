@@ -1,7 +1,6 @@
-const { Client, Intents } = require('discord.js');
 const Discord = require('discord.js');
 
-const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_REACTIONS] });
+const client = new Discord.Client({ intents: [Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS] });
 
 const { HLTV, default: hltv } = require('hltv');
 const { AutoPoster } = require('topgg-autoposter');
@@ -12,9 +11,9 @@ ap.on('posted', (stats) =>
   console.log(`Posted stats to Top.gg | ${stats.serverCount} servers`)
 })
 
-// const testConfig = require('./config.json');
-// process.env.prefix = testConfig.prefix;
-// process.env.BOT_TOKEN = testConfig.token;
+const testConfig = require('./config.json');
+process.env.prefix = testConfig.prefix;
+process.env.BOT_TOKEN = testConfig.token;
 
 const teamDictionary = require("./teams.json");
 const alternateTeamDictionary = require("./alternateteams.json");
@@ -743,12 +742,13 @@ client.on("interactionCreate", async (interaction) =>
 
   if (commandName === 'news')
   {
+    await interaction.deferReply();
     HLTV.getNews().then((res) =>
     {
       var currIndex = 0;
       var embed = handleNewsPages(res, currIndex);
       var originalMember = interaction.user;
-      interaction.reply({ embeds: [embed], ephemeral: false, components: [row] });
+      interaction.editReply({ embeds: [embed], ephemeral: false, components: [row] });
 
       const filter = (user) =>
       {
@@ -897,6 +897,7 @@ client.on("interactionCreate", async (interaction) =>
   if (commandName === 'teammaps')
   {
     var inputTeamName = options.getString('teamname');
+    await interaction.deferReply();
 
     if(teamDictionary.hasOwnProperty(inputTeamName.toUpperCase()))
     {
@@ -921,7 +922,7 @@ client.on("interactionCreate", async (interaction) =>
         var embed = handleMapPages(res, currIndex, teamName, teamID, mapArr, mapNameArr);
 
         var originalMember = interaction.user;
-        interaction.reply({ embeds: [embed], ephemeral: false, components: [row] });
+        interaction.editReply({ embeds: [embed], ephemeral: false, components: [row] });
 
         const filter = (user) =>
         {
@@ -969,7 +970,7 @@ client.on("interactionCreate", async (interaction) =>
         .setTimestamp()
         .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
         .setDescription(`${teamName} is not a valid team. Please try again or visit [hltv.org](https://www.hltv.org)`);
-        interaction.reply({ embeds: [embed] });
+        interaction.editReply({ embeds: [embed] });
       });
     }else
     {
@@ -979,7 +980,7 @@ client.on("interactionCreate", async (interaction) =>
       .setTimestamp()
       .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
       .setDescription(`${teamName} is not a valid team. Please try again or visit [hltv.org](https://www.hltv.org)`);
-      interaction.reply({ embeds: [embed] });
+      interaction.editReply({ embeds: [embed] });
     }
   }
 
@@ -1055,12 +1056,13 @@ client.on("interactionCreate", async (interaction) =>
 
   if (commandName === 'events')
   {
+    await interaction.deferReply();
     HLTV.getEvents().then((res) =>
     {
       var currIndex = 0;
       var embed = handleEventPages(res, currIndex);
       var originalMember = interaction.user;
-      interaction.reply({ embeds: [embed], ephemeral: false, components: [row] });
+      interaction.editReply({ embeds: [embed], ephemeral: false, components: [row] });
 
       const filter = (user) =>
       {
@@ -1108,12 +1110,13 @@ client.on("interactionCreate", async (interaction) =>
       .setTimestamp()
       .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
       .setDescription(`An error occurred whilst fetching events. Please try again or visit [hltv.org](https://www.hltv.org)`);
-      interaction.reply({ embeds: [embed] });
+      interaction.editReply({ embeds: [embed] });
     });
   }
 
   if (commandName === 'results')
   {
+    await interaction.deferReply();
     var currDate = new Date();
     var prevDate = new Date();
     prevDate.setDate(currDate.getDate() - 7); // last 7 days
@@ -1123,7 +1126,7 @@ client.on("interactionCreate", async (interaction) =>
       var currIndex = 0;
       var embed = handlePages(res, currIndex, COMMANDCODE.RESULTS);
       var originalMember = interaction.user;
-      interaction.reply({ embeds: [embed], ephemeral: false, components: [row] });
+      interaction.editReply({ embeds: [embed], ephemeral: false, components: [row] });
 
       const filter = (user) =>
       {
@@ -1171,18 +1174,19 @@ client.on("interactionCreate", async (interaction) =>
       .setTimestamp()
       .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
       .setDescription(`An error occurred whilst fetching match results. Please try again or visit [hltv.org](https://www.hltv.org)`);
-      interaction.reply({ embeds: [embed] });
+      interaction.editReply({ embeds: [embed] });
     });
   }
 
   if (commandName === 'matches')
   {
+    await interaction.deferReply();
     HLTV.getMatches().then((res) =>
     {
       var currIndex = 0;
       var embed = handlePages(res, currIndex, COMMANDCODE.MATCHES);
       var originalMember = interaction.user;
-      interaction.reply({ embeds: [embed], ephemeral: false, components: [row] });
+      interaction.editReply({ embeds: [embed], ephemeral: false, components: [row] });
 
       const filter = (user) =>
       {
@@ -1230,12 +1234,13 @@ client.on("interactionCreate", async (interaction) =>
       .setTimestamp()
       .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
       .setDescription(`An error occurred whilst fetching upcoming matches. Please try again or visit [hltv.org](https://www.hltv.org)`);
-      interaction.reply({ embeds: [embed] });
+      interaction.editReply({ embeds: [embed] });
     });
   }
 
   if (commandName === 'livematches')
   {
+    await interaction.deferReply();
     HLTV.getMatches().then((res) =>
     {
       var liveArr = [];
@@ -1259,7 +1264,7 @@ client.on("interactionCreate", async (interaction) =>
       if (livecount == 0)
       {
         embed.setTitle("There are currently no live matches.");
-        interaction.reply({ embeds: [embed], ephemeral: false});
+        interaction.editReply({ embeds: [embed], ephemeral: false});
       }
       else
       {
@@ -1315,7 +1320,7 @@ client.on("interactionCreate", async (interaction) =>
       .setTimestamp()
       .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
       .setDescription(`An error occurred whilst fetching live matches. Please try again or visit [hltv.org](https://www.hltv.org)`);
-      interaction.reply({ embeds: [embed] });
+      interaction.editReply({ embeds: [embed] });
     });
   }
 })
