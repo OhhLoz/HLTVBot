@@ -3,15 +3,19 @@ const Discord = require('discord.js');
 
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_REACTIONS] });
 
-const { HLTV } = require('hltv');
+const { HLTV, default: hltv } = require('hltv');
 const { AutoPoster } = require('topgg-autoposter');
+const ap = AutoPoster(process.env.TOPGG_TOKEN, client);
+
+ap.on('posted', (stats) =>
+{
+  console.log(`Posted stats to Top.gg | ${stats.serverCount} servers`)
+})
+
 
 // const testConfig = require('./config.json');
 // process.env.prefix = testConfig.prefix;
 // process.env.BOT_TOKEN = testConfig.token;
-// process.env.TOPGG_TOKEN = testConfig.topggAPItoken;
-
-const ap = AutoPoster(process.env.TOPGG_TOKEN, client);
 
 const teamDictionary = require("./teams.json");
 const alternateTeamDictionary = require("./alternateteams.json");
@@ -20,6 +24,7 @@ const formatDictionary = require("./formats.json");
 const package = require("./package.json");
 
 const hltvURL = "https://www.hltv.org";
+const topggVoteURL = "https://top.gg/bot/548165454158495745/vote";
 
 var titleSpacer = "\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800";
 
@@ -43,6 +48,10 @@ const reactionControls = {
 const row = new Discord.MessageActionRow()
 .addComponents(
   new Discord.MessageButton()
+  .setStyle('LINK')
+  .setLabel("Vote!")
+  .setURL(topggVoteURL),
+  new Discord.MessageButton()
   .setCustomId(reactionControls.PREV_PAGE)
   .setStyle('SECONDARY')
   .setLabel(" ")
@@ -56,7 +65,11 @@ const row = new Discord.MessageActionRow()
   .setCustomId(reactionControls.NEXT_PAGE)
   .setStyle('SECONDARY')
   .setLabel(" ")
-  .setEmoji(reactionControls.NEXT_PAGE)
+  .setEmoji(reactionControls.NEXT_PAGE),
+  new Discord.MessageButton()
+  .setStyle('LINK')
+  .setLabel("HLTV")
+  .setURL(hltvURL)
 );
 
 var id = function(x) {return x;};
@@ -390,11 +403,6 @@ var handleNewsPages = (newsArray, startIndex) =>
     return embed;
 }
 
-ap.on('posted', (stats) =>
-{
-  console.log(`Posted stats to Top.gg | ${stats.serverCount} servers`)
-})
-
 client.on("ready", () =>
 {
   //  STATISTICS GATHERING
@@ -540,7 +548,7 @@ client.on("guildCreate", guild =>
 
 client.on("guildDelete", guild =>
 {
-  console.log(`I have been removed from: ${guild.name} (id: ${guild.id})`);
+  console.log(`I have been removed from: ${guild.name} (id: ${guild.id}). This guild had ${guild.memberCount} members!`);
 });
 
 client.on("interactionCreate", async (interaction) =>
@@ -618,7 +626,7 @@ client.on("interactionCreate", async (interaction) =>
     .addField("Channel Count", channelcount.toString(), true)
     .addField("Version", package.version.toString(), true)
     .addField("Uptime", getTime(client.uptime), true)
-    .addField("Invite Link", "[Invite](https://discordapp.com/oauth2/authorize?client_id=548165454158495745&scope=bot&permissions=330816)", true)
+    .addField("Invite Link", "[Invite](https://discordapp.com/oauth2/authorize?client_id=548165454158495745&scope=bot&permissions=277025442816)", true)
     .addField("Support Link", "[GitHub](https://github.com/OhhLoz/HLTVBot)", true)
     .addField("Bot Page", "[Vote Here!](https://top.gg/bot/548165454158495745)", true)
     .addField("Donate", "[PayPal](https://www.paypal.me/LaurenceUre)", true)
@@ -938,7 +946,7 @@ client.on("interactionCreate", async (interaction) =>
             }
             case reactionControls.NEXT_PAGE:
             {
-              if (currIndex + 3 <= res.length - 1)
+              if (currIndex + 3 <= mapArr.length - 1)
                 currIndex+=3;
                 interaction.editReply({embeds: [handleMapPages(res, currIndex, teamName, teamID, mapArr, mapNameArr)]});
               break;
