@@ -11,9 +11,9 @@ ap.on('posted', (stats) =>
   console.log(`Posted stats to Top.gg | ${stats.serverCount} servers`)
 })
 
-const testConfig = require('./config.json');
-process.env.prefix = testConfig.prefix;
-process.env.BOT_TOKEN = testConfig.token;
+// const testConfig = require('./config.json');
+// process.env.prefix = testConfig.prefix;
+// process.env.BOT_TOKEN = testConfig.token;
 
 const teamDictionary = require("./teams.json");
 const alternateTeamDictionary = require("./alternateteams.json");
