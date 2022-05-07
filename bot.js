@@ -12,7 +12,6 @@ ap.on('posted', (stats) =>
   console.log(`Posted stats to Top.gg | ${stats.serverCount} servers`)
 })
 
-
 // const testConfig = require('./config.json');
 // process.env.prefix = testConfig.prefix;
 // process.env.BOT_TOKEN = testConfig.token;
@@ -335,7 +334,6 @@ var handleEventPages = (eventArray, startIndex) =>
       var eventNameURLFormat = event.name.replace(/\s+/g, '-').toLowerCase();
       var matchStartDate;
       var matchEndDate;
-      var prizePool;
 
       if(event.dateStart != undefined)
         matchStartDate = (new Date(event.dateStart)).toString();
@@ -445,17 +443,13 @@ client.on("ready", () =>
   })
 
   commands?.create({
-    name: 'teams',
-    description: 'Lists valid teams or the teams rankings',
-    options:
-    [
-      {
-        name: 'rankings',
-        description: 'Display the top30 teams?',
-        required: false,
-        type: Discord.Constants.ApplicationCommandOptionTypes.BOOLEAN
-      }
-    ]
+    name: 'teamlist',
+    description: 'Lists valid teams for the teammaps and teamstats commands',
+  })
+
+  commands?.create({
+    name: 'teamrankings',
+    description: 'Displays the top 30 team rankings & recent position changes',
   })
 
   commands?.create({
@@ -478,6 +472,11 @@ client.on("ready", () =>
       required: true,
       type: Discord.Constants.ApplicationCommandOptionTypes.STRING
     }]
+  })
+
+  commands?.create({
+    name: 'playerrankings',
+    description: 'Displays the top 30 player rankings & recent position changes.',
   })
 
   commands?.create({
@@ -570,14 +569,14 @@ client.on("interactionCreate", async (interaction) =>
     .addField("/ping", "Displays the current ping to the bot & the API", false)
     .addField("/stats", "Displays bot statistics, invite link and contact information", false)
     .addField('\u200b', `${titleSpacer}**Team Commands**`)
-    .addField("/teams", "Lists all of the currently accepted teams for the teamstats & teammaps commands", false)
-    .addField("/teams rankings", "Displays the top 30 team rankings & recent position changes", false)
+    .addField("/teamlist", "Lists all of the currently accepted teams for the teamstats & teammaps commands", false)
+    .addField("/teamrankings", "Displays the top 30 team rankings & recent position changes", false)
     .addField("/team [teamname]", "Displays the profile related to the input team", false)
     .addField("/teamstats [teamname]", "Displays the statistics related to the input team", false)
     .addField("/teammaps [teamname]", "Displays the map statistics related to the input team", false)
     .addField('\u200b', `${titleSpacer}**Player Commands**`)
     .addField("/player [player]", "Displays player statistics from the given player", false)
-    .addField("/player rankings", "Displays the top 30 player rankings & recent position changes. 'ranking' is also accepted.",false)
+    .addField("/playerrankings", "Displays the top 30 player rankings & recent position changes.",false)
     .addField('\u200b', `${titleSpacer}**Match Commands**`)
     .addField("/livematches", "Displays all currently live matches", false)
     .addField("/matches", "Displays all known scheduled matches", false)
@@ -638,45 +637,41 @@ client.on("interactionCreate", async (interaction) =>
     })
   }
 
-  if (commandName === 'teams')
+  if (commandName === 'teamlist')
   {
-    var isTop30 = options.getBoolean('rankings');
-    var embed = new Discord.MessageEmbed();
+    var embed = new Discord.MessageEmbed()
+    .setTitle("Valid Teams")
+    .setColor(0xff8d00)
+    .setTimestamp()
+    .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()});
     var outputStr = "";
-    if (!isTop30)
+    var count = 1;
+    var teamKeysSorted = Object.keys(teamDictionary).sort();
+    for (i = 0; i < teamKeysSorted.length; i++)
     {
-      var outputStr = "";
-      embed = new Discord.MessageEmbed()
-      .setTitle("Valid Teams")
-      .setColor(0xff8d00)
-      .setTimestamp()
-      .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()});
-
-      var count = 1;
-      var teamKeysSorted = Object.keys(teamDictionary).sort();
-      for (i = 0; i < teamKeysSorted.length; i++)
-      {
-        outputStr += teamKeysSorted[i];
-        if(count != Object.keys(teamDictionary).length)
-          outputStr += "\n";
-        count++;
-      }
-      embed.setDescription(outputStr);
-      interaction.reply
-      ({
-        embeds: [embed],
-        ephemeral: false
-      })
+      outputStr += teamKeysSorted[i];
+      if(count != Object.keys(teamDictionary).length)
+        outputStr += "\n";
+      count++;
     }
-    else
-    {
-      embed
-      .setTitle("Team Rankings")
-      .setColor(0x00AE86)
-      .setTimestamp()
-      .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
+    embed.setDescription(outputStr);
+    interaction.reply
+    ({
+      embeds: [embed],
+      ephemeral: false
+    })
+  }
 
-      HLTV.getTeamRanking().then((res) =>
+  if (commandName === "teamrankings")
+  {
+    await interaction.deferReply();
+    var embed = new Discord.MessageEmbed()
+    .setTitle("Valid Teams")
+    .setColor(0xff8d00)
+    .setTimestamp()
+    .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()});
+    var outputStr = "";
+    HLTV.getTeamRanking().then((res) =>
       {
         for (var rankObjKey in res)
         {
@@ -686,7 +681,7 @@ client.on("interactionCreate", async (interaction) =>
         }
         embed.setDescription(outputStr);
 
-        interaction.reply
+        interaction.editReply
         ({
           embeds: [embed],
           ephemeral: false
@@ -700,13 +695,13 @@ client.on("interactionCreate", async (interaction) =>
         .setTimestamp()
         .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
         .setDescription(`An error occurred whilst fetching team rankings. Please try again or visit [hltv.org](https://www.hltv.org)`);
-        interaction.reply({ embeds: [embed] });
+        interaction.editReply({ embeds: [embed] });
       });
-    }
   }
 
   if (commandName === "threads")
   {
+    await interaction.deferReply();
     HLTV.getRecentThreads().then((res) =>
     {
       var embedcount = 0;
@@ -728,7 +723,7 @@ client.on("interactionCreate", async (interaction) =>
       if (embedcount == 0)
         embed.setDescription("No Threads found, please try again later.")
 
-      interaction.reply
+      interaction.editReply
       ({
         embeds: [embed],
         ephemeral: false
@@ -742,7 +737,7 @@ client.on("interactionCreate", async (interaction) =>
       .setTimestamp()
       .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
       .setDescription(`An error occurred whilst fetching recent threads. Please try again or visit [hltv.org](https://www.hltv.org)`);
-      interaction.reply({ embeds: [embed] });
+      interaction.editReply({ embeds: [embed] });
     });
   }
 
@@ -801,13 +796,14 @@ client.on("interactionCreate", async (interaction) =>
       .setTimestamp()
       .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
       .setDescription(`An error occurred whilst fetching news. Please try again or visit [hltv.org](https://www.hltv.org)`);
-      interaction.reply({ embeds: [embed] });
+      interaction.editReply({ embeds: [embed] });
     });
   }
 
   if (commandName === 'team')
   {
     var teamName = options.getString('teamname');
+    await interaction.deferReply();
 
     HLTV.getTeamByName({name: teamName}).then((res)=>
     {
@@ -832,7 +828,7 @@ client.on("interactionCreate", async (interaction) =>
       }
       embed.addField("Players", playerRosterOutputStr);
       embed.addField("Rank", res.rank.toString());
-      interaction.reply({ embeds: [embed] });
+      interaction.editReply({ embeds: [embed] });
     }).catch((err) =>
     {
       console.log(err);
@@ -842,13 +838,14 @@ client.on("interactionCreate", async (interaction) =>
       .setTimestamp()
       .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
       .setDescription(`${teamName} is not a valid team name. Please try again or visit [hltv.org](https://www.hltv.org)`);
-      interaction.reply({ embeds: [embed] });
+      interaction.editReply({ embeds: [embed] });
     });
   }
 
   if (commandName === 'teamstats')
   {
     var inputTeamName = options.getString('teamname');
+    await interaction.deferReply();
 
     if(teamDictionary.hasOwnProperty(inputTeamName.toUpperCase()))
     {
@@ -873,7 +870,7 @@ client.on("interactionCreate", async (interaction) =>
           .addField("Average Kills Per Round", res.overview.totalKills == undefined || res.overview.roundsPlayed == undefined ? "Not Available" : (Math.round(res.overview.totalKills / res.overview.roundsPlayed * 100) / 100).toString(), true)
           .addField("Rounds Played", res.overview.roundsPlayed == undefined ? "Not Available" : res.overview.roundsPlayed.toString(), true)
           .addField("Overall Win%", res.overview.wins == undefined || res.overview.losses == undefined ? "Not Available" : (Math.round(res.overview.wins / (res.overview.losses + res.overview.wins) * 10000) / 100).toString() + "%", true)
-          interaction.reply({ embeds: [embed] });
+          interaction.editReply({ embeds: [embed] });
         }).catch((err) =>
         {
           console.log(err);
@@ -883,7 +880,7 @@ client.on("interactionCreate", async (interaction) =>
           .setTimestamp()
           .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
           .setDescription(`${teamName} is not a valid team. Please try again or visit [hltv.org](https://www.hltv.org)`);
-          interaction.reply({ embeds: [embed] });
+          interaction.editReply({ embeds: [embed] });
         });
     }else
     {
@@ -893,7 +890,7 @@ client.on("interactionCreate", async (interaction) =>
       .setTimestamp()
       .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
       .setDescription(`${teamName} is not a valid team. Please try again or visit [hltv.org](https://www.hltv.org)`);
-      interaction.reply({ embeds: [embed] });
+      interaction.editReply({ embeds: [embed] });
     }
   }
 
@@ -989,7 +986,7 @@ client.on("interactionCreate", async (interaction) =>
   if (commandName === 'player')
   {
     var playerName = options.getString('player');
-
+    await interaction.deferReply();
     HLTV.getPlayerByName({name: playerName}).then((res)=>
     {
       var embed = new Discord.MessageEmbed()
@@ -1008,7 +1005,7 @@ client.on("interactionCreate", async (interaction) =>
       .addField("Twitter", res.twitter == undefined ? "Not Available" : res.twitter)
       .addField("Team", `[${res.team.name}](https://www.hltv.org/team/${res.team.id}/${res.team.name.replace(/\s+/g, '')})`)
       .addField("Rating", res.statistics.rating == undefined ? "Not Available" : res.statistics.rating.toString());
-      interaction.reply({ embeds: [embed] });
+      interaction.editReply({ embeds: [embed] });
     }).catch((err) =>
     {
       console.log(err);
@@ -1018,7 +1015,41 @@ client.on("interactionCreate", async (interaction) =>
       .setTimestamp()
       .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
       .setDescription(`${playerName} is not a valid playername. Please try again or visit [hltv.org](https://www.hltv.org)`);
-      interaction.reply({ embeds: [embed] });
+      interaction.editReply({ embeds: [embed] });
+    });
+  }
+
+  if (commandName === 'playerrankings')
+  {
+    var outputStr = "";
+    await interaction.deferReply();
+    HLTV.getPlayerRanking({startDate: '', endDate: '', rankingFilter: 'Top30'}).then((res) => {
+      var count = 1;
+      for (var playerObjKey in res)
+      {
+        var playerObj = res[playerObjKey];
+        outputStr += `${count}. [${playerObj.player.name}](https://www.hltv.org/stats/players/${playerObj.player.id}/${playerObj.player.name}) (${playerObj.rating1})\n`
+        if (count == 30)
+          break;
+        count++;
+      }
+      var embed = new Discord.MessageEmbed()
+      .setTitle("Player Rankings")
+      .setColor(0x00AE86)
+      .setTimestamp()
+      .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
+      .setDescription(outputStr);
+      interaction.editReply({ embeds: [embed] });
+    }).catch((err) =>
+    {
+      console.log(err);
+      var embed = new Discord.MessageEmbed()
+      .setTitle("Error Occurred")
+      .setColor(0x00AE86)
+      .setTimestamp()
+      .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
+      .setDescription(`An error occurred whilst fetching player rankings. Please try again or visit [hltv.org](https://www.hltv.org)`);
+      interaction.editReply({ embeds: [embed] });
     });
   }
 
