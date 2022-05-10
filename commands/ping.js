@@ -9,7 +9,7 @@ module.exports =
     {
         try
         {
-            const message = await interaction.reply({ content: "Pong!", fetchReply: true, ephemeral: true });
+            const message = await interaction.editReply({ content: "Pong!", fetchReply: true, ephemeral: true });
 
             await interaction.editReply(
             {

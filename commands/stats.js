@@ -26,7 +26,7 @@ module.exports =
         .addField("Bot Page", "[Vote Here!](https://top.gg/bot/548165454158495745)", true)
         .addField("Donate", "[PayPal](https://www.paypal.me/LaurenceUre)", true)
 
-        interaction.reply
+        interaction.editReply
         ({
             embeds: [embed],
             ephemeral: false

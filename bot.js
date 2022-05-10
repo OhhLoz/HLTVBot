@@ -158,10 +158,12 @@ client.on("interactionCreate", async (interaction) =>
 
   try
   {
+    await interaction.deferReply();
     await command.execute(interaction, client, botData);
   }
   catch(err)
   {
+    console.log("\n\nEntered root command error state\n\n");
     if (err)
       console.log(err);
 
@@ -171,7 +173,7 @@ client.on("interactionCreate", async (interaction) =>
     .setTimestamp()
     .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
     .setDescription(`An error occurred whilst executing command. Please try again or visit [hltv.org](${hltvURL})`);
-    await interaction.reply({ embeds: [embed] });
+    await interaction.editReply({ embeds: [embed] });
   }
 })
 

@@ -10,7 +10,6 @@ module.exports =
 	async execute(interaction, client, botData)
     {
         var outputStr = "";
-        await interaction.deferReply();
         HLTV.getPlayerRanking({startDate: '', endDate: '', rankingFilter: 'Top30'}).then((res) =>
         {
             var count = 1;
@@ -24,6 +23,7 @@ module.exports =
             }
             var embed = new MessageEmbed()
             .setTitle("Player Rankings")
+            .setURL(`${botData.hltvURL}/stats/players`)
             .setColor(0x00AE86)
             .setTimestamp()
             .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})

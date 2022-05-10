@@ -11,7 +11,6 @@ module.exports =
 	async execute(interaction, client, botData)
     {
         var playerName = interaction.options.getString('player');
-        await interaction.deferReply();
         HLTV.getPlayerByName({name: playerName}).then((res)=>
         {
             var embed = new MessageEmbed()
@@ -20,7 +19,7 @@ module.exports =
             .setThumbnail(res.image)
             .setTimestamp()
             .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
-            .setURL(`https://www.hltv.org/player/${res.id}/${res.ign}/`)
+            .setURL(`${botData.hltvURL}/player/${res.id}/${res.ign}/`)
             .addField("Name", res.name == undefined ? "Not Available" : res.name)
             .addField("IGN", res.ign == undefined ? "Not Available" : res.ign)
             .addField("Age", res.age == undefined ? "Not Available" : res.age.toString())
@@ -28,7 +27,7 @@ module.exports =
             .addField("Facebook", res.facebook == undefined ? "Not Available" : res.facebook)
             .addField("Twitch", res.twitch == undefined ? "Not Available" : res.twitch)
             .addField("Twitter", res.twitter == undefined ? "Not Available" : res.twitter)
-            .addField("Team", `[${res.team.name}](https://www.hltv.org/team/${res.team.id}/${res.team.name.replace(/\s+/g, '')})`)
+            .addField("Team", `[${res.team.name}](${botData.hltvURL}/team/${res.team.id}/${res.team.name.replace(/\s+/g, '')})`)
             .addField("Rating", res.statistics.rating == undefined ? "Not Available" : res.statistics.rating.toString());
             interaction.editReply({ embeds: [embed] });
         }).catch((err) =>

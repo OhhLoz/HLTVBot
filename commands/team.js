@@ -11,7 +11,6 @@ module.exports =
 	async execute(interaction, client, botData)
     {
         var teamName = interaction.options.getString('teamname');
-        await interaction.deferReply();
 
         HLTV.getTeamByName({name: teamName}).then((res)=>
         {
@@ -23,7 +22,7 @@ module.exports =
             //.setImage(res.coverImage)
             .setTimestamp()
             .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
-            .setURL(`https://www.hltv.org/team/${res.id}/${teamName.replace(/\s+/g, '')}`)
+            .setURL(`${botData.hltvURL}/team/${res.id}/${teamName.replace(/\s+/g, '')}`)
             .addField("Location", res.country.name == undefined ? "Not Available" : res.country.name)
             .addField("Facebook", res.facebook == undefined ? "Not Available" : res.facebook)
             .addField("Twitter",  res.twitter == undefined ? "Not Available" : res.twitter)

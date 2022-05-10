@@ -9,28 +9,28 @@ module.exports =
 		.setDescription("Displays the top 30 team rankings & recent position changes"),
 	async execute(interaction, client, botData)
     {
-        await interaction.deferReply();
-    var embed = new MessageEmbed()
-    .setTitle("Valid Teams")
-    .setColor(0xff8d00)
-    .setTimestamp()
-    .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()});
-    var outputStr = "";
-    HLTV.getTeamRanking().then((res) =>
-    {
-        for (var rankObjKey in res)
+        var embed = new MessageEmbed()
+        .setTitle("Valid Teams")
+        .setColor(0xff8d00)
+        .setURL(`${botData.hltvURL}/ranking/teams/`)
+        .setTimestamp()
+        .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()});
+        var outputStr = "";
+        HLTV.getTeamRanking().then((res) =>
         {
-            var rankObj = res[rankObjKey];
-            var teamStr = `[${rankObj.team.name}](https://www.hltv.org/team/${rankObj.team.id}/${rankObj.team.name.replace(/\s+/g, '')})`;
-            outputStr += `${rankObj.place}. ${teamStr} (${rankObj.change})\n`
-        }
-        embed.setDescription(outputStr);
+            for (var rankObjKey in res)
+            {
+                var rankObj = res[rankObjKey];
+                var teamStr = `[${rankObj.team.name}](${botData.hltvURL}/team/${rankObj.team.id}/${rankObj.team.name.replace(/\s+/g, '')})`;
+                outputStr += `${rankObj.place}. ${teamStr} (${rankObj.change})\n`
+            }
+            embed.setDescription(outputStr);
 
-        interaction.editReply
-        ({
-            embeds: [embed],
-            ephemeral: false
-        })
+            interaction.editReply
+            ({
+                embeds: [embed],
+                ephemeral: false
+            })
         }).catch((err) =>
         {
             console.log(err);

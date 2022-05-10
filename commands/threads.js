@@ -9,43 +9,43 @@ module.exports =
 		.setDescription("Lists recent CS related hltv threads"),
 	async execute(interaction, client, botData)
     {
-        await interaction.deferReply();
-        HLTV.getRecentThreads().then((res) =>
+      HLTV.getRecentThreads().then((res) =>
+      {
+        var embedcount = 0;
+        var embed = new MessageEmbed()
+        .setTitle("Recent Threads")
+        .setColor(0xff8d00)
+        .setURL(`${botData.hltvURL}/forums/counterstrike`)
+        .setTimestamp()
+        .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()});
+        for (index in res)
         {
-          var embedcount = 0;
-          var embed = new MessageEmbed()
-          .setTitle("Recent Threads")
-          .setColor(0xff8d00)
-          .setTimestamp()
-          .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()});
-          for (index in res)
+          if(res[index].title != undefined && res[index].category == 'cs')
           {
-            if(res[index].title != undefined && res[index].category == 'cs')
-            {
-              embed.addField(`${res[index].title}`, `[Link](${botData.hltvURL + res[index].link}) Replies: ${res[index].replies} Category: ${res[index].category}`);
-              embedcount++;
-            }
-            if(embedcount >= 24)
-              break;
+            embed.addField(`${res[index].title}`, `[Link](${botData.hltvURL + res[index].link}) Replies: ${res[index].replies}`);
+            embedcount++;
           }
-          if (embedcount == 0)
-            embed.setDescription("No Threads found, please try again later.")
+          if(embedcount >= 24)
+            break;
+        }
+        if (embedcount == 0)
+          embed.setDescription("No Threads found, please try again later.")
 
-          interaction.editReply
-          ({
-            embeds: [embed],
-            ephemeral: false
-          })
-        }).catch((err) =>
-        {
-          console.log(err);
-          var embed = new MessageEmbed()
-          .setTitle("Error Occurred")
-          .setColor(0x00AE86)
-          .setTimestamp()
-          .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
-          .setDescription(`An error occurred whilst fetching recent threads. Please try again or visit [hltv.org](${botData.hltvURL})`);
-          interaction.editReply({ embeds: [embed] });
-        });
+        interaction.editReply
+        ({
+          embeds: [embed],
+          ephemeral: false
+        })
+      }).catch((err) =>
+      {
+        console.log(err);
+        var embed = new MessageEmbed()
+        .setTitle("Error Occurred")
+        .setColor(0x00AE86)
+        .setTimestamp()
+        .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
+        .setDescription(`An error occurred whilst fetching recent threads. Please try again or visit [hltv.org](${botData.hltvURL})`);
+        interaction.editReply({ embeds: [embed] });
+      });
     }
 }

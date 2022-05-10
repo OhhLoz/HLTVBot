@@ -26,7 +26,7 @@ module.exports =
         }
         embed.setDescription(outputStr);
 
-        interaction.reply
+        interaction.editReply
         ({
             embeds: [embed],
             ephemeral: false
