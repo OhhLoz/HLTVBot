@@ -10,7 +10,6 @@ module.exports =
 		.setDescription("Displays the most recent match results"),
 	async execute(interaction, client, botData)
     {
-        await interaction.deferReply();
         var currDate = new Date();
         var prevDate = new Date();
         prevDate.setDate(currDate.getDate() - 7); // last 7 days
@@ -31,28 +30,44 @@ module.exports =
 
           collector.on('collect', (button) =>
           {
-            switch (button.customId)
+            try
             {
-              case botData.reactionControls.PREV_PAGE:
+              switch (button.customId)
               {
-                if (currIndex - 3 >= 0)
-                  currIndex-=3;
-                  interaction.editReply({embeds: [func.handlePages(res, currIndex, botData.COMMANDCODE.RESULTS)]});
-                break;
+                case botData.reactionControls.PREV_PAGE:
+                {
+                  if (currIndex - 3 >= 0)
+                    currIndex-=3;
+                    interaction.editReply({embeds: [func.handlePages(res, currIndex, botData.COMMANDCODE.RESULTS)]});
+                  break;
+                }
+                case botData.reactionControls.NEXT_PAGE:
+                {
+                  if (currIndex + 3 <= res.length - 1)
+                    currIndex+=3;
+                    interaction.editReply({embeds: [func.handlePages(res, currIndex, botData.COMMANDCODE.RESULTS)]});
+                  break;
+                }
+                case botData.reactionControls.STOP:
+                {
+                  // stop listening for reactions
+                  collector.stop();
+                  break;
+                }
               }
-              case botData.reactionControls.NEXT_PAGE:
-              {
-                if (currIndex + 3 <= res.length - 1)
-                  currIndex+=3;
-                  interaction.editReply({embeds: [func.handlePages(res, currIndex, botData.COMMANDCODE.RESULTS)]});
-                break;
-              }
-              case botData.reactionControls.STOP:
-              {
-                // stop listening for reactions
-                collector.stop();
-                break;
-              }
+            }
+            catch(err)
+            {
+                if (err)
+                    console.log(err);
+
+                var embed = new MessageEmbed()
+                .setTitle("Error Occurred")
+                .setColor(0x00AE86)
+                .setTimestamp()
+                .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
+                .setDescription(`An error occurred during button interaction. Please try again or visit [hltv.org](${hltvURL})`);
+                interaction.editReply({ embeds: [embed] });
             }
           });
 
@@ -61,8 +76,9 @@ module.exports =
           });
         }).catch((err) =>
         {
-          console.log(err);
-          var embed = new Discord.MessageEmbed()
+          if (err)
+            console.log(err);
+          var embed = new MessageEmbed()
           .setTitle("Error Occurred")
           .setColor(0x00AE86)
           .setTimestamp()

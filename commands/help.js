@@ -35,7 +35,7 @@ module.exports =
         .addField("/threads", "Displays the most recent hltv user threads", false)
         .addField("/news", "Displays the most recent hltv news & match info", false)
 
-        interaction.reply
+        interaction.editReply
         ({
             embeds: [embed],
             ephemeral: true

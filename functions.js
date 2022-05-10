@@ -77,27 +77,46 @@ var handlePages = (res, startIndex, code) => {
   {
     var match = res[i];
     var pages = res.length/pageSize;
+    var matchOutputStr = "Not Available"
+    var team1NameFormatted = "Not Available"
+    var team2NameFormatted = "Not Available"
+    var matchURLStr = hltvURL;
+    var eventFormatted = "Unknown"
 
     if(match == null) //Error with live matches, assumes will have enough to fill 1 page so less than that throws an error
       return embed;
 
     // TEMPORARY CODE FOR ISSUE #73
-    if (match.team1 == null || match.team2 == null)
-      return embed;
+    if (match.team1 != null && match.team2 != null)
+    {
+      // POPULATE EMBED
+      team1NameFormatted = match.team1.name.replace(/\s+/g, '-').toLowerCase();
+      team2NameFormatted = match.team2.name.replace(/\s+/g, '-').toLowerCase();
+      matchOutputStr = `[${match.team1.name}](${hltvURL}/team/${match.team1.id}/${team1NameFormatted}) vs [${match.team2.name}](${hltvURL}/team/${match.team2.id}/${team2NameFormatted})`
+      if(match.id != null)
+      {
+        matchURLStr += "/matches/" + match.id.toString() + "/" + team1NameFormatted + "-vs-" + team2NameFormatted;
+        matchOutputStr += " [[Match Link](" + matchURLStr + ")]"
+      }
+    }
 
-    // POPULATE EMBED
-    var team1NameFormatted = match.team1.name.replace(/\s+/g, '-').toLowerCase();
-    var team2NameFormatted = match.team2.name.replace(/\s+/g, '-').toLowerCase();
+    if (match.event != undefined)
+    {
+      eventFormatted = match.event.name.replace(/\s+/g, '-').toLowerCase();
+      matchURLStr += "-" + eventFormatted;
+    }
 
     embed.setFooter({text: `Page ${startIndex/pageSize + 1} of ${Math.ceil(pages)}`, iconURL: "https://cdn.discordapp.com/avatars/548165454158495745/222c8d9ccac5d194d8377c5da5b0f95b.png?size=4096"});
-    embed.addField(`Match`, `[${match.team1.name}](${hltvURL}/team/${match.team1.id}/${team1NameFormatted}) vs [${match.team2.name}](${hltvURL}/team/${match.team2.id}/${team2NameFormatted})`, false);
+    embed.addField(`Match`, `${matchOutputStr}`, false);
 
     if(code == COMMANDCODE.MATCHES)
     {
       var matchDate = new Date(match.date);
       if(match.live)
         matchDate = "Live";
-      embed.addField("Date", `${matchDate.toString()}`, false);
+      else
+        matchDate = matchDate.toUTCString()
+      embed.addField("Date", `${matchDate}`, false);
     }
     embed.addField("Format", `${formatDictionary[match.format]}`, false);
 
@@ -165,11 +184,10 @@ var handlePages = (res, startIndex, code) => {
     {
       if (match.event != undefined)
       {
-        var eventFormatted = match.event.name.replace(/\s+/g, '-').toLowerCase();
         embed.addField("Event", `[${match.event.name}](${hltvURL}/events/${match.event.id}/${eventFormatted})`, false);
       }
       else
-          embed.addField("Event", "Unknown", false);
+          embed.addField("Event", `${eventFormatted}`, false);
 
       if (match.title != undefined)
           embed.addField("Title", match.title, false);
@@ -272,18 +290,18 @@ var handleEventPages = (eventArray, startIndex) =>
       var matchEndDate;
 
       if(event.dateStart != undefined)
-        matchStartDate = (new Date(event.dateStart)).toString();
+        matchStartDate = new Date(event.dateStart);
       else
         matchStartDate = "Unknown";
 
       if(event.dateEnd != undefined)
-        matchEndDate = (new Date(event.dateEnd)).toString();
+        matchEndDate = new Date(event.dateEnd);
       else
         matchEndDate = "Unknown";
 
       embed.addField("Name", `[${event.name}](${hltvURL}/events/${event.id}/${eventNameURLFormat})`);
-      embed.addField("Start", matchStartDate);
-      embed.addField("End", matchEndDate);
+      embed.addField("Start", matchStartDate.toUTCString());
+      embed.addField("End", matchEndDate.toUTCString());
       embed.addField("Prize Pool", event.prizePool == undefined ? "Not Available" : event.prizePool);
       embed.addField("Number of Teams", event.numberOfTeams == undefined ? "Not Available" : event.numberOfTeams.toString());
       embed.addField("Location", event.location == undefined ? "Not Available" : event.location.name);
@@ -327,7 +345,7 @@ var handleNewsPages = (newsArray, startIndex) =>
 
 
       embed.addField('\u200b', newsObj.title == undefined || newsObj.link == undefined ? "Not Available" : `[${newsObj.title}](${hltvURL}${newsObj.link})`);
-      embed.addField("Date", newsObj.date == undefined ? "Not Available" : `${(new Date(newsObj.date)).toString()}`);
+      embed.addField("Date", newsObj.date == undefined ? "Not Available" : `${(new Date(newsObj.date)).toUTCString()}`);
       embed.addField("Country", newsObj.country == undefined ? "Not Available" : newsObj.country.name);
       embed.addField("Comments", newsObj.comments == undefined ? "Not Available" : newsObj.comments.toString());
 

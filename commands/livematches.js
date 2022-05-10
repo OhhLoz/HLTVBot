@@ -10,7 +10,6 @@ module.exports =
 		.setDescription("Displays all currently live matches"),
 	async execute(interaction, client, botData)
     {
-        await interaction.deferReply();
         HLTV.getMatches().then((res) =>
         {
             var liveArr = [];
@@ -48,29 +47,45 @@ module.exports =
 
                 collector.on('collect', (button) =>
                 {
-                    switch (button.customId)
+                    try
                     {
-                        case botData.reactionControls.PREV_PAGE:
+                        switch (button.customId)
                         {
-                            if (currIndex - 5 >= 0)
-                                currIndex-=5;
-                                interaction.editReply({embeds: [func.handlePages(liveArr, currIndex, botData.COMMANDCODE.LIVEMATCHES)]});
-                            break;
+                            case botData.reactionControls.PREV_PAGE:
+                            {
+                                if (currIndex - 5 >= 0)
+                                    currIndex-=5;
+                                    interaction.editReply({embeds: [func.handlePages(liveArr, currIndex, botData.COMMANDCODE.LIVEMATCHES)]});
+                                break;
+                            }
+                            case botData.reactionControls.NEXT_PAGE:
+                            {
+                                if (currIndex + 5 <= liveArr.length - 1)
+                                    currIndex+=5;
+                                    interaction.editReply({embeds: [func.handlePages(liveArr, currIndex, botData.COMMANDCODE.LIVEMATCHES)]});
+                                break;
+                            }
+                            case botData.reactionControls.STOP:
+                            {
+                                // stop listening for reactions
+                                collector.stop();
+                                break;
+                            }
                         }
-                        case botData.reactionControls.NEXT_PAGE:
-                        {
-                            if (currIndex + 5 <= liveArr.length - 1)
-                                currIndex+=5;
-                                interaction.editReply({embeds: [func.handlePages(liveArr, currIndex, botData.COMMANDCODE.LIVEMATCHES)]});
-                            break;
-                        }
-                        case botData.reactionControls.STOP:
-                        {
-                            // stop listening for reactions
-                            collector.stop();
-                            break;
-                        }
-                   }
+                    }
+                    catch(err)
+                    {
+                        if (err)
+                            console.log(err);
+
+                        var embed = new MessageEmbed()
+                        .setTitle("Error Occurred")
+                        .setColor(0x00AE86)
+                        .setTimestamp()
+                        .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
+                        .setDescription(`An error occurred during button interaction. Please try again or visit [hltv.org](${hltvURL})`);
+                        interaction.editReply({ embeds: [embed] });
+                    }
                 });
                 collector.on('end', async () =>
                 {
@@ -79,7 +94,8 @@ module.exports =
             }
         }).catch((err) =>
         {
-            console.log(err);
+            if (err)
+                console.log(err);
             var embed = new MessageEmbed()
             .setTitle("Error Occurred")
             .setColor(0x00AE86)

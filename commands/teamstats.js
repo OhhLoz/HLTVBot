@@ -12,7 +12,6 @@ module.exports =
 	async execute(interaction, client, botData)
     {
         var inputTeamName = interaction.options.getString('teamname');
-        await interaction.deferReply();
 
         if(teamDictionary.hasOwnProperty(inputTeamName.toUpperCase()))
         {

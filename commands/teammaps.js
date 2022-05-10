@@ -13,7 +13,6 @@ module.exports =
 	async execute(interaction, client, botData)
     {
         var inputTeamName = interaction.options.getString('teamname');
-        await interaction.deferReply();
 
         if(teamDictionary.hasOwnProperty(inputTeamName.toUpperCase()))
         {
@@ -49,28 +48,44 @@ module.exports =
 
             collector.on('collect', (button) =>
             {
-              switch (button.customId)
+              try
               {
-                case botData.reactionControls.PREV_PAGE:
+                switch (button.customId)
                 {
-                  if (currIndex - 3 >= 0)
-                    currIndex-=3;
-                    interaction.editReply({embeds: [func.handleMapPages(res, currIndex, teamName, teamID, mapArr, mapNameArr)]});
-                  break;
+                  case botData.reactionControls.PREV_PAGE:
+                  {
+                    if (currIndex - 3 >= 0)
+                      currIndex-=3;
+                      interaction.editReply({embeds: [func.handleMapPages(res, currIndex, teamName, teamID, mapArr, mapNameArr)]});
+                    break;
+                  }
+                  case botData.reactionControls.NEXT_PAGE:
+                  {
+                    if (currIndex + 3 <= mapArr.length - 1)
+                      currIndex+=3;
+                      interaction.editReply({embeds: [func.handleMapPages(res, currIndex, teamName, teamID, mapArr, mapNameArr)]});
+                    break;
+                  }
+                  case botData.reactionControls.STOP:
+                  {
+                    // stop listening for reactions
+                    collector.stop();
+                    break;
+                  }
                 }
-                case botData.reactionControls.NEXT_PAGE:
-                {
-                  if (currIndex + 3 <= mapArr.length - 1)
-                    currIndex+=3;
-                    interaction.editReply({embeds: [func.handleMapPages(res, currIndex, teamName, teamID, mapArr, mapNameArr)]});
-                  break;
-                }
-                case botData.reactionControls.STOP:
-                {
-                  // stop listening for reactions
-                  collector.stop();
-                  break;
-                }
+              }
+              catch(err)
+              {
+                  if (err)
+                      console.log(err);
+
+                  var embed = new MessageEmbed()
+                  .setTitle("Error Occurred")
+                  .setColor(0x00AE86)
+                  .setTimestamp()
+                  .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
+                  .setDescription(`An error occurred during button interaction. Please try again or visit [hltv.org](${hltvURL})`);
+                  interaction.editReply({ embeds: [embed] });
               }
             });
 
@@ -88,7 +103,8 @@ module.exports =
             .setDescription(`${teamName} is not a valid team or another error occurred. Please try again or visit [hltv.org](${botData.hltvURL})`);
             interaction.editReply({ embeds: [embed] });
           });
-        }else
+        }
+        else
         {
           var embed = new MessageEmbed()
           .setTitle("Invalid Team")

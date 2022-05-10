@@ -10,7 +10,6 @@ module.exports =
 		.setDescription("Lists recent hltv news stories"),
 	async execute(interaction, client, botData)
     {
-        await interaction.deferReply();
         HLTV.getNews().then((res) =>
         {
             var currIndex = 0;
@@ -27,28 +26,45 @@ module.exports =
 
             collector.on('collect', (button) =>
             {
-                switch (button.customId)
+                try
                 {
-                case botData.reactionControls.PREV_PAGE:
-                {
-                    if (currIndex - 8 >= 0)
-                    currIndex-=8;
-                    interaction.editReply({embeds: [func.handleNewsPages(res, currIndex)]});
-                    break;
+                    switch (button.customId)
+                    {
+                        case botData.reactionControls.PREV_PAGE:
+                        {
+                            if (currIndex - 8 >= 0)
+                            currIndex-=8;
+                            interaction.editReply({embeds: [func.handleNewsPages(res, currIndex)]});
+                            break;
+                        }
+                        case botData.reactionControls.NEXT_PAGE:
+                        {
+                            if (currIndex + 8 <= res.length - 1)
+                            currIndex+=8;
+                            interaction.editReply({embeds: [func.handleNewsPages(res, currIndex)]});
+                            break;
+                        }
+                        case botData.reactionControls.STOP:
+                        {
+                            // stop listening for reactions
+                            collector.stop();
+                            break;
+                        }
+                    }
                 }
-                case botData.reactionControls.NEXT_PAGE:
+                catch(err)
                 {
-                    if (currIndex + 8 <= res.length - 1)
-                    currIndex+=8;
-                    interaction.editReply({embeds: [func.handleNewsPages(res, currIndex)]});
-                    break;
-                }
-                case botData.reactionControls.STOP:
-                {
-                    // stop listening for reactions
-                    collector.stop();
-                    break;
-                }
+                    if (err)
+                        console.log(err);
+
+                    var embed = new MessageEmbed()
+                    .setTitle("Error Occurred")
+                    .setColor(0x00AE86)
+                    .setURL(`${botData.hltvURL}`)
+                    .setTimestamp()
+                    .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
+                    .setDescription(`An error occurred during button interaction. Please try again or visit [hltv.org](${hltvURL})`);
+                    interaction.editReply({ embeds: [embed] });
                 }
             });
 
@@ -57,7 +73,8 @@ module.exports =
             });
         }).catch((err) =>
         {
-            console.log(err);
+            if (err)
+                console.log(err);
             var embed = new MessageEmbed()
             .setTitle("Error Occurred")
             .setColor(0x00AE86)
