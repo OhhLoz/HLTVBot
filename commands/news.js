@@ -63,7 +63,7 @@ module.exports =
                     .setURL(`${botData.hltvURL}`)
                     .setTimestamp()
                     .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
-                    .setDescription(`An error occurred during button interaction. Please try again or visit [hltv.org](${hltvURL})`);
+                    .setDescription(`An error occurred during button interaction. Please try again or visit [hltv.org](${botData.hltvURL})`);
                     interaction.editReply({ embeds: [embed] });
                 }
             });
