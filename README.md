@@ -22,8 +22,10 @@ This bot can be accessed or invited to your discord server via the [Top.gg](http
 
 ## License
 
-This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details
-
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details  
+I am in no way affiliated with HLTV  
+  
 ## Acknowledgments
 
-* Top.gg for approving my bot
+* Top.gg for approving my bot  
+* HLTV for making a great site to track the CS:GO scene
