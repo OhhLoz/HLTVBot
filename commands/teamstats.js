@@ -27,15 +27,18 @@ module.exports =
                 .setTimestamp()
                 .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
                 .setURL(`${botData.hltvURL}/stats/teams/${teamID}/${teamName}`)
-                .addField("Maps Played", res.overview.mapsPlayed == undefined ? "Not Available" : res.overview.mapsPlayed.toString(), true)
-                .addField("Wins", res.overview.wins == undefined ? "Not Available" : res.overview.wins.toString(), true)
-                .addField("Losses", res.overview.losses == undefined ? "Not Available" : res.overview.losses.toString(), true)
-                .addField("Kills", res.overview.totalKills == undefined ? "Not Available" : res.overview.totalKills.toString(), true)
-                .addField("Deaths", res.overview.totalDeaths == undefined ? "Not Available" : res.overview.totalDeaths.toString(), true)
-                .addField("KD Ratio", res.overview.kdRatio == undefined ? "Not Available" : res.overview.kdRatio.toString(), true)
-                .addField("Average Kills Per Round", res.overview.totalKills == undefined || res.overview.roundsPlayed == undefined ? "Not Available" : (Math.round(res.overview.totalKills / res.overview.roundsPlayed * 100) / 100).toString(), true)
-                .addField("Rounds Played", res.overview.roundsPlayed == undefined ? "Not Available" : res.overview.roundsPlayed.toString(), true)
-                .addField("Overall Win%", res.overview.wins == undefined || res.overview.losses == undefined ? "Not Available" : (Math.round(res.overview.wins / (res.overview.losses + res.overview.wins) * 10000) / 100).toString() + "%", true)
+                .addFields
+                (
+                    {name: "Maps Played", value: res.overview.mapsPlayed == undefined ? "Not Available" : res.overview.mapsPlayed.toString(), inline: true},
+                    {name: "Wins", value: res.overview.wins == undefined ? "Not Available" : res.overview.wins.toString(), inline: true},
+                    {name: "Losses", value: res.overview.losses == undefined ? "Not Available" : res.overview.losses.toString(), inline: true},
+                    {name: "Kills", value: res.overview.totalKills == undefined ? "Not Available" : res.overview.totalKills.toString(), inline: true},
+                    {name: "Deaths", value: res.overview.totalDeaths == undefined ? "Not Available" : res.overview.totalDeaths.toString(), inline: true},
+                    {name: "KD Ratio", value: res.overview.kdRatio == undefined ? "Not Available" : res.overview.kdRatio.toString(), inline: true},
+                    {name: "Average Kills Per Round", value: res.overview.totalKills == undefined || res.overview.roundsPlayed == undefined ? "Not Available" : (Math.round(res.overview.totalKills / res.overview.roundsPlayed * 100) / 100).toString(), inline: true},
+                    {name: "Rounds Played", value: res.overview.roundsPlayed == undefined ? "Not Available" : res.overview.roundsPlayed.toString(), inline: true},
+                    {name: "Overall Win%", value: res.overview.wins == undefined || res.overview.losses == undefined ? "Not Available" : (Math.round(res.overview.wins / (res.overview.losses + res.overview.wins) * 10000) / 100).toString() + "%", inline: true},
+                )
                 interaction.editReply({ embeds: [embed] });
             }).catch((err) =>
             {

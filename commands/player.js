@@ -20,15 +20,18 @@ module.exports =
             .setTimestamp()
             .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
             .setURL(`${botData.hltvURL}/player/${res.id}/${res.ign}/`)
-            .addField("Name", res.name == undefined ? "Not Available" : res.name)
-            .addField("IGN", res.ign == undefined ? "Not Available" : res.ign)
-            .addField("Age", res.age == undefined ? "Not Available" : res.age.toString())
-            .addField("Country", res.country.name == undefined ? "Not Available" : res.country.name)
-            .addField("Facebook", res.facebook == undefined ? "Not Available" : res.facebook)
-            .addField("Twitch", res.twitch == undefined ? "Not Available" : res.twitch)
-            .addField("Twitter", res.twitter == undefined ? "Not Available" : res.twitter)
-            .addField("Team", `[${res.team.name}](${botData.hltvURL}/team/${res.team.id}/${res.team.name.replace(/\s+/g, '')})`)
-            .addField("Rating", res.statistics.rating == undefined ? "Not Available" : res.statistics.rating.toString());
+            .addFields
+            (
+                {name: "Name", value: res.name == undefined ? "Not Available" : res.name},
+                {name: "IGN", value:  res.ign == undefined ? "Not Available" : res.ign},
+                {name: "Age", value:  res.age == undefined ? "Not Available" : res.age.toString()},
+                {name: "Country", value:  res.country.name == undefined ? "Not Available" : res.country.name},
+                {name: "Facebook", value:  res.facebook == undefined ? "Not Available" : res.facebook},
+                {name: "Twitch", value:  res.twitch == undefined ? "Not Available" : res.twitch},
+                {name: "Twitter", value:  res.twitter == undefined ? "Not Available" : res.twitter},
+                {name: "Team", value:  `[${res.team.name}](${botData.hltvURL}/team/${res.team.id}/${res.team.name.replace(/\s+/g, '')})`},
+                {name: "Rating", value:  res.statistics.rating == undefined ? "Not Available" : res.statistics.rating.toString()},
+            )
             interaction.editReply({ embeds: [embed] });
         }).catch((err) =>
         {

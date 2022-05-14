@@ -19,12 +19,7 @@ const hltvURL = "https://www.hltv.org";
 const topggVoteURL = "https://top.gg/bot/548165454158495745/vote";
 var titleSpacer = "\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800";
 
-//    STAT VARIABLES
-var servercount = 0;
-var usercount = 0;
-var botcount = 0;
-var channelcount = 0;
-
+//    GLOBAL VARIABLES
 const reactionControls =
 {
   PREV_PAGE: '⬅',
@@ -88,6 +83,7 @@ else
   const testConfig = require('./config.json');
   process.env.prefix = testConfig.prefix;
   process.env.BOT_TOKEN = testConfig.token;
+  process.env.DATABASE_URL = testConfig.databaseURL;
 }
 
 const commandFiles = fs.readdirSync("./commands").filter(file => file.endsWith(".js"));
@@ -112,17 +108,8 @@ client.on("ready", () =>
   {
     if (guild.id == "264445053596991498") //top.gg discord guildId, ignored since it isn't "real" users for statistics
       return;
-    servercount += 1;
-    channelcount += guild.channels.cache.filter(channel => channel.type != 'category').size;
-    //usercount += guild.members.cache.filter(member => !member.user.bot).size;
-    usercount += guild.memberCount;
-    botcount += guild.members.cache.filter(member => member.user.bot).size;
+    botData = func.checkStats(guild, botData, true);
   })
-
-  botData.servercount = servercount;
-  botData.channelcount = channelcount;
-  botData.usercount = usercount;
-  botData.botcount = botcount;
 
   const guild = client.guilds.cache.get('509391645226172420'); //development server guildid
 
@@ -131,19 +118,23 @@ client.on("ready", () =>
   else
     client.application.commands.set(commandsArr);
 
-  console.log(`HLTVBot is currently serving ${usercount} users, in ${channelcount} channels of ${servercount} servers. Alongside ${botcount} bot brothers.`);
-  client.user.setActivity(`${servercount} servers | /help | .hltv`, { type: 'WATCHING' });
+  console.log(`HLTVBot is currently serving ${botData.usercount} users, in ${botData.channelcount} channels of ${botData.servercount} servers. Alongside ${botData.botcount} bot brothers.`);
+  client.user.setActivity(`${botData.servercount} servers | /help | .hltv`, { type: 'WATCHING' });
   reverseTeamDictionary = func.reverseMapFromMap(teamDictionary);
 });
 
 client.on("guildCreate", guild =>
 {
   console.log(`New guild joined: ${guild.name} (id: ${guild.id}). This guild has ${guild.memberCount} members!`);
+  botData = func.checkStats(guild, botData, true);
+  client.user.setActivity(`${botData.servercount} servers | /help | .hltv`, { type: 'WATCHING' });
 });
 
 client.on("guildDelete", guild =>
 {
   console.log(`I have been removed from: ${guild.name} (id: ${guild.id}). This guild had ${guild.memberCount} members!`);
+  botData = func.checkStats(guild, botData, false);
+  client.user.setActivity(`${botData.servercount} servers | /help | .hltv`, { type: 'WATCHING' });
 });
 
 client.on("interactionCreate", async (interaction) =>
@@ -173,7 +164,7 @@ client.on("interactionCreate", async (interaction) =>
     .setTimestamp()
     .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
     .setDescription(`An error occurred whilst executing command. Please try again or visit [hltv.org](${hltvURL})`);
-    await interaction.editReply({ embeds: [embed] });
+    await interaction.reply({ embeds: [embed] });
   }
 })
 

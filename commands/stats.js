@@ -15,16 +15,20 @@ module.exports =
         .setTimestamp()
         .setThumbnail(client.user.displayAvatarURL())
         .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
-        .addField("User Count", botData.usercount.toString(), true)
-        .addField("Bot User Count", botData.botcount.toString(), true)
-        .addField("Server Count", botData.servercount.toString(), true)
-        .addField("Channel Count", botData.channelcount.toString(), true)
-        .addField("Version", botData.version.toString(), true)
-        .addField("Uptime", func.getTime(client.uptime), true)
-        .addField("Invite Link", "[Invite](https://discordapp.com/oauth2/authorize?client_id=548165454158495745&scope=bot&permissions=277025442816)", true)
-        .addField("Support Link", "[GitHub](https://github.com/OhhLoz/HLTVBot)", true)
-        .addField("Bot Page", "[Vote Here!](https://top.gg/bot/548165454158495745)", true)
-        .addField("Donate", "[PayPal](https://www.paypal.me/LaurenceUre)", true)
+        .addFields
+        (
+            {name: "User Count", value: botData.usercount.toString(), inline:true},
+            {name: "Bot User Count", value: botData.botcount.toString(), inline:true},
+            {name: "Server Count", value: botData.servercount.toString(), inline:true},
+            {name: "Channel Count", value: botData.channelcount.toString(), inline:true},
+            {name: "Version", value: botData.version.toString(), inline:true},
+            {name: "Uptime", value: func.getTime(client.uptime), inline:true},
+            {name: "Invite Link", value: "[Invite](https://discordapp.com/oauth2/authorize?client_id=548165454158495745&scope=bot&permissions=277025442816)", inline:true},
+            {name: "Support Link", value: "[GitHub](https://github.com/OhhLoz/HLTVBot)", inline:true},
+            {name: "Support Server", value: "[Discord](https://discord.gg/wBW9B9TtYK)", inline:true},
+            {name: "Bot Page", value: "[Vote Here!](https://top.gg/bot/548165454158495745)", inline:true},
+            {name: "Donate", value: "[PayPal](https://www.paypal.me/LaurenceUre)", inline:true},
+        )
 
         interaction.editReply
         ({

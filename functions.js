@@ -243,12 +243,15 @@ var handleMapPages = (res, startIndex, teamName, teamID, mapArr, mapNameArr) =>
 
       if (map != null)
       {
-        embed.addField(mapName, "=========================================================" , false);
-        embed.addField("Wins", map.wins == undefined ? "Not Available" : map.wins.toString() , true);
-        embed.addField("Draws", map.draws == undefined ? "Not Available" : map.draws.toString() , true);
-        embed.addField("Losses", map.losses == undefined ? "Not Available" : map.losses.toString() , true);
-        embed.addField("Win Rate", map.winRate == undefined ? "Not Available" : map.winRate.toString() + "%" , true);
-        embed.addField("Total Rounds", map.totalRounds == undefined ? "Not Available" : map.totalRounds.toString() , true);
+        embed.addFields
+        (
+          {name: mapName, value: "=========================================================", inline:false},
+          {name: "Wins", value: map.wins == undefined ? "Not Available" : map.wins.toString(), inline:true},
+          {name: "Draws", value: map.draws == undefined ? "Not Available" : map.draws.toString(), inline:true},
+          {name: "Losses", value: map.losses == undefined ? "Not Available" : map.losses.toString(), inline:true},
+          {name:"Win Rate", value: map.winRate == undefined ? "Not Available" : map.winRate.toString() + "%", inline:true},
+          {name:"Total Rounds", value: map.totalRounds == undefined ? "Not Available" : map.totalRounds.toString(), inline:true},
+        )
       }
 
       if(i != startIndex+(pageSize - 1))
@@ -299,12 +302,15 @@ var handleEventPages = (eventArray, startIndex) =>
       else
         matchEndDate = "Unknown";
 
-      embed.addField("Name", `[${event.name}](${hltvURL}/events/${event.id}/${eventNameURLFormat})`);
-      embed.addField("Start", matchStartDate.toUTCString());
-      embed.addField("End", matchEndDate.toUTCString());
-      embed.addField("Prize Pool", event.prizePool == undefined ? "Not Available" : event.prizePool);
-      embed.addField("Number of Teams", event.numberOfTeams == undefined ? "Not Available" : event.numberOfTeams.toString());
-      embed.addField("Location", event.location == undefined ? "Not Available" : event.location.name);
+      embed.addFields
+      (
+        {name:"Name", value: `[${event.name}](${hltvURL}/events/${event.id}/${eventNameURLFormat})`},
+        {name:"Start", value: matchStartDate.toUTCString()},
+        {name:"End", value: matchEndDate.toUTCString()},
+        {name:"Prize Pool", value: event.prizePool == undefined ? "Not Available" : event.prizePool},
+        {name:"Number of Teams", value: event.numberOfTeams == undefined ? "Not Available" : event.numberOfTeams.toString()},
+        {name:"Location", value: event.location == undefined ? "Not Available" : event.location.name},
+      )
 
       if(i != startIndex+(pageSize - 1))
         embed.addField('\u200b', '\u200b');
@@ -343,11 +349,13 @@ var handleNewsPages = (newsArray, startIndex) =>
       if(newsObj == undefined)
         break;
 
-
-      embed.addField('\u200b', newsObj.title == undefined || newsObj.link == undefined ? "Not Available" : `[${newsObj.title}](${hltvURL}${newsObj.link})`);
-      embed.addField("Date", newsObj.date == undefined ? "Not Available" : `${(new Date(newsObj.date)).toUTCString()}`);
-      embed.addField("Country", newsObj.country == undefined ? "Not Available" : newsObj.country.name);
-      embed.addField("Comments", newsObj.comments == undefined ? "Not Available" : newsObj.comments.toString());
+      embed.addFields
+      (
+        {name:'\u200b', value: newsObj.title == undefined || newsObj.link == undefined ? "Not Available" : `[${newsObj.title}](${hltvURL}${newsObj.link})`},
+        {name:"Date", value: newsObj.date == undefined ? "Not Available" : `${(new Date(newsObj.date)).toUTCString()}`},
+        {name:"Country", value: newsObj.country == undefined ? "Not Available" : newsObj.country.name},
+        {name:"Comments", value: newsObj.comments == undefined ? "Not Available" : newsObj.comments.toString()},
+      )
 
       if(i != startIndex+(pageSize - 1))
         embed.addField('\u200b', '\u200b');
@@ -355,5 +363,37 @@ var handleNewsPages = (newsArray, startIndex) =>
     return embed;
 }
 
+/**
+ * Populates botData with servers, channels, users and bot count based on the given guild object
+ *
+ *
+ * @param {Object}   guild     Guild object used to check for all the relevant stats
+ * @param {Object}   botData   Global object used to keep track of necessary botData to avoid reuse.
+ * @param {boolean}  isJoin    Used to determine whether to add or subtract the stats from the global total
+ *
+ * @return {Object}            Returns the populated botData object.
+ */
+var checkStats = (guild, botData, isJoin) =>
+{
+  if (isJoin)
+  {
+    botData.servercount += 1;
+    botData.channelcount += guild.channels.cache.filter(channel => channel.type != 'category').size;
+    //usercount += guild.members.cache.filter(member => !member.user.bot).size;
+    botData.usercount += guild.memberCount;
+    botData.botcount += guild.members.cache.filter(member => member.user.bot).size;
+  }
+  else
+  {
+    botData.servercount -= 1;
+    botData.channelcount -= guild.channels.cache.filter(channel => channel.type != 'category').size;
+    //usercount += guild.members.cache.filter(member => !member.user.bot).size;
+    botData.usercount -= guild.memberCount;
+    botData.botcount -= guild.members.cache.filter(member => member.user.bot).size;
+  }
 
-module.exports = {handleEventPages, handleMapPages, handleNewsPages, handlePages, reverseMapFromMap, getTime}
+  return botData;
+}
+
+
+module.exports = {handleEventPages, handleMapPages, handleNewsPages, handlePages, reverseMapFromMap, getTime, checkStats}
