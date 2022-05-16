@@ -1,62 +1,136 @@
-const { Client } = require('pg');
 const testConfig = require('./config.json');
-//const { Sequelize } = require('sequelize');
+const { Sequelize, DataTypes, Op } = require('sequelize');
 process.env.DATABASE_URL = testConfig.databaseURL;
 
-const client = new Client({
-  connectionString: process.env.DATABASE_URL,
-  ssl:
+const QUERYCODES =
+{
+  findAll : 0,
+  create: 1
+}
+
+const databaseClient = new Sequelize(process.env.DATABASE_URL,
+{
+  logging: false,
+  dialectOptions:
   {
-    rejectUnauthorized: false
+    ssl:
+    {
+      require: true,
+      rejectUnauthorized: false
+    }
   }
+})
+
+const teamDictionary = databaseClient.define('teamDictionary',
+{
+  id:
+  {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    autoIncrement: true,
+    primaryKey: true
+  },
+  team_id:
+  {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  team_name:
+  {
+    type: DataTypes.STRING,
+    allowNull: false
+  }
+},
+{
+  tableName: 'teamdictionary',
+  timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at'
 });
 
-//const databaseClient = new Sequelize(process.env.DATABASE_URL)
+const teamProfiles = databaseClient.define('teamProfiles',
+{
+  team_id:
+  {
+    type: DataTypes.STRING,
+    primaryKey: true,
+    allowNull: false
+  },
+  team_name:{type: DataTypes.STRING},
+  logo:{type: DataTypes.STRING},
+  location:{type: DataTypes.STRING},
+  facebook:{type: DataTypes.STRING},
+  twitter:{type: DataTypes.STRING},
+  instagram:{type: DataTypes.STRING},
+  rank:{type: DataTypes.STRING}
+},
+{
+  tableName: 'teamprofiles',
+  timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at'
+});
 
-//client.connect();
+const fetchTeamIDByTeamName =
+{
+  attributes: ['team_id'],
+  where:
+  {
+    team_name:
+    {
+    }
+  }
+}
 
-// client.query(`CREATE TABLE teamprofiles (
-// 	team_id VARCHAR ( 10 ) PRIMARY KEY,
-// 	team_name VARCHAR ( 100 ) UNIQUE NOT NULL,
-// 	logo VARCHAR ( 255 ),
-// 	location VARCHAR ( 20 ),
-// 	facebook VARCHAR ( 100 ),
-// 	twitter VARCHAR ( 100 ),
-// 	instagram VARCHAR ( 100 ),
-// 	rank VARCHAR ( 10 ),
-//   created_at TIMESTAMP NOT NULL,
-//   updated_at TIMESTAMP
-// );`, (err, res) => {
-//     if (err) throw err;
-//     for (let row of res.rows) {
-//       console.log(JSON.stringify(row));
-//     }
-//     client.end();
-// });
+const fetchTeamProfileByTeamID =
+{
+  attributes: ['team_id','team_name','logo','location','facebook','twitter','instagram','rank'],
+  where:
+  {
+    team_id:
+    {
+    }
+  }
+}
 
-// client.query(`TRUNCATE TABLE teamprofiles;`, (err, res) => {
-//   if (err) throw err;
-//   for (let row of res.rows) {
-//     console.log(JSON.stringify(row));
-//   }
-//   client.end();
-// });
+
+//teamProfiles.sync({ alter: true })
+
 module.exports =
 {
-  async connect()
+  async authenticate()
   {
-    await client.connect();
+    try
+    {
+      await databaseClient.authenticate();
+      console.log('Database connection has been established successfully.');
+      return true;
+    }
+    catch (error)
+    {
+      console.error('Unable to connect to the database:', error);
+      return false;
+    }
   },
-  async queryHandler(query)
+  async queryHandler(model, attributes, queryCode)
   {
     let response;
     try
     {
-      response = await client.query(query);
-      if(response.rows.length != 0)
+      switch (queryCode)
+      {
+        case QUERYCODES.findAll:
+          response = await model.findAll(attributes);
+          break;
+        case QUERYCODES.create:
+          response = await model.create(attributes);
+          break;
+      }
+
+      if(response.dataValues != undefined)  // check if this code works if there is no result
       {
         //console.log(response.rows)
-        return JSON.stringify(response.rows[0]);
+        return JSON.stringify(response.dataValues);
       }
       return undefined;
     }
@@ -67,18 +141,38 @@ module.exports =
   },
   async checkTeamDict(teamName)
   {
-    return this.queryHandler(`SELECT team_id FROM teamdictionary WHERE team_name ILIKE '${teamName}';`);
+    var attributeTemplate = fetchTeamIDByTeamName;
+    attributeTemplate.where.team_name = { [Op.iLike]: teamName }
+    return this.queryHandler(teamDictionary, attributeTemplate, QUERYCODES.findAll);
   },
   async insertTeamDict(teamID, teamName)
   {
-    return this.queryHandler(`INSERT INTO teamDictionary(team_id, team_name, created_at, updated_at) VALUES ('${teamID}','${teamName}',to_timestamp(${Date.now()} / 1000.0), to_timestamp(${Date.now()} / 1000.0));`);
+    return this.queryHandler(teamDictionary,
+    {
+      team_id: teamID,
+      team_name: teamName
+    },
+    QUERYCODES.create);
   },
   async checkTeamProfiles(teamID)
   {
-    return this.queryHandler(`SELECT (team_id, team_name, logo, location, facebook, twitter, instagram, rank) FROM teamprofiles WHERE team_id = '${teamID}'; `);
+    var attributeTemplate = fetchTeamProfileByTeamID;
+    attributeTemplate.where.team_id = { [Op.eq]: teamID.toString() }
+    return this.queryHandler(teamProfiles, attributeTemplate, QUERYCODES.findAll);
   },
   async insertTeamProfile(res)
   {
-    return this.queryHandler(`INSERT INTO teamprofiles(team_id, team_name, logo, location, facebook, twitter, instagram, rank, created_at, updated_at) VALUES ('${res.id}','${res.name}','${res.logo}','${res.location}','${res.facebook}','${res.twitter}','${res.instagram}','${res.rank}',to_timestamp(${Date.now()} / 1000.0),to_timestamp(${Date.now()} / 1000.0))`);
+    return this.queryHandler(teamProfiles,
+    {
+      team_id: res.id,
+      team_name: res.name,
+      logo: res.logo,
+      location: res.location,
+      facebook: res.facebook,
+      twitter: res.twitter,
+      instagram: res.instagram,
+      rank: res.rank
+    },
+    QUERYCODES.create);
   }
 }

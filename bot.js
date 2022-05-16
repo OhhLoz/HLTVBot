@@ -112,7 +112,7 @@ client.on("ready", () =>
     botData = func.checkStats(guild, botData, true);
   })
 
-  database.connect();
+  database.authenticate();
 
   const guild = client.guilds.cache.get('509391645226172420'); //development server guildid
 
