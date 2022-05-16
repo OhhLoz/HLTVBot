@@ -4,9 +4,10 @@ const client = new Discord.Client({ intents: [Discord.Intents.FLAGS.GUILDS, Disc
 const { HLTV } = require('hltv');
 const func = require("./functions.js");
 const fs = require("fs");
+const database = require("./database.js");
 
 //   SET TRUE WHEN TESTING TO DISABLE TOPGG Posting & TO USE TEST BOT TOKEN
-const TESTING = false;
+const TESTING = true;
 
 //    DATA IMPORT
 const teamDictionary = require("./teams.json");
@@ -111,6 +112,8 @@ client.on("ready", () =>
     botData = func.checkStats(guild, botData, true);
   })
 
+  database.connect();
+
   const guild = client.guilds.cache.get('509391645226172420'); //development server guildid
 
   if(TESTING)
@@ -164,7 +167,10 @@ client.on("interactionCreate", async (interaction) =>
     .setTimestamp()
     .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
     .setDescription(`An error occurred whilst executing command. Please try again or visit [hltv.org](${hltvURL})`);
-    await interaction.reply({ embeds: [embed] });
+    if(interaction.deferred)
+      await interaction.editReply({ embeds: [embed] });
+    else
+      await interaction.reply({ embeds: [embed] });
   }
 })
 

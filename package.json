@@ -1,6 +1,6 @@
 {
   "name": "HLTVBot",
-  "version": "1.6.6",
+  "version": "1.6.7",
   "description": "",
   "main": "bot.js",
   "dependencies": {
@@ -9,6 +9,8 @@
     "discord.js": "^13.6.0",
     "hltv": "^3.4.0",
     "pg": "^8.7.3",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.19.0",
     "topgg-autoposter": "^2.0.1"
   },
   "scripts": {

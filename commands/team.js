@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const { MessageEmbed } = require('discord.js');
 const { HLTV } = require('hltv');
+const database = require("../database.js")
 
 module.exports =
 {
@@ -12,43 +13,58 @@ module.exports =
     {
         var teamName = interaction.options.getString('teamname');
 
-        HLTV.getTeamByName({name: teamName}).then((res)=>
+        // if teamProfiles already have a team by teamName then use that if not updated in 1 hour
+        var result = await database.checkTeamDict(teamName);
+        //console.log(result);
+        if (result == undefined)    //if teamname not found in teamDictionary
         {
-            var playerRosterOutputStr = '';
-            for (var i = 0; i < res.players.length; i++)
+            HLTV.getTeamByName({name: teamName}).then((res)=>
             {
-                playerRosterOutputStr += `[${res.players[i].name}](${botData.hltvURL}/stats/players/${res.players[i].id}/${res.players[i].name})`
-                if(i != res.players.length - 1)
-                playerRosterOutputStr += ', ';
-            }
-            var embed = new MessageEmbed()
-            .setTitle(teamName + " Profile")
-            .setColor(0x00AE86)
-            //.setThumbnail(res.logo)
-            //.setImage(res.coverImage)
-            .setTimestamp()
-            .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
-            .setURL(`${botData.hltvURL}/team/${res.id}/${teamName.replace(/\s+/g, '')}`)
-            .addFields
-            (
-                {name: "Location", value: res.country.name == undefined ? "Not Available" : res.country.name},
-                {name: "Facebook", value: res.facebook == undefined ? "Not Available" : res.facebook},
-                {name: "Twitter", value: res.twitter == undefined ? "Not Available" : res.twitter},
-                {name: "Instagram", value: res.instagram == undefined ? "Not Available" : res.instagram},
-                {name: "Players", value: playerRosterOutputStr},
-                {name: "Rank", value: res.rank.toString()}
-            )
-            interaction.editReply({ embeds: [embed] });
-        }).catch((err) =>
-        {
-            console.log(err);
-            var embed = new MessageEmbed()
-            .setTitle("Invalid Team")
-            .setColor(0x00AE86)
-            .setTimestamp()
-            .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
-            .setDescription(`${teamName} is not a valid team name. Please try again or visit [hltv.org](${botData.hltvURL})`);
-            interaction.editReply({ embeds: [embed] });
-        });
+                //sanitize teamName to prevent sql injection
+                database.insertTeamDict(res.id, res.name);
+                if (teamName.toLowerCase() != res.name.toLowerCase())
+                    database.insertTeamDict(res.id, teamName);
+                database.checkTeamProfiles(res.id).then((result) => {
+                    if (result == undefined)
+                        database.insertTeamProfile(res);
+                });
+
+                var playerRosterOutputStr = '';
+                for (var i = 0; i < res.players.length; i++)
+                {
+                    playerRosterOutputStr += `[${res.players[i].name}](${botData.hltvURL}/stats/players/${res.players[i].id}/${res.players[i].name})`
+                    if(i != res.players.length - 1)
+                    playerRosterOutputStr += ', ';
+                }
+                var embed = new MessageEmbed()
+                .setTitle(res.name + " Profile")
+                .setColor(0x00AE86)
+                //.setThumbnail(res.logo)
+                //.setImage(res.coverImage)
+                .setTimestamp()
+                .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
+                .setURL(`${botData.hltvURL}/team/${res.id}/${res.name.replace(/\s+/g, '')}`)
+                .addFields
+                (
+                    {name: "Location", value: res.country.name == undefined ? "Not Available" : res.country.name},
+                    {name: "Facebook", value: res.facebook == undefined ? "Not Available" : res.facebook},
+                    {name: "Twitter", value: res.twitter == undefined ? "Not Available" : res.twitter},
+                    {name: "Instagram", value: res.instagram == undefined ? "Not Available" : res.instagram},
+                    {name: "Players", value: playerRosterOutputStr},
+                    {name: "Rank", value: res.rank.toString()}
+                )
+                interaction.editReply({ embeds: [embed] });
+            }).catch((err) =>
+            {
+                console.log(err);
+                var embed = new MessageEmbed()
+                .setTitle("Invalid Team")
+                .setColor(0x00AE86)
+                .setTimestamp()
+                .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
+                .setDescription(`${teamName} is not a valid team name. Please try again or visit [hltv.org](${botData.hltvURL})`);
+                interaction.editReply({ embeds: [embed] });
+            });
+        }
     }
 }
