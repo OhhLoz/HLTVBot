@@ -89,15 +89,11 @@ module.exports =
                 });
                 collector.on('end', async () =>
                 {
-                    try
-                    {
-                        interaction.deleteReply();
-                    }
-                    catch(err)
-                    {
-                        if (err)
-                            console.log(err);
-                    }
+                    interaction.deleteReply().catch(err =>
+                        {
+                            if (err.code !== 10008)
+                                console.log(err);
+                        });
                 });
             }
         }).catch((err) =>
