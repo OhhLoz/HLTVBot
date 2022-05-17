@@ -89,7 +89,15 @@ module.exports =
                 });
                 collector.on('end', async () =>
                 {
-                    interaction.deleteReply();
+                    try
+                    {
+                        interaction.deleteReply();
+                    }
+                    catch(err)
+                    {
+                        if (err)
+                            console.log(err);
+                    }
                 });
             }
         }).catch((err) =>

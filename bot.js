@@ -164,7 +164,10 @@ client.on("interactionCreate", async (interaction) =>
     .setTimestamp()
     .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
     .setDescription(`An error occurred whilst executing command. Please try again or visit [hltv.org](${hltvURL})`);
-    await interaction.reply({ embeds: [embed] });
+    if(interaction.deferred)
+      await interaction.editReply({ embeds: [embed] });
+    else
+      await interaction.reply({ embeds: [embed] });
   }
 })
 
