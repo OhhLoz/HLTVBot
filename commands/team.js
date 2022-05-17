@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const { MessageEmbed } = require('discord.js');
 const { HLTV } = require('hltv');
-const database = require("../database.js")
+const database = require("../databaseWrapper.js")
 
 module.exports =
 {
@@ -24,9 +24,13 @@ module.exports =
                 database.insertTeamDict(res.id, res.name);
                 if (teamName.toLowerCase() != res.name.toLowerCase())
                     database.insertTeamDict(res.id, teamName);
-                database.checkTeamProfiles(res.id).then((result) => {
+                database.checkTeamProfiles(res.id).then((result) =>
+                {
                     if (result == undefined)
+                    {
                         database.insertTeamProfile(res);
+                        database.insertRoster(res.players, res.id);
+                    }
                 });
 
                 var playerRosterOutputStr = '';

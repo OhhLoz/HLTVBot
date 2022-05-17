@@ -4,7 +4,7 @@ const client = new Discord.Client({ intents: [Discord.Intents.FLAGS.GUILDS, Disc
 const { HLTV } = require('hltv');
 const func = require("./functions.js");
 const fs = require("fs");
-const database = require("./database.js");
+const database = require("./databaseWrapper.js");
 
 //   SET TRUE WHEN TESTING TO DISABLE TOPGG Posting & TO USE TEST BOT TOKEN
 const TESTING = true;
@@ -112,7 +112,7 @@ client.on("ready", () =>
     botData = func.checkStats(guild, botData, true);
   })
 
-  database.authenticate();
+  database.authenticate(true);
 
   const guild = client.guilds.cache.get('509391645226172420'); //development server guildid
 
