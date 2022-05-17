@@ -94,7 +94,7 @@ module.exports =
       console.log(err)
     }
   },
-  async checkTeamDict(teamName)
+  async fetchTeamDict(teamName)
   {
     var attributeTemplate = databaseConstants.fetchTeamIDByTeamName;
     attributeTemplate.where.team_name = { [Op.iLike]: teamName }
@@ -109,7 +109,7 @@ module.exports =
     },
     databaseConstants.QUERYCODES.create);
   },
-  async checkTeamProfiles(teamID)
+  async fetchTeamProfiles(teamID)
   {
     var attributeTemplate = databaseConstants.fetchTeamProfileByTeamID;
     attributeTemplate.where.team_id = { [Op.eq]: teamID.toString() }
@@ -130,7 +130,22 @@ module.exports =
     },
     databaseConstants.QUERYCODES.create);
   },
-  async checkRoster(teamID)
+  async handleTeamProfile(res)
+  {
+    this.fetchTeamProfiles(res.id).then((result) =>
+    {
+        if (result == undefined)
+        {
+            this.insertTeamProfile(res);
+            this.insertRoster(res.players, res.id);
+        }
+        else
+        {
+            // if result expired / updated too long ago update it
+        }
+    });
+  },
+  async fetchRoster(teamID)
   {
     var attributeTemplate = databaseConstants.fetchRosterByTeamID;
     attributeTemplate.where.team_id = { [Op.eq]: teamID }

@@ -7,6 +7,11 @@ const QUERYCODES =
   bulkCreate: 2
 }
 
+const expiryTime =
+{
+  teamdictionary: "1 hour"
+}
+
 const tableOptions =
 {
     freezeTableName: true,
@@ -84,19 +89,19 @@ const rosterTableSchema =
 
 const fetchTeamIDByTeamName =
 {
-  attributes: ['team_id'],
+  attributes: ['team_id', 'updated_at'],
   where: { team_name:{} }
 }
 
 const fetchTeamProfileByTeamID =
 {
-  attributes: ['team_id','team_name','logo','location','facebook','twitter','instagram','rank'],
+  attributes: ['team_id','team_name','logo','location','facebook','twitter','instagram','rank', 'updated_at'],
   where: { team_id:{} }
 }
 
 const fetchRosterByTeamID =
 {
-  attributes: ['player_id','team_id','player_name','role','timeOnTeam','mapsPlayed'],
+  attributes: ['player_id','team_id','player_name','role','timeOnTeam','mapsPlayed', 'updated_at'],
   where: { team_id:{} }
 }
 

@@ -395,5 +395,34 @@ var checkStats = (guild, botData, isJoin) =>
   return botData;
 }
 
+var handleTeamProfile = (res) =>
+{
+  var playerRosterOutputStr = '';
+  for (var i = 0; i < res.players.length; i++)
+  {
+      playerRosterOutputStr += `[${res.players[i].name}](${botData.hltvURL}/stats/players/${res.players[i].id}/${res.players[i].name})`
+      if(i != res.players.length - 1)
+      playerRosterOutputStr += ', ';
+  }
+  var embed = new MessageEmbed()
+  .setTitle(res.name + " Profile")
+  .setColor(0x00AE86)
+  //.setThumbnail(res.logo)
+  //.setImage(res.coverImage)
+  .setTimestamp()
+  .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
+  .setURL(`${botData.hltvURL}/team/${res.id}/${res.name.replace(/\s+/g, '')}`)
+  .addFields
+  (
+      {name: "Location", value: res.country.name == undefined ? "Not Available" : res.country.name},
+      {name: "Facebook", value: res.facebook == undefined ? "Not Available" : res.facebook},
+      {name: "Twitter", value: res.twitter == undefined ? "Not Available" : res.twitter},
+      {name: "Instagram", value: res.instagram == undefined ? "Not Available" : res.instagram},
+      {name: "Players", value: playerRosterOutputStr},
+      {name: "Rank", value: res.rank.toString()}
+  )
+  return embed;
+}
 
-module.exports = {handleEventPages, handleMapPages, handleNewsPages, handlePages, reverseMapFromMap, getTime, checkStats}
+
+module.exports = {handleEventPages, handleMapPages, handleNewsPages, handlePages, reverseMapFromMap, getTime, checkStats, handleTeamProfile}
