@@ -2,7 +2,6 @@ const { SlashCommandBuilder } = require("@discordjs/builders");
 const { MessageEmbed } = require('discord.js');
 const { HLTV } = require('hltv');
 const database = require("../databaseWrapper.js")
-const databaseConstants = require("../databaseConstants.js")
 const func = require("../functions.js")
 
 module.exports =
@@ -15,102 +14,103 @@ module.exports =
     {
         var teamName = interaction.options.getString('teamname');
 
-        var teamDictResult = await database.fetchTeamDict(teamName);    // NEED TO CHECK TEAMDICT FIRST SINCE WE DONT HAVE THE TEAMID
-
-        if (teamDictResult == undefined)    //if teamid not found in teamDictionary
+        database.fetchTeamDict(teamName).then(teamDictResult =>
         {
-            HLTV.getTeamByName({name: teamName}).then((res)=>
+            if (teamDictResult == undefined)    //if teamid not found in teamDictionary
             {
-                //sanitize teamName to prevent sql injection
-
-                database.insertTeamDict(res.id, res.name);
-                if (teamName.toLowerCase() != res.name.toLowerCase())
-                    database.insertTeamDict(res.id, teamName);
-
-                database.fetchTeamProfiles(res.id).then((result) =>
+                HLTV.getTeamByName({name: teamName}).then((res)=>
                 {
-                    if (result == undefined)
+                    //sanitize teamName to prevent sql injection
+
+                    database.insertTeamDict(res.id, res.name);
+                    if (teamName.toLowerCase() != res.name.toLowerCase())
+                        database.insertTeamDict(res.id, teamName);
+
+                    database.fetchTeamProfiles(res.id).then((teamProfileResult) =>
                     {
-                        database.insertTeamProfile(res);
-                        database.insertRoster(res.players, res.id);
+                        if (teamProfileResult == undefined)
+                        {
+                            database.insertTeamProfile(res);
+                            database.insertRoster(res.players, res.id);
+                        }
+                        else
+                            database.handleTeamProfileUpdate(res, new Date(result.updated_at))
+                    });
+                    var embed = func.handleTeamProfile(res, botData)
+                    interaction.editReply({ embeds: [embed] });
+                }).catch((err) =>
+                {
+                    console.log(err);
+                    var embed = new MessageEmbed()
+                    .setTitle("Invalid Team")
+                    .setColor(0x00AE86)
+                    .setTimestamp()
+                    .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
+                    .setDescription(`Error whilst checking ${teamName} and/or accessing the database. Please try again or visit [hltv.org](${botData.hltvURL})`);
+                    interaction.editReply({ embeds: [embed] });
+                });
+            }
+            else
+            {
+                database.fetchTeamProfiles(teamDictResult.team_id).then((teamProfileResult) =>
+                {
+                    if (teamProfileResult == undefined)
+                    {
+                        HLTV.getTeam({id: teamDictResult.team_id}).then((res)=>
+                        {
+                            database.fetchTeamProfiles(res.id).then((teamProfileResult) =>
+                            {
+                                if (teamProfileResult == undefined)
+                                {
+                                    database.insertTeamProfile(res);
+                                    database.insertRoster(res.players, res.id);
+                                }
+                                else
+                                {
+                                    database.handleTeamDictUpdate(teamDictResult.team_id, res.name, new Date(teamDictResult.updated_at));
+                                    database.handleTeamProfileUpdate(res, new Date(teamProfileResult.updated_at))
+                                }
+                            });
+                            var embed = func.handleTeamProfile(res, botData)
+                            interaction.editReply({ embeds: [embed] });
+                        }).catch((err) =>
+                        {
+                            console.log(err);
+                            var embed = new MessageEmbed()
+                            .setTitle("Invalid Team")
+                            .setColor(0x00AE86)
+                            .setTimestamp()
+                            .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
+                            .setDescription(`Error whilst checking ${teamDictResult.team_id} and/or accessing the database. Please try again or visit [hltv.org](${botData.hltvURL})`);
+                            interaction.editReply({ embeds: [embed] });
+                        });
                     }
                     else
-                        database.handleTeamProfileUpdate(res, new Date(result.updated_at))
-                });
-                var embed = func.handleTeamProfile(res, botData)
-                interaction.editReply({ embeds: [embed] });
-            }).catch((err) =>
-            {
-                console.log(err);
-                var embed = new MessageEmbed()
-                .setTitle("Invalid Team")
-                .setColor(0x00AE86)
-                .setTimestamp()
-                .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
-                .setDescription(`Error whilst checking ${teamName} and/or accessing the database. Please try again or visit [hltv.org](${botData.hltvURL})`);
-                interaction.editReply({ embeds: [embed] });
-            });
-        }
-        else
-        {
-            database.fetchTeamProfiles(teamDictResult.team_id).then((result) =>
-            {
-                if (result == undefined)
-                {
-                    HLTV.getTeam({id: teamDictResult.team_id}).then((res)=>
                     {
-                        database.fetchTeamProfiles(res.id).then((result) =>
+                        database.fetchRoster(teamDictResult.team_id).then((fetchedRoster) =>
                         {
-                            if (result == undefined)
+                            var resObj = teamProfileResult.dataValues;
+                            resObj.id = resObj.team_id;
+                            resObj.name = resObj.team_name;
+                            resObj.country = {name: resObj.location};
+                            var playersArr = []
+
+                            for(var key in fetchedRoster)
                             {
-                                database.insertTeamProfile(res);
-                                database.insertRoster(res.players, res.id);
+                                playersArr.push(fetchedRoster[key].dataValues);
                             }
-                            else
-                            {
-                                database.handleTeamDictUpdate(teamDictResult.team_id, res.name, new Date(teamDictResult.updated_at));
-                                database.handleTeamProfileUpdate(res, new Date(result.updated_at))
-                            }
+
+                            resObj.players = playersArr;
+
+                            database.handleTeamDictUpdate(teamDictResult.team_id, resObj.name, new Date(teamDictResult.updated_at));
+                            database.handleTeamProfileUpdate(resObj, new Date(teamProfileResult.dataValues.updated_at));
+
+                            var embed = func.handleTeamProfile(resObj, botData)
+                            interaction.editReply({ embeds: [embed] });
                         });
-                        var embed = func.handleTeamProfile(res, botData)
-                        interaction.editReply({ embeds: [embed] });
-                    }).catch((err) =>
-                    {
-                        console.log(err);
-                        var embed = new MessageEmbed()
-                        .setTitle("Invalid Team")
-                        .setColor(0x00AE86)
-                        .setTimestamp()
-                        .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
-                        .setDescription(`Error whilst checking ${teamDictResult.team_id} and/or accessing the database. Please try again or visit [hltv.org](${botData.hltvURL})`);
-                        interaction.editReply({ embeds: [embed] });
-                    });
-                }
-                else
-                {
-                    database.fetchRoster(teamDictResult.team_id).then((fetchedRoster) =>
-                    {
-                        var resObj = result.dataValues;
-                        resObj.id = resObj.team_id;
-                        resObj.name = resObj.team_name;
-                        resObj.country = {name: resObj.location};
-                        var playersArr = []
-
-                        for(var key in fetchedRoster)
-                        {
-                            playersArr.push(fetchedRoster[key].dataValues);
-                        }
-
-                        resObj.players = playersArr;
-
-                        database.handleTeamDictUpdate(teamDictResult.team_id, resObj.name, new Date(teamDictResult.updated_at));
-                        database.handleTeamProfileUpdate(resObj, new Date(result.dataValues.updated_at));
-
-                        var embed = func.handleTeamProfile(resObj, botData)
-                        interaction.editReply({ embeds: [embed] });
-                    });
-                }
-            });
-        }
+                    }
+                });
+            }
+        });
     }
 }
