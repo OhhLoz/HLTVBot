@@ -422,15 +422,15 @@ var handleTeamProfile = (res, botData) =>
   .setTimestamp()
   .setFooter({text: "Sent by HLTVBot", iconURL: "https://cdn.discordapp.com/avatars/548165454158495745/222c8d9ccac5d194d8377c5da5b0f95b.png?size=4096"})
   .setURL(`${botData.hltvURL}/team/${res.id}/${res.name.replace(/\s+/g, '')}`)
-  .addFields
-  (
-      {name: "Location", value: res.country.name == undefined ? "Not Available" : res.country.name},
-      {name: "Facebook", value: res.facebook == undefined ? "Not Available" : res.facebook},
-      {name: "Twitter", value: res.twitter == undefined ? "Not Available" : res.twitter},
-      {name: "Instagram", value: res.instagram == undefined ? "Not Available" : res.instagram},
-      {name: "Players", value: playerRosterOutputStr},
-      {name: "Rank", value: res.rank.toString()}
-  )
+  .addField("Location", res.country.name == undefined ? "Not Available" : res.country.name)
+  if (res.facebook)
+    embed.addField("Facebook", res.facebook);
+  if (res.twitter)
+    embed.addField("Twitter", res.twitter);
+  if (res.instagram)
+    embed.addField("Instagram", res.instagram);
+  embed.addField("Players", playerRosterOutputStr);
+  embed.addField("Rank", res.rank.toString());
   return embed;
 }
 
