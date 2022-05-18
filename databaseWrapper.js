@@ -16,9 +16,7 @@ const databaseClient = new Sequelize(process.env.DATABASE_URL,
   }
 })
 
-const testing = false;
-
-if (testing)
+if (false)
 {
   const { Client } = require('pg');
 
@@ -31,7 +29,7 @@ if (testing)
   });
 
   client.connect();
-  client.query(`TRUNCATE TABLE roster, teamprofiles;`, (err, res) => {
+  client.query(`TRUNCATE TABLE roster, teamprofiles, teamdictionary;`, (err, res) => {
     if (err) throw err;
     for (let row of res.rows) {
       console.log(JSON.stringify(row));
@@ -86,14 +84,11 @@ module.exports =
         case databaseConstants.QUERYCODES.update:
           response = await model.update(attributes[0], attributes[1]);
           break;
+        case databaseConstants.QUERYCODES.findOne:
+          response = await model.findOne(attributes);
+          break;
       }
-
-      if(response[0] != undefined)  // checks if there is a response
-      {
-        //console.log(response)
-        return response;
-      }
-      return undefined;
+      return response;
     }
     catch (err)
     {
@@ -104,7 +99,7 @@ module.exports =
   {
     var attributeTemplate = databaseConstants.fetchTeamIDByTeamName;
     attributeTemplate.where.team_name = { [Op.iLike]: teamName }
-    return this.queryHandler(teamDictionary, attributeTemplate, databaseConstants.QUERYCODES.findAll);
+    return this.queryHandler(teamDictionary, attributeTemplate, databaseConstants.QUERYCODES.findOne);
   },
   async insertTeamDict(teamID, teamName)
   {
@@ -115,11 +110,29 @@ module.exports =
     },
     databaseConstants.QUERYCODES.create);
   },
+  async updateTeamDict(teamID, teamName)
+  {
+    return this.queryHandler(teamProfiles,
+    ([{
+      team_id: teamID,
+      team_name: teamName
+    }, {where: {team_id: teamID}}]),
+    databaseConstants.QUERYCODES.update);
+  },
+  async handleTeamDictUpdate(teamID, teamName, dbDate)
+  {
+    //var dateMilliDifference = new Date(new Date().toUTCString().substr(0, 25)).getTime() - new Date(dbDate.toUTCString().substr(0, 25)).getTime();
+    var dateMilliDifference = Date.now() - dbDate.getTime();
+    if (dateMilliDifference > databaseConstants.expiryTime.teamdictionary)
+    {
+        this.updateTeamDict(teamID, teamName);
+    }
+  },
   async fetchTeamProfiles(teamID)
   {
     var attributeTemplate = databaseConstants.fetchTeamProfileByTeamID;
     attributeTemplate.where.team_id = { [Op.eq]: teamID.toString() }
-    return this.queryHandler(teamProfiles, attributeTemplate, databaseConstants.QUERYCODES.findAll);
+    return this.queryHandler(teamProfiles, attributeTemplate, databaseConstants.QUERYCODES.findOne);
   },
   async insertTeamProfile(res)
   {
@@ -136,28 +149,15 @@ module.exports =
     },
     databaseConstants.QUERYCODES.create);
   },
-  async handleTeamProfile(res)
+  async handleTeamProfileUpdate(res, dbDate)
   {
-    this.fetchTeamProfiles(res.id).then((result) =>
+    //var dateMilliDifference = new Date(new Date().toUTCString().substr(0, 25)).getTime() - new Date(dbDate.toUTCString().substr(0, 25)).getTime();
+    var dateMilliDifference = Date.now() - dbDate.getTime();
+    if (dateMilliDifference > databaseConstants.expiryTime.teamprofiles)
     {
-        if (result == undefined)
-        {
-          this.insertTeamProfile(res);
-          this.insertRoster(res.players, res.id);
-        }
-        else
-        {
-          var dbDate = new Date(result.updated_at);
-          //var dateMilliDifference = new Date(new Date().toUTCString().substr(0, 25)).getTime() - new Date(dbDate.toUTCString().substr(0, 25)).getTime();
-          var dateMilliDifference = Date.now() - dbDate.getTime();
-          if (dateMilliDifference > databaseConstants.expiryTime.teamprofiles)
-          {
-              //update teamprofiles & roster
-              this.updateRoster(res.players, res.id);
-              this.updateTeamProfile(res);
-          }
-        }
-    });
+        this.updateRoster(res.players, res.id);
+        this.updateTeamProfile(res);
+    }
   },
   async updateTeamProfile(res)
   {

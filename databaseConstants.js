@@ -6,14 +6,15 @@ const QUERYCODES =
   create: 1,
   bulkCreate: 2,
   delete: 3,
-  update: 4
+  update: 4,
+  findOne : 5
 }
 
 // expiryTime in milliseconds
 const msinMinutes = 60 * 1000;
 const expiryTime =
 {
-  teamdictionary: 60 * msinMinutes,
+  teamdictionary: 600 * msinMinutes,
   teamprofiles: 60 * msinMinutes
 }
 
