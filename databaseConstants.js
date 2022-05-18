@@ -4,12 +4,17 @@ const QUERYCODES =
 {
   findAll : 0,
   create: 1,
-  bulkCreate: 2
+  bulkCreate: 2,
+  delete: 3,
+  update: 4
 }
 
+// expiryTime in milliseconds
+const msinMinutes = 60 * 1000;
 const expiryTime =
 {
-  teamdictionary: "1 hour"
+  teamdictionary: 60 * msinMinutes,
+  teamprofiles: 60 * msinMinutes
 }
 
 const tableOptions =
@@ -101,18 +106,19 @@ const fetchTeamProfileByTeamID =
 
 const fetchRosterByTeamID =
 {
-  attributes: ['player_id','team_id','player_name','role','timeOnTeam','mapsPlayed', 'updated_at'],
+  attributes: ['id','team_id','name','type','timeOnTeam','mapsPlayed'],
   where: { team_id:{} }
 }
 
 module.exports =
 {
-    QUERYCODES,
-    tableOptions,
-    teamDictionaryTableSchema,
-    teamProfilesTableSchema,
-    rosterTableSchema,
-    fetchTeamIDByTeamName,
-    fetchTeamProfileByTeamID,
-    fetchRosterByTeamID
+  QUERYCODES,
+  expiryTime,
+  tableOptions,
+  teamDictionaryTableSchema,
+  teamProfilesTableSchema,
+  rosterTableSchema,
+  fetchTeamIDByTeamName,
+  fetchTeamProfileByTeamID,
+  fetchRosterByTeamID
 }

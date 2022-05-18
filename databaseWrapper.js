@@ -31,7 +31,7 @@ if (testing)
   });
 
   client.connect();
-  client.query(`DROP TABLE roster;`, (err, res) => {
+  client.query(`TRUNCATE TABLE roster;`, (err, res) => {
     if (err) throw err;
     for (let row of res.rows) {
       console.log(JSON.stringify(row));
@@ -80,12 +80,18 @@ module.exports =
         case databaseConstants.QUERYCODES.bulkCreate:
           response = await model.bulkCreate(attributes);
           break;
+        case databaseConstants.QUERYCODES.delete:
+          response = await model.destroy(attributes);
+          break;
+        case databaseConstants.QUERYCODES.update:
+          response = await model.update(attributes[0], attributes[1]);
+          break;
       }
 
-      if(response.dataValues != undefined)  // check if this code works if there is no result
+      if(response[0] != undefined)  // checks if there is a response
       {
-        //console.log(response.rows)
-        return JSON.stringify(response.dataValues);
+        //console.log(response)
+        return response;
       }
       return undefined;
     }
@@ -122,7 +128,7 @@ module.exports =
       team_id: res.id,
       team_name: res.name,
       logo: res.logo,
-      location: res.location,
+      location: res.country.name,
       facebook: res.facebook,
       twitter: res.twitter,
       instagram: res.instagram,
@@ -136,14 +142,37 @@ module.exports =
     {
         if (result == undefined)
         {
-            this.insertTeamProfile(res);
-            this.insertRoster(res.players, res.id);
+          this.insertTeamProfile(res);
+          this.insertRoster(res.players, res.id);
         }
         else
         {
-            // if result expired / updated too long ago update it
+          var dbDate = new Date(result.updated_at);
+          //var dateMilliDifference = new Date(new Date().toUTCString().substr(0, 25)).getTime() - new Date(dbDate.toUTCString().substr(0, 25)).getTime();
+          var dateMilliDifference = Date.now() - dbDate.getTime();
+          if (dateMilliDifference > databaseConstants.expiryTime.teamprofiles)
+          {
+              //update teamprofiles & roster
+              this.updateRoster(res.players, res.id);
+              this.updateTeamProfile(res);
+          }
         }
     });
+  },
+  async updateTeamProfile(res)
+  {
+    return this.queryHandler(teamProfiles,
+    ([{
+      team_id: res.id,
+      team_name: res.name,
+      logo: res.logo,
+      location: res.country.name,
+      facebook: res.facebook,
+      twitter: res.twitter,
+      instagram: res.instagram,
+      rank: res.rank
+    }, {where: {team_id: res.id}}]),
+    databaseConstants.QUERYCODES.update);
   },
   async fetchRoster(teamID)
   {
@@ -159,4 +188,9 @@ module.exports =
     }
     return this.queryHandler(roster, rosterArr, databaseConstants.QUERYCODES.bulkCreate);
   },
+  async updateRoster(rosterArr, teamID)
+  {
+    await this.queryHandler(roster, {where: {team_id: teamID}}, databaseConstants.QUERYCODES.delete);
+    this.insertRoster(rosterArr, teamID);
+  }
 }

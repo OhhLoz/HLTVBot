@@ -1,4 +1,4 @@
-const Discord = require('discord.js');
+const { MessageEmbed } = require('discord.js');
 const COMMANDCODE = require("./commandcodes.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
@@ -46,11 +46,11 @@ let getTime = (milli) => {
  * @param {int}      startIndex     Which index within the Object to start populating the pages with.
  * @param {string}   code           An identifier used to determine where the function was called from and changes functionality accordingly.
  *
- * @return {Discord.MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
+ * @return {MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
  */
 var handlePages = (res, startIndex, code) => {
   var pageSize = 0;
-  var embed = new Discord.MessageEmbed()
+  var embed = new MessageEmbed()
       .setColor(0x00AE86)
       .setTimestamp();
 
@@ -214,12 +214,12 @@ var handlePages = (res, startIndex, code) => {
  * @param {string[]}   mapArr       A string array containing all the map codes the team has played.
  * @param {string[]}   mapNameArr   A string array containing all the map names the team has played.
  *
- * @return {Discord.MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
+ * @return {MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
  */
 var handleMapPages = (res, startIndex, teamName, teamID, mapArr, mapNameArr) =>
 {
   var pageSize = 3;
-  var embed = new Discord.MessageEmbed()
+  var embed = new MessageEmbed()
       .setColor(0x00AE86)
       .setTimestamp()
       .setTitle(teamName + " Maps")
@@ -268,12 +268,12 @@ var handleMapPages = (res, startIndex, teamName, teamID, mapArr, mapNameArr) =>
  * @param {Object}   eventArray     Object containing the events to be formatted into pages.
  * @param {int}      startIndex     Which index within the Object to start populating the pages with.
  *
- * @return {Discord.MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
+ * @return {MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
  */
 var handleEventPages = (eventArray, startIndex) =>
 {
   var pageSize = 3;
-  var embed = new Discord.MessageEmbed()
+  var embed = new MessageEmbed()
       .setColor(0x00AE86)
       .setTimestamp()
       .setTitle("Events")
@@ -326,12 +326,12 @@ var handleEventPages = (eventArray, startIndex) =>
  * @param {Object}   newsArray     Object containing the news to be formatted into pages.
  * @param {int}      startIndex     Which index within the Object to start populating the pages with.
  *
- * @return {Discord.MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
+ * @return {MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
  */
 var handleNewsPages = (newsArray, startIndex) =>
 {
   var pageSize = 8;
-  var embed = new Discord.MessageEmbed()
+  var embed = new MessageEmbed()
       .setColor(0x00AE86)
       .setTimestamp()
       .setTitle("News")
@@ -395,14 +395,14 @@ var checkStats = (guild, botData, isJoin) =>
   return botData;
 }
 
-var handleTeamProfile = (res) =>
+var handleTeamProfile = (res, botData) =>
 {
   var playerRosterOutputStr = '';
   for (var i = 0; i < res.players.length; i++)
   {
-      playerRosterOutputStr += `[${res.players[i].name}](${botData.hltvURL}/stats/players/${res.players[i].id}/${res.players[i].name})`
+      playerRosterOutputStr += `[${res.players[i].name}](${botData.hltvURL}/stats/players/${res.players[i].id}/${res.players[i].name}): ${res.players[i].type} (${res.players[i].timeOnTeam})`
       if(i != res.players.length - 1)
-      playerRosterOutputStr += ', ';
+      playerRosterOutputStr += '\n';
   }
   var embed = new MessageEmbed()
   .setTitle(res.name + " Profile")
@@ -410,7 +410,7 @@ var handleTeamProfile = (res) =>
   //.setThumbnail(res.logo)
   //.setImage(res.coverImage)
   .setTimestamp()
-  .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
+  .setFooter({text: "Sent by HLTVBot", iconURL: "https://cdn.discordapp.com/avatars/548165454158495745/222c8d9ccac5d194d8377c5da5b0f95b.png?size=4096"})
   .setURL(`${botData.hltvURL}/team/${res.id}/${res.name.replace(/\s+/g, '')}`)
   .addFields
   (

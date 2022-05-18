@@ -2,6 +2,7 @@ const { SlashCommandBuilder } = require("@discordjs/builders");
 const { MessageEmbed } = require('discord.js');
 const { HLTV } = require('hltv');
 const database = require("../databaseWrapper.js")
+const databaseConstants = require("../databaseConstants.js")
 const func = require("../functions.js")
 
 module.exports =
@@ -15,8 +16,8 @@ module.exports =
         var teamName = interaction.options.getString('teamname');
 
         var teamDictResult = await database.fetchTeamDict(teamName);    // NEED TO CHECK TEAMDICT FIRST SINCE WE DONT HAVE THE TEAMID
-        //console.log(result);
-        if (teamDictResult == undefined)    //if teamname not found in teamDictionary
+
+        if (teamDictResult == undefined)    //if teamid not found in teamDictionary
         {
             HLTV.getTeamByName({name: teamName}).then((res)=>
             {
@@ -27,7 +28,8 @@ module.exports =
                     database.insertTeamDict(res.id, teamName);
 
                 database.handleTeamProfile(res);
-                var embed = func.handleTeamProfile(res).then(interaction.editReply({ embeds: [embed] }));
+                var embed = func.handleTeamProfile(res, botData)
+                interaction.editReply({ embeds: [embed] });
             }).catch((err) =>
             {
                 console.log(err);
@@ -42,15 +44,61 @@ module.exports =
         }
         else
         {
-            //teamid found
-            database.fetchTeamProfiles(teamDictResult.team_id).then((result) =>
+            //teamid found in teamDict
+            database.fetchTeamProfiles(teamDictResult[0].team_id).then((result) =>
             {
                 if (result == undefined)
                 {
-                    // HLTV.getTeamByID (1 less API REquest).then(insertTeamProfiles & insertRoster)
+                    // if no team profile
+                    HLTV.getTeam({id: teamDictResult[0].team_id}).then((res)=>
+                    {
+                        database.handleTeamProfile(res);
+                        var embed = func.handleTeamProfile(res, botData)
+                        interaction.editReply({ embeds: [embed] });
+                    }).catch((err) =>
+                    {
+                        console.log(err);
+                        var embed = new MessageEmbed()
+                        .setTitle("Invalid Team")
+                        .setColor(0x00AE86)
+                        .setTimestamp()
+                        .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
+                        .setDescription(`${teamName} is not a valid team name. Please try again or visit [hltv.org](${botData.hltvURL})`);
+                        interaction.editReply({ embeds: [embed] });
+                    });
                 }
+                else
+                {
+                    var playersArr = []
+                    var resObj = result[0].dataValues;
+                    resObj.id = resObj.team_id;
+                    resObj.name = resObj.team_name;
+                    resObj.country = {name: resObj.location};
 
-                // if result expired / updated too long ago update it
+                    database.fetchRoster(resObj.id).then((fetchedRoster) =>
+                    {
+                        //console.log(fetchedRoster);
+                        for(var key in fetchedRoster)
+                        {
+                            playersArr.push(fetchedRoster[key].dataValues);
+                        }
+
+                        resObj.players = playersArr;
+
+                        // if result expired / updated too long ago update it
+                        var dbDate = new Date(result[0].dataValues.updated_at);
+                        var dateMilliDifference = Date.now() - dbDate.getTime();
+                        console.log(func.getTime(dateMilliDifference));
+                        if (dateMilliDifference > databaseConstants.expiryTime.teamprofiles)
+                        {
+                            database.updateRoster(resObj.players, resObj.id);
+                            database.updateTeamProfile(resObj);
+                        }
+
+                        var embed = func.handleTeamProfile(resObj, botData)
+                        interaction.editReply({ embeds: [embed] });
+                    });
+                }
             });
         }
     }
