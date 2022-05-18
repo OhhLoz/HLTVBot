@@ -27,7 +27,16 @@ module.exports =
                 if (teamName.toLowerCase() != res.name.toLowerCase())
                     database.insertTeamDict(res.id, teamName);
 
-                database.handleTeamProfile(res);
+                database.fetchTeamProfiles(res.id).then((result) =>
+                {
+                    if (result == undefined)
+                    {
+                        database.insertTeamProfile(res);
+                        database.insertRoster(res.players, res.id);
+                    }
+                    else
+                        database.handleTeamProfileUpdate(res, new Date(result.updated_at))
+                });
                 var embed = func.handleTeamProfile(res, botData)
                 interaction.editReply({ embeds: [embed] });
             }).catch((err) =>
@@ -44,15 +53,25 @@ module.exports =
         }
         else
         {
-            //teamid found in teamDict
-            database.fetchTeamProfiles(teamDictResult[0].team_id).then((result) =>
+            database.fetchTeamProfiles(teamDictResult.team_id).then((result) =>
             {
                 if (result == undefined)
                 {
-                    // if no team profile
-                    HLTV.getTeam({id: teamDictResult[0].team_id}).then((res)=>
+                    HLTV.getTeam({id: teamDictResult.team_id}).then((res)=>
                     {
-                        database.handleTeamProfile(res);
+                        database.fetchTeamProfiles(res.id).then((result) =>
+                        {
+                            if (result == undefined)
+                            {
+                                database.insertTeamProfile(res);
+                                database.insertRoster(res.players, res.id);
+                            }
+                            else
+                            {
+                                database.handleTeamDictUpdate(teamDictResult.team_id, res.name, new Date(teamDictResult.updated_at));
+                                database.handleTeamProfileUpdate(res, new Date(result.updated_at))
+                            }
+                        });
                         var embed = func.handleTeamProfile(res, botData)
                         interaction.editReply({ embeds: [embed] });
                     }).catch((err) =>
@@ -63,20 +82,20 @@ module.exports =
                         .setColor(0x00AE86)
                         .setTimestamp()
                         .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
-                        .setDescription(`Error whilst checking ${teamDictResult[0].team_id} and/or accessing the database. Please try again or visit [hltv.org](${botData.hltvURL})`);
+                        .setDescription(`Error whilst checking ${teamDictResult.team_id} and/or accessing the database. Please try again or visit [hltv.org](${botData.hltvURL})`);
                         interaction.editReply({ embeds: [embed] });
                     });
                 }
                 else
                 {
-                    var playersArr = []
-                    var resObj = result[0].dataValues;
-                    resObj.id = resObj.team_id;
-                    resObj.name = resObj.team_name;
-                    resObj.country = {name: resObj.location};
-
-                    database.fetchRoster(resObj.id).then((fetchedRoster) =>
+                    database.fetchRoster(teamDictResult.team_id).then((fetchedRoster) =>
                     {
+                        var resObj = result.dataValues;
+                        resObj.id = resObj.team_id;
+                        resObj.name = resObj.team_name;
+                        resObj.country = {name: resObj.location};
+                        var playersArr = []
+
                         for(var key in fetchedRoster)
                         {
                             playersArr.push(fetchedRoster[key].dataValues);
@@ -84,15 +103,8 @@ module.exports =
 
                         resObj.players = playersArr;
 
-                        // if result expired / updated too long ago update it
-                        var dbDate = new Date(result[0].dataValues.updated_at);
-                        var dateMilliDifference = Date.now() - dbDate.getTime();
-                        //console.log(func.getTime(dateMilliDifference));
-                        if (dateMilliDifference > databaseConstants.expiryTime.teamprofiles)
-                        {
-                            database.updateRoster(resObj.players, resObj.id);
-                            database.updateTeamProfile(resObj);
-                        }
+                        database.handleTeamDictUpdate(teamDictResult.team_id, resObj.name, new Date(teamDictResult.updated_at));
+                        database.handleTeamProfileUpdate(resObj, new Date(result.dataValues.updated_at));
 
                         var embed = func.handleTeamProfile(resObj, botData)
                         interaction.editReply({ embeds: [embed] });
