@@ -38,7 +38,7 @@ module.exports =
                 .setColor(0x00AE86)
                 .setTimestamp()
                 .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
-                .setDescription(`${teamName} is not a valid team name. Please try again or visit [hltv.org](${botData.hltvURL})`);
+                .setDescription(`Error whilst checking ${teamName} and/or accessing the database. Please try again or visit [hltv.org](${botData.hltvURL})`);
                 interaction.editReply({ embeds: [embed] });
             });
         }
@@ -63,7 +63,7 @@ module.exports =
                         .setColor(0x00AE86)
                         .setTimestamp()
                         .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
-                        .setDescription(`${teamName} is not a valid team name. Please try again or visit [hltv.org](${botData.hltvURL})`);
+                        .setDescription(`Error whilst checking ${teamDictResult[0].team_id} and/or accessing the database. Please try again or visit [hltv.org](${botData.hltvURL})`);
                         interaction.editReply({ embeds: [embed] });
                     });
                 }
@@ -77,7 +77,6 @@ module.exports =
 
                     database.fetchRoster(resObj.id).then((fetchedRoster) =>
                     {
-                        //console.log(fetchedRoster);
                         for(var key in fetchedRoster)
                         {
                             playersArr.push(fetchedRoster[key].dataValues);
@@ -88,7 +87,7 @@ module.exports =
                         // if result expired / updated too long ago update it
                         var dbDate = new Date(result[0].dataValues.updated_at);
                         var dateMilliDifference = Date.now() - dbDate.getTime();
-                        console.log(func.getTime(dateMilliDifference));
+                        //console.log(func.getTime(dateMilliDifference));
                         if (dateMilliDifference > databaseConstants.expiryTime.teamprofiles)
                         {
                             database.updateRoster(resObj.players, resObj.id);

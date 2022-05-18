@@ -31,7 +31,7 @@ if (testing)
   });
 
   client.connect();
-  client.query(`TRUNCATE TABLE roster;`, (err, res) => {
+  client.query(`TRUNCATE TABLE roster, teamprofiles;`, (err, res) => {
     if (err) throw err;
     for (let row of res.rows) {
       console.log(JSON.stringify(row));
