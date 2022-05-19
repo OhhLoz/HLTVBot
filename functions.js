@@ -1,8 +1,9 @@
-const { MessageEmbed } = require('discord.js');
+const { MessageEmbed, MessageAttachment } = require('discord.js');
 const COMMANDCODE = require("./commandcodes.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 const hltvURL = "https://www.hltv.org";
+const nodeHtmlToImage = require('node-html-to-image')
 
 var id = function(x) {return x;};
 
@@ -404,7 +405,7 @@ var checkStats = (guild, botData, isJoin) =>
  *
  * @return {MessageEmbed}            Returns the populated team profile embed object.
  */
-var handleTeamProfile = (res, botData) =>
+var handleTeamProfile = (interaction, res, botData) =>
 {
   var playerRosterOutputStr = '';
   for (var i = 0; i < res.players.length; i++)
@@ -415,23 +416,45 @@ var handleTeamProfile = (res, botData) =>
   }
 
   var embed = new MessageEmbed()
-  .setTitle(res.name + " Profile")
-  .setColor(0x00AE86)
-  .setThumbnail(res.logo)
-  //.setImage(res.coverImage)
-  .setTimestamp()
-  .setFooter({text: "Sent by HLTVBot", iconURL: "https://cdn.discordapp.com/avatars/548165454158495745/222c8d9ccac5d194d8377c5da5b0f95b.png?size=4096"})
-  .setURL(`${botData.hltvURL}/team/${res.id}/${res.name.replace(/\s+/g, '')}`)
-  .addField("Location", res.country.name == undefined ? "Not Available" : res.country.name)
-  if (res.facebook)
-    embed.addField("Facebook", res.facebook);
-  if (res.twitter)
-    embed.addField("Twitter", res.twitter);
-  if (res.instagram)
-    embed.addField("Instagram", res.instagram);
-  embed.addField("Players", playerRosterOutputStr);
-  embed.addField("Rank", res.rank.toString());
-  return embed;
+    .setTitle(res.name + " Profile")
+    .setColor(0x00AE86)
+    .setThumbnail(res.logo)
+    //.setImage(res.coverImage)
+    .setTimestamp()
+    .setFooter({text: "Sent by HLTVBot", iconURL: "https://cdn.discordapp.com/avatars/548165454158495745/222c8d9ccac5d194d8377c5da5b0f95b.png?size=4096"})
+    .setURL(`${botData.hltvURL}/team/${res.id}/${res.name.replace(/\s+/g, '')}`)
+    .addField("Location", res.country.name == undefined ? "Not Available" : res.country.name)
+    if (res.facebook)
+      embed.addField("Facebook", res.facebook);
+    if (res.twitter)
+      embed.addField("Twitter", res.twitter);
+    if (res.instagram)
+      embed.addField("Instagram", res.instagram);
+    embed.addField("Players", playerRosterOutputStr);
+    embed.addField("Rank", res.rank.toString());
+
+  if (res.logo.includes(".svg"))
+  {
+    nodeHtmlToImage({
+      html: `<img src='${res.logo}' />`,
+      quality: 100,
+      type: 'png',
+      transparent: true,
+      puppeteerArgs: {
+        args: ['--no-sandbox'],
+      },
+      encoding: 'buffer',
+    }).then(imageResult =>
+    {
+      var thumbnail = new MessageAttachment(imageResult, 'logo.png')
+      embed.setThumbnail('attachment://logo.png');
+
+      interaction.editReply({ embeds: [embed], files: [thumbnail] });
+    })
+  }
+  else
+      interaction.editReply({ embeds: [embed] });
+
 }
 
 module.exports = {handleEventPages, handleMapPages, handleNewsPages, handlePages, reverseMapFromMap, getTime, checkStats, handleTeamProfile}
