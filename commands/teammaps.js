@@ -1,8 +1,9 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
-const { MessageEmbed } = require('discord.js');
+const { MessageEmbed, MessageAttachment } = require('discord.js');
 const { HLTV } = require('hltv');
 const teamDictionary = require("../teams.json");
 const func = require("../functions.js");
+const nodeHtmlToImage = require('node-html-to-image')
 
 module.exports =
 {
@@ -34,69 +35,129 @@ module.exports =
               mapcount++;
             }
 
-            var embed = func.handleMapPages(res, currIndex, teamName, teamID, mapArr, mapNameArr);
+            var htmlString = func.handleMapPages(res, currIndex, teamName, teamID, mapArr, mapNameArr);
 
-            var originalMember = interaction.user;
-            interaction.editReply({ embeds: [embed], ephemeral: false, components: [botData.interactionRow] });
-
-            const filter = (user) =>
+            nodeHtmlToImage({
+              html: `${htmlString}`,
+              quality: 100,
+              type: 'png',
+              transparent: true,
+              puppeteerArgs: {
+                args: ['--no-sandbox'],
+              },
+              encoding: 'buffer',
+            }).then(imageResult =>
             {
-              user.deferUpdate();
-              return user.member.id === originalMember.id;
-            }
-            const collector = interaction.channel.createMessageComponentCollector({filter, componentType: 'BUTTON', time: 60000});
+              var image = new MessageAttachment(imageResult, `${currIndex}.png`)
+              var embed = new MessageEmbed()
+              .setColor(0x00AE86)
+              .setTimestamp()
+              .setTitle(teamName + " Maps")
+              .setURL(`https://www.hltv.org/stats/teams/${teamID}/${teamName}`);
+              embed.setImage(`attachment://${currIndex}.png`);
+              interaction.editReply({ embeds: [embed], ephemeral: false, components: [botData.interactionRow], files: [image] });
 
-            collector.on('collect', (button) =>
-            {
-              try
+              var originalMember = interaction.user;
+
+              const filter = (user) =>
               {
-                switch (button.customId)
+                user.deferUpdate();
+                return user.member.id === originalMember.id;
+              }
+              const collector = interaction.channel.createMessageComponentCollector({filter, componentType: 'BUTTON', time: 60000});
+
+              collector.on('collect', (button) =>
+              {
+                try
                 {
-                  case botData.reactionControls.PREV_PAGE:
+                  switch (button.customId)
                   {
-                    if (currIndex - 3 >= 0)
-                      currIndex-=3;
-                      interaction.editReply({embeds: [func.handleMapPages(res, currIndex, teamName, teamID, mapArr, mapNameArr)]});
-                    break;
-                  }
-                  case botData.reactionControls.NEXT_PAGE:
-                  {
-                    if (currIndex + 3 <= mapArr.length - 1)
-                      currIndex+=3;
-                      interaction.editReply({embeds: [func.handleMapPages(res, currIndex, teamName, teamID, mapArr, mapNameArr)]});
-                    break;
-                  }
-                  case botData.reactionControls.STOP:
-                  {
-                    // stop listening for reactions
-                    collector.stop();
-                    break;
+                    case botData.reactionControls.PREV_PAGE:
+                    {
+                      if (currIndex - 3 >= 0)
+                        currIndex-=3;
+                        var embed = new MessageEmbed()
+                        .setColor(0x00AE86)
+                        .setTimestamp()
+                        .setTitle(teamName + " Maps")
+                        .setURL(`https://www.hltv.org/stats/teams/${teamID}/${teamName}`);
+                        htmlString = func.handleMapPages(res, currIndex, teamName, teamID, mapArr, mapNameArr);
+                        nodeHtmlToImage({
+                          html: `${htmlString}`,
+                          quality: 100,
+                          type: 'png',
+                          transparent: true,
+                          puppeteerArgs: {
+                            args: ['--no-sandbox'],
+                          },
+                          encoding: 'buffer',
+                        }).then(imageResult =>
+                        {
+                          var image = new MessageAttachment(imageResult, `${currIndex}.png`)
+                          embed.setImage(`attachment://${currIndex}.png`);
+                          interaction.editReply({ embeds: [embed], ephemeral: false, components: [botData.interactionRow], files: [image] });
+                        });
+                      break;
+                    }
+                    case botData.reactionControls.NEXT_PAGE:
+                    {
+                      if (currIndex + 3 <= mapArr.length - 1)
+                        currIndex+=3;
+                        var embed = new MessageEmbed()
+                        .setColor(0x00AE86)
+                        .setTimestamp()
+                        .setTitle(teamName + " Maps")
+                        .setURL(`https://www.hltv.org/stats/teams/${teamID}/${teamName}`);
+                        htmlString = func.handleMapPages(res, currIndex, teamName, teamID, mapArr, mapNameArr);
+                        nodeHtmlToImage({
+                          html: `${htmlString}`,
+                          quality: 100,
+                          type: 'png',
+                          transparent: true,
+                          puppeteerArgs: {
+                            args: ['--no-sandbox'],
+                          },
+                          encoding: 'buffer',
+                        }).then(imageResult =>
+                        {
+                          var image = new MessageAttachment(imageResult, `${currIndex}.png`)
+                          embed.setImage(`attachment://${currIndex}.png`);
+                          interaction.editReply({ embeds: [embed], ephemeral: false, components: [botData.interactionRow], files: [image] });
+                        });
+                      break;
+                    }
+                    case botData.reactionControls.STOP:
+                    {
+                      // stop listening for reactions
+                      collector.stop();
+                      break;
+                    }
                   }
                 }
-              }
-              catch(err)
-              {
-                  if (err)
-                      console.log(err);
-
-                  var embed = new MessageEmbed()
-                  .setTitle("Error Occurred")
-                  .setColor(0x00AE86)
-                  .setTimestamp()
-                  .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
-                  .setDescription(`An error occurred during button interaction. Please try again or visit [hltv.org](${botData.hltvURL})`);
-                  interaction.editReply({ embeds: [embed] });
-              }
-            });
-
-            collector.on('end', async () =>
-            {
-              interaction.deleteReply().catch(err =>
+                catch(err)
                 {
-                    if (err.code !== 10008)
+                    if (err)
                         console.log(err);
-                });
-            });
+
+                    var embed = new MessageEmbed()
+                    .setTitle("Error Occurred")
+                    .setColor(0x00AE86)
+                    .setTimestamp()
+                    .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
+                    .setDescription(`An error occurred during button interaction. Please try again or visit [hltv.org](${botData.hltvURL})`);
+                    interaction.editReply({ embeds: [embed] });
+                }
+              });
+
+              collector.on('end', async () =>
+              {
+                interaction.deleteReply().catch(err =>
+                  {
+                      if (err.code !== 10008)
+                          console.log(err);
+                  });
+              });
+            })
           }).catch((err) =>
           {
             console.log(err);

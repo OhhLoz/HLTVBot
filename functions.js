@@ -1,6 +1,7 @@
 const { MessageEmbed, MessageAttachment } = require('discord.js');
 const COMMANDCODE = require("./commandcodes.json");
 const mapDictionary = require("./maps.json");
+const mapURLDictionary = require("./mapimages.json");
 const formatDictionary = require("./formats.json");
 const hltvURL = "https://www.hltv.org";
 const nodeHtmlToImage = require('node-html-to-image')
@@ -226,39 +227,35 @@ var handleMapPages = (res, startIndex, teamName, teamID, mapArr, mapNameArr) =>
       .setTitle(teamName + " Maps")
       .setURL(`${hltvURL}/stats/teams/${teamID}/${teamName}`);
 
+  var teamMapContentHTML = ""
+
   for (var i = startIndex; i < startIndex+pageSize; i++)
-    {
-      var map = mapArr[i];
-      //console.log(map);
-      var mapName = mapDictionary[mapNameArr[i]];
-      //console.log(mapName);
-      var pages = mapArr.length/pageSize;
+  {
+    var map = mapArr[i];
+    //console.log(map);
+    var mapName = mapDictionary[mapNameArr[i]];
+    //console.log(mapName);
+    var pages = mapArr.length/pageSize;
 
-      // if(map == null) //Error with live matches, assumes will have enough to fill 1 page so less than that throws an error
-      //   return embed;
+    // if(map == null) //Error with live matches, assumes will have enough to fill 1 page so less than that throws an error
+    //   return embed;
 
-      embed.setFooter({text: `Page ${startIndex/pageSize + 1} of ${Math.ceil(pages)}`, iconURL: "https://cdn.discordapp.com/avatars/548165454158495745/222c8d9ccac5d194d8377c5da5b0f95b.png?size=4096"});
+    var mapURL = mapURLDictionary[mapNameArr[i]]
 
-      if (mapName == undefined)
-         mapName = "Other";
+    embed.setFooter({text: `Page ${startIndex/pageSize + 1} of ${Math.ceil(pages)}`, iconURL: "https://cdn.discordapp.com/avatars/548165454158495745/222c8d9ccac5d194d8377c5da5b0f95b.png?size=4096"});
 
-      if (map != null)
-      {
-        embed.addFields
-        (
-          {name: mapName, value: "=========================================================", inline:false},
-          {name: "Wins", value: map.wins == undefined ? "Not Available" : map.wins.toString(), inline:true},
-          {name: "Draws", value: map.draws == undefined ? "Not Available" : map.draws.toString(), inline:true},
-          {name: "Losses", value: map.losses == undefined ? "Not Available" : map.losses.toString(), inline:true},
-          {name:"Win Rate", value: map.winRate == undefined ? "Not Available" : map.winRate.toString() + "%", inline:true},
-          {name:"Total Rounds", value: map.totalRounds == undefined ? "Not Available" : map.totalRounds.toString(), inline:true},
-        )
-      }
+    if (mapName == undefined)
+        mapName = "Other";
 
-      if(i != startIndex+(pageSize - 1))
-        embed.addField('\u200b', '\u200b');
-    }
-    return embed;
+    if (map != null)
+      teamMapContentHTML += formatTeamMapsHTML(mapName, map, mapURL);
+
+    if(i != startIndex+(pageSize - 1))
+      teamMapContentHTML += '<hr id="seperator">'
+  }
+
+    var teamMapFullHTML = formatTeamMapFullHTML(teamMapContentHTML);
+    return teamMapFullHTML;
 }
 
 /**
@@ -457,4 +454,152 @@ var handleTeamProfile = (interaction, res, botData) =>
 
 }
 
-module.exports = {handleEventPages, handleMapPages, handleNewsPages, handlePages, reverseMapFromMap, getTime, checkStats, handleTeamProfile}
+var formatTeamMapsHTML = (mapName, map, mapURL) =>
+{
+  return `<div class="map-container">
+      <div class="flex-item-left">
+        <div class = "flex-container">
+          <div id="maptitle">
+            <h4 id="title">${mapName}</h4>
+          </div>
+          <div id="roundsplayed">
+            <h5 id="rounds">${map.totalRounds == undefined ? "Not Available" : map.totalRounds.toString() + " Rounds"}</h5>
+          </div>
+        </div>
+        <hr>
+        <div class="flex-container">
+          <div class="flex-item">
+            <h5 id="wintitle">W</h5>
+            <h5>${map.wins == undefined ? "Not Available" : map.wins.toString()}</h5>
+          </div>
+          <div class="flex-item">
+            <h5>D</h5>
+            <h5>${map.draws == undefined ? "Not Available" : map.draws.toString()}</h5>
+          </div>
+          <div class="flex-item">
+            <h5 id="losstitle">L</h5>
+            <h5>${map.losses == undefined ? "Not Available" : map.losses.toString()}</h5>
+          </div>
+          <div class="flex-item">
+            <h5>Win %</h5>
+            <h5>${map.winRate == undefined ? "Not Available" : map.winRate.toString()}</h5>
+          </div>
+        </div>
+      </div>
+      <div class="flex-item-right">
+        <img src='${mapURL}' />
+      </div>
+  </div>`
+}
+
+var formatTeamMapFullHTML = (data) =>
+{
+  return `<!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+      <style>
+        body {
+          font-family: 'Courier New', monospace;
+          color: #fff;
+          max-width: 500px;
+          border-top: 3px solid rgb(16, 180, 209);
+        }
+
+        .map-container {
+          max-width: 500px;
+          display: flex;
+          flex-direction: row;
+          background: rgb(31, 31, 31);
+          align-items: flex-start;
+        }
+
+        .flex-container {
+          display: flex;
+          flex-direction: row;
+          align-items: flex-start;
+        }
+
+        .flex-item-left {
+          margin-left: 10px;
+          flex: 70%;
+          text-anchor: start;
+          line-height:0px;
+        }
+
+        .flex-item-left hr {
+          margin-left: 5px;
+          margin-right: 5px;
+        }
+
+        #maptitle h4 {
+          margin-left: 10px;
+          margin-bottom: 10px;
+        }
+
+        #roundsplayed h5 {
+          text-align: end;
+          margin-right: 10px;
+          margin-bottom: 10px;
+        }
+
+        .flex-item-right {
+          padding: 10px;
+          flex: 30%;
+        }
+
+        #maptitle {
+          flex: 60%
+        }
+
+        #roundsplayed {
+          flex: 40%
+        }
+
+        img {
+          width: 150px;
+          height: 100px;
+          border: 1px solid #fff;
+          padding: 5px;
+        }
+
+        #wintitle {
+          color: chartreuse;
+        }
+
+        #losstitle {
+          color: rgb(255, 0, 0);
+        }
+
+        .flex-item {
+          flex: 70%;
+          line-height:0px;
+          text-align: center;
+        }
+
+        .wrapper {
+          background: rgb(31, 31, 31);
+          padding-top: 5px;
+        }
+
+        #seperator {
+          border: 1px solid dodgerblue;
+          margin-left: 10px;
+          margin-right: 10px;
+          margin-top: 0px;
+          margin-bottom: 5px;
+        }
+
+      </style>
+    </head>
+    <body>
+      <div class="wrapper">
+        ${data}
+    </div>
+    </body>
+  </html>`
+}
+
+module.exports = {handleEventPages, handleMapPages, handleNewsPages, handlePages, reverseMapFromMap, getTime, checkStats, handleTeamProfile, formatTeamMapsHTML, formatTeamMapFullHTML}
