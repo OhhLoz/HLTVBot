@@ -166,7 +166,7 @@ client.on("interactionCreate", async (interaction) =>
     .setColor(0x00AE86)
     .setTimestamp()
     .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
-    .setDescription(`An error occurred whilst executing command. Please try again or visit [hltv.org](${hltvURL})`);
+    .setDescription(`An error occurred whilst executing command. If this persists please add the bot to the server again. Please try again or visit [hltv.org](${hltvURL})`);
     if(interaction.deferred)
       await interaction.editReply({ embeds: [embed] });
     else
@@ -271,7 +271,11 @@ client.on("messageCreate", async message =>
         });
 
         collector.on('end', async () => {
-            message.delete();
+            message.delete().catch(err =>
+            {
+                if (err.code !== 10008)
+                    console.log(err);
+            });
         });
       });
     });
@@ -464,7 +468,7 @@ client.on("messageCreate", async message =>
           var embed = new Discord.MessageEmbed()
           .setTitle(teamName + " Profile")
           .setColor(0x00AE86)
-          //.setThumbnail(thumbnailBuffer)
+          .setThumbnail(res.logo)
           //.setImage(res.coverImage)
           .setTimestamp()
           .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
@@ -562,7 +566,11 @@ client.on("messageCreate", async message =>
             });
 
             collector.on('end', async () => {
-                message.delete();
+                message.delete().catch(err =>
+                {
+                    if (err.code !== 10008)
+                        console.log(err);
+                });
             });
           });
         });
@@ -620,7 +628,11 @@ client.on("messageCreate", async message =>
         });
 
         collector.on('end', async () => {
-            message.delete();
+            message.delete().catch(err =>
+            {
+                if (err.code !== 10008)
+                    console.log(err);
+            });
         });
       });
     });
@@ -667,8 +679,11 @@ client.on("messageCreate", async message =>
         });
 
         collector.on('end', async () => {
-          message.delete();
-            //message.reactions.removeAll().catch(error => console.error('Failed to clear reactions: ', error));
+            message.delete().catch(err =>
+            {
+                if (err.code !== 10008)
+                    console.log(err);
+            });
         });
       });
     });
@@ -739,7 +754,11 @@ client.on("messageCreate", async message =>
           });
 
           collector.on('end', async () => {
-              message.delete();
+              message.delete().catch(err =>
+              {
+                  if (err.code !== 10008)
+                      console.log(err);
+              });
           });
         });
       }
@@ -787,7 +806,11 @@ client.on("messageCreate", async message =>
         });
 
         collector.on('end', async () => {
-            message.delete();
+            message.delete().catch(err =>
+            {
+                if (err.code !== 10008)
+                    console.log(err);
+            });
         });
       })
     });
