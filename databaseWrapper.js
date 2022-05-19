@@ -190,7 +190,8 @@ module.exports =
   },
   async updateRoster(rosterArr, teamID)
   {
-    await this.queryHandler(roster, {where: {team_id: teamID}}, databaseConstants.QUERYCODES.delete);
-    await this.insertRoster(rosterArr, teamID);
+    await this.queryHandler(roster, {where: {team_id: teamID}}, databaseConstants.QUERYCODES.delete).then(() => {
+      this.insertRoster(rosterArr, teamID);
+    });
   }
 }

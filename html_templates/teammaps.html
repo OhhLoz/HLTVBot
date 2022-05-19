@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <style>
+      body {
+        font-family: 'Courier New', monospace;
+        background: rgb(22, 22, 22);
+        color: #fff;
+        max-width: 500px;
+      }
+
+      .title-container {
+        max-width: 500px;
+        display: flex;
+        flex-direction: row;
+        background: rgb(31, 31, 31);
+        align-items: flex-start;
+      }
+
+      #titlecont{
+        border-top: 3px solid rgb(16, 180, 209);
+      }
+
+      .flex-container {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+      }
+
+      .flex-item-left {
+        margin-left: 10px;
+        flex: 70%;
+        text-anchor: start;
+        line-height:0px;
+      }
+
+      #maptitle h4 {
+        margin-left: 10px;
+        margin-bottom: 10px;
+      }
+
+      #roundsplayed h5 {
+        text-align: end;
+        margin-right: 10px;
+        margin-bottom: 10px;
+      }
+
+      .flex-item-right {
+        padding: 10px;
+        flex: 30%;
+      }
+
+      #maptitle {
+        flex: 60%
+      }
+
+      #roundsplayed {
+        flex: 40%
+      }
+
+      img {
+        width: 150px;
+        height: 100px;
+        border: 1px solid #fff;
+        padding: 5px;
+      }
+
+      #wintitle {
+        color: chartreuse;
+      }
+
+      #losstitle {
+        color: rgb(255, 0, 0);
+      }
+
+      .flex-item {
+        padding: 10px;
+        flex: 70%;
+        line-height:0px;
+        text-align: center;
+      }
+
+    </style>
+  </head>
+  <body>
+    <div class="title-container" id="titlecont">
+      <div class="flex-item-left">
+        <div class = "flex-container">
+          <div id="maptitle">
+            <h4 id="title">Dust 2</h4>
+          </div>
+          <div id="roundsplayed">
+            <h5 id="rounds">7519 Rounds</h5>
+          </div>
+        </div>
+        <hr>
+        <div class="flex-container">
+          <div class="flex-item">
+            <h5 id="wintitle">W</h5>
+            <h5 id="wins">177</h5>
+          </div>
+          <div class="flex-item">
+            <h5 id="drawtitle">D</h5>
+            <h5 id="draws">1</h5>
+          </div>
+          <div class="flex-item">
+            <h5 id="losstitle">L</h5>
+            <h5 id="losses">113</h5>
+          </div>
+          <div class="flex-item">
+            <h5 id="wltitle">Win %</h5>
+            <h5 id="wl">60.8%</h5>
+          </div>
+        </div>
+      </div>
+      <div class="flex-item-right">
+        <img src='https://static.wikia.nocookie.net/cswikia/images/4/42/Dust2_asite1.png/revision/latest?cb=20211006143721' />
+      </div>
+    </div>
+  </body>
+</html>
