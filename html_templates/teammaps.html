@@ -10,18 +10,15 @@
         background: rgb(22, 22, 22);
         color: #fff;
         max-width: 500px;
+        border-top: 3px solid rgb(16, 180, 209);
       }
 
-      .title-container {
+      .map-container {
         max-width: 500px;
         display: flex;
         flex-direction: row;
         background: rgb(31, 31, 31);
         align-items: flex-start;
-      }
-
-      #titlecont{
-        border-top: 3px solid rgb(16, 180, 209);
       }
 
       .flex-container {
@@ -35,6 +32,11 @@
         flex: 70%;
         text-anchor: start;
         line-height:0px;
+      }
+
+      .flex-item-left hr {
+        margin-left: 5px;
+        margin-right: 5px;
       }
 
       #maptitle h4 {
@@ -77,48 +79,132 @@
       }
 
       .flex-item {
-        padding: 10px;
         flex: 70%;
         line-height:0px;
         text-align: center;
       }
 
+      .wrapper {
+        background: rgb(31, 31, 31);
+        padding-top: 5px;
+      }
+
+      #seperator {
+        border: 1px solid dodgerblue;
+        margin-left: 10px;
+        margin-right: 10px;
+        margin-top: 0px;
+        margin-bottom: 5px;
+      }
+
     </style>
   </head>
   <body>
-    <div class="title-container" id="titlecont">
-      <div class="flex-item-left">
-        <div class = "flex-container">
-          <div id="maptitle">
-            <h4 id="title">Dust 2</h4>
+    <div class="wrapper">
+      <div class="map-container">
+        <div class="flex-item-left">
+          <div class = "flex-container">
+            <div id="maptitle">
+              <h4 id="title">Dust 2</h4>
+            </div>
+            <div id="roundsplayed">
+              <h5 id="rounds">7519 Rounds</h5>
+            </div>
           </div>
-          <div id="roundsplayed">
-            <h5 id="rounds">7519 Rounds</h5>
+          <hr>
+          <div class="flex-container">
+            <div class="flex-item">
+              <h5 id="wintitle">W</h5>
+              <h5>177</h5>
+            </div>
+            <div class="flex-item">
+              <h5>D</h5>
+              <h5>1</h5>
+            </div>
+            <div class="flex-item">
+              <h5 id="losstitle">L</h5>
+              <h5>113</h5>
+            </div>
+            <div class="flex-item">
+              <h5>Win %</h5>
+              <h5>60.8%</h5>
+            </div>
           </div>
         </div>
-        <hr>
-        <div class="flex-container">
-          <div class="flex-item">
-            <h5 id="wintitle">W</h5>
-            <h5 id="wins">177</h5>
-          </div>
-          <div class="flex-item">
-            <h5 id="drawtitle">D</h5>
-            <h5 id="draws">1</h5>
-          </div>
-          <div class="flex-item">
-            <h5 id="losstitle">L</h5>
-            <h5 id="losses">113</h5>
-          </div>
-          <div class="flex-item">
-            <h5 id="wltitle">Win %</h5>
-            <h5 id="wl">60.8%</h5>
-          </div>
+        <div class="flex-item-right">
+          <img src='https://static.wikia.nocookie.net/cswikia/images/4/42/Dust2_asite1.png/revision/latest?cb=20211006143721' />
         </div>
       </div>
-      <div class="flex-item-right">
-        <img src='https://static.wikia.nocookie.net/cswikia/images/4/42/Dust2_asite1.png/revision/latest?cb=20211006143721' />
+      <hr id="seperator">
+      <div class="map-container">
+        <div class="flex-item-left">
+          <div class = "flex-container">
+            <div id="maptitle">
+              <h4 id="title">Dust 2</h4>
+            </div>
+            <div id="roundsplayed">
+              <h5 id="rounds">7519 Rounds</h5>
+            </div>
+          </div>
+          <hr>
+          <div class="flex-container">
+            <div class="flex-item">
+              <h5 id="wintitle">W</h5>
+              <h5>177</h5>
+            </div>
+            <div class="flex-item">
+              <h5>D</h5>
+              <h5>1</h5>
+            </div>
+            <div class="flex-item">
+              <h5 id="losstitle">L</h5>
+              <h5>113</h5>
+            </div>
+            <div class="flex-item">
+              <h5>Win %</h5>
+              <h5>60.8%</h5>
+            </div>
+          </div>
+        </div>
+        <div class="flex-item-right">
+          <img src='https://static.wikia.nocookie.net/cswikia/images/4/42/Dust2_asite1.png/revision/latest?cb=20211006143721' />
+        </div>
       </div>
-    </div>
+      <hr id="seperator">
+      <div class="map-container">
+        <div class="flex-item-left">
+          <div class = "flex-container">
+            <div id="maptitle">
+              <h4 id="title">Dust 2</h4>
+            </div>
+            <div id="roundsplayed">
+              <h5 id="rounds">7519 Rounds</h5>
+            </div>
+          </div>
+          <hr>
+          <div class="flex-container">
+            <div class="flex-item">
+              <h5 id="wintitle">W</h5>
+              <h5>177</h5>
+            </div>
+            <div class="flex-item">
+              <h5>D</h5>
+              <h5>1</h5>
+            </div>
+            <div class="flex-item">
+              <h5 id="losstitle">L</h5>
+              <h5>113</h5>
+            </div>
+            <div class="flex-item">
+              <h5>Win %</h5>
+              <h5>60.8%</h5>
+            </div>
+          </div>
+        </div>
+        <div class="flex-item-right">
+          <img src='https://static.wikia.nocookie.net/cswikia/images/4/42/Dust2_asite1.png/revision/latest?cb=20211006143721' />
+        </div>
+      </div>
+  </div>
   </body>
 </html>
