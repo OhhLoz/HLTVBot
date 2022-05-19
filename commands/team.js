@@ -36,8 +36,7 @@ module.exports =
                         else
                             database.handleTeamProfileUpdate(res, new Date(result.updated_at))
                     });
-                    var embed = func.handleTeamProfile(res, botData)
-                    interaction.editReply({ embeds: [embed] });
+                    func.handleTeamProfile(interaction, res, botData)
                 }).catch((err) =>
                 {
                     console.log(err);
@@ -71,8 +70,7 @@ module.exports =
                                     database.handleTeamProfileUpdate(res, new Date(teamProfileResult.updated_at))
                                 }
                             });
-                            var embed = func.handleTeamProfile(res, botData)
-                            interaction.editReply({ embeds: [embed] });
+                            func.handleTeamProfile(interaction, res, botData)
                         }).catch((err) =>
                         {
                             console.log(err);
@@ -105,8 +103,7 @@ module.exports =
                             database.handleTeamDictUpdate(teamDictResult.team_id, resObj.name, new Date(teamDictResult.updated_at));
                             database.handleTeamProfileUpdate(resObj, new Date(teamProfileResult.dataValues.updated_at));
 
-                            var embed = func.handleTeamProfile(resObj, botData)
-                            interaction.editReply({ embeds: [embed] });
+                            func.handleTeamProfile(interaction, resObj, botData)
                         });
                     }
                 });
