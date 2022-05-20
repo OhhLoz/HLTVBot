@@ -29,7 +29,7 @@ if (false)
   });
 
   client.connect();
-  client.query(`TRUNCATE TABLE roster, teamprofiles, teamdictionary;`, (err, res) => {
+  client.query(`TRUNCATE TABLE teamstats;`, (err, res) => {
     if (err) throw err;
     for (let row of res.rows) {
       console.log(JSON.stringify(row));
@@ -42,8 +42,9 @@ if (false)
 const teamDictionary = databaseClient.define('teamdictionary', databaseConstants.teamDictionaryTableSchema, databaseConstants.tableOptions);
 const teamProfiles = databaseClient.define('teamprofiles', databaseConstants.teamProfilesTableSchema, databaseConstants.tableOptions);
 const roster = databaseClient.define('roster', databaseConstants.rosterTableSchema, databaseConstants.tableOptions);
+const teamStats = databaseClient.define('teamstats', databaseConstants.teamStatsTableSchema, databaseConstants.tableOptions);
 
-//roster.sync({ alter: true })
+//teamStats.sync({ alter: true })
 
 module.exports =
 {
@@ -192,5 +193,52 @@ module.exports =
   {
     await this.queryHandler(roster, {where: {team_id: teamID}}, databaseConstants.QUERYCODES.delete);
     await this.insertRoster(rosterArr, teamID);
+  },
+  async fetchTeamStats(teamID)
+  {
+    var attributeTemplate = databaseConstants.fetchTeamStatsByTeamID;
+    attributeTemplate.where.team_id = { [Op.eq]: teamID.toString() }
+    return this.queryHandler(teamStats, attributeTemplate, databaseConstants.QUERYCODES.findOne);
+  },
+  async insertTeamStats(res)
+  {
+    return this.queryHandler(teamStats,
+    {
+      team_id: res.id,
+      team_name: res.name,
+      wins: res.overview.wins,
+      losses: res.overview.losses,
+      kills: res.overview.totalKills,
+      deaths: res.overview.totalDeaths,
+      kdratio: res.overview.kdRatio,
+      roundsplayed: res.overview.roundsPlayed,
+      mapsplayed: res.overview.mapsPlayed
+    },
+    databaseConstants.QUERYCODES.create);
+  },
+  async updateTeamStats(res)
+  {
+    return this.queryHandler(teamStats,
+    ([{
+      team_id: res.id,
+      team_name: res.name,
+      wins: res.overview.wins,
+      losses: res.overview.losses,
+      kills: res.overview.totalKills,
+      deaths: res.overview.totalDeaths,
+      kdratio: res.overview.kdRatio,
+      roundsplayed: res.overview.roundsPlayed,
+      mapsplayed: res.overview.mapsPlayed
+    }, {where: {team_id: res.id}}]),
+    databaseConstants.QUERYCODES.update);
+  },
+  async handleTeamStatsUpdate(res, dbDate)
+  {
+    //var dateMilliDifference = new Date(new Date().toUTCString().substr(0, 25)).getTime() - new Date(dbDate.toUTCString().substr(0, 25)).getTime();
+    var dateMilliDifference = Date.now() - dbDate.getTime();
+    if (dateMilliDifference > databaseConstants.expiryTime.teamstats)
+    {
+        this.updateTeamStats(res);
+    }
   }
 }

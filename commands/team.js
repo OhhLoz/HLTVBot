@@ -13,6 +13,7 @@ module.exports =
 	async execute(interaction, client, botData)
     {
         var teamName = interaction.options.getString('teamname');
+        //sanitize teamName to prevent sql injection
 
         database.fetchTeamDict(teamName).then(teamDictResult =>
         {
@@ -20,8 +21,6 @@ module.exports =
             {
                 HLTV.getTeamByName({name: teamName}).then((res)=>
                 {
-                    //sanitize teamName to prevent sql injection
-
                     database.insertTeamDict(res.id, res.name);
                     if (teamName.toLowerCase() != res.name.toLowerCase())
                         database.insertTeamDict(res.id, teamName);
@@ -57,19 +56,8 @@ module.exports =
                     {
                         HLTV.getTeam({id: teamDictResult.team_id}).then((res)=>
                         {
-                            database.fetchTeamProfiles(res.id).then((teamProfileResult) =>
-                            {
-                                if (teamProfileResult == undefined)
-                                {
-                                    database.insertTeamProfile(res);
-                                    database.insertRoster(res.players, res.id);
-                                }
-                                else
-                                {
-                                    database.handleTeamDictUpdate(teamDictResult.team_id, res.name, new Date(teamDictResult.updated_at));
-                                    database.handleTeamProfileUpdate(res, new Date(teamProfileResult.updated_at))
-                                }
-                            });
+                            database.insertTeamProfile(res);
+                            database.insertRoster(res.players, res.id);
                             func.handleTeamProfile(interaction, res, botData)
                         }).catch((err) =>
                         {
@@ -108,6 +96,24 @@ module.exports =
                     }
                 });
             }
+        }).catch((err) =>
+        {
+            if (err)
+                console.log(err)
+            HLTV.getTeamByName({name: teamName}).then((res)=>
+            {
+                func.handleTeamProfile(interaction, res, botData)
+            }).catch((err) =>
+            {
+                console.log(err);
+                var embed = new MessageEmbed()
+                .setTitle("Invalid Team")
+                .setColor(0x00AE86)
+                .setTimestamp()
+                .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
+                .setDescription(`Error whilst checking ${teamName} and/or accessing the database. Please try again or visit [hltv.org](${botData.hltvURL})`);
+                interaction.editReply({ embeds: [embed] });
+            });
         });
     }
 }

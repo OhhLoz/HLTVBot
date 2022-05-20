@@ -454,7 +454,39 @@ var handleTeamProfile = (interaction, res, botData) =>
   }
   else
       interaction.editReply({ embeds: [embed] });
-
 }
 
-module.exports = {handleEventPages, handleMapPages, handleNewsPages, handlePages, reverseMapFromMap, getTime, checkStats, handleTeamProfile}
+/**
+ * Formats a team profile embed based on the given arguments
+ *
+ *
+ * @param {Object}   res     Team profile object to populated the embed with
+ * @param {Object}   botData   Global object used to keep track of necessary botData to avoid reuse.
+ *
+ * @return {MessageEmbed}            Returns the populated team profile embed object.
+ */
+ var handleTeamStats = (interaction, res, botData) =>
+ {
+    var teamnameformatted = res.name.replace(/\s+/g, '-').toLowerCase();
+    const embed = new MessageEmbed()
+    .setTitle(res.name + " Stats")
+    .setColor(0x00AE86)
+    .setTimestamp()
+    .setFooter({text: "Sent by HLTVBot", iconURL: "https://cdn.discordapp.com/avatars/548165454158495745/222c8d9ccac5d194d8377c5da5b0f95b.png?size=4096"})
+    .setURL(`${botData.hltvURL}/stats/teams/${res.id}/${teamnameformatted}`)
+    .addFields
+    (
+        {name: "Maps Played", value: res.overview.mapsPlayed == undefined ? "Not Available" : res.overview.mapsPlayed.toString(), inline: true},
+        {name: "Wins", value: res.overview.wins == undefined ? "Not Available" : res.overview.wins.toString(), inline: true},
+        {name: "Losses", value: res.overview.losses == undefined ? "Not Available" : res.overview.losses.toString(), inline: true},
+        {name: "Kills", value: res.overview.totalKills == undefined ? "Not Available" : res.overview.totalKills.toString(), inline: true},
+        {name: "Deaths", value: res.overview.totalDeaths == undefined ? "Not Available" : res.overview.totalDeaths.toString(), inline: true},
+        {name: "KD Ratio", value: res.overview.kdRatio == undefined ? "Not Available" : res.overview.kdRatio.toString(), inline: true},
+        {name: "Average Kills Per Round", value: res.overview.totalKills == undefined || res.overview.roundsPlayed == undefined ? "Not Available" : (Math.round(res.overview.totalKills / res.overview.roundsPlayed * 100) / 100).toString(), inline: true},
+        {name: "Rounds Played", value: res.overview.roundsPlayed == undefined ? "Not Available" : res.overview.roundsPlayed.toString(), inline: true},
+        {name: "Overall Win%", value: res.overview.wins == undefined || res.overview.losses == undefined ? "Not Available" : (Math.round(res.overview.wins / (res.overview.losses + res.overview.wins) * 10000) / 100).toString() + "%", inline: true},
+    )
+    interaction.editReply({ embeds: [embed] });
+ }
+
+module.exports = {handleEventPages, handleMapPages, handleNewsPages, handlePages, reverseMapFromMap, getTime, checkStats, handleTeamProfile, handleTeamStats}

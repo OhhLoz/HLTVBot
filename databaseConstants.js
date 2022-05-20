@@ -15,7 +15,8 @@ const msinMinutes = 60 * 1000;
 const expiryTime =
 {
   teamdictionary: 600 * msinMinutes,
-  teamprofiles: 60 * msinMinutes
+  teamprofiles: 60 * msinMinutes,
+  teamstats: 60 * msinMinutes
 }
 
 const tableOptions =
@@ -93,6 +94,24 @@ const rosterTableSchema =
     mapsPlayed: {type: DataTypes.STRING}
 }
 
+const teamStatsTableSchema =
+{
+    team_id:
+    {
+        type: DataTypes.STRING,
+        primaryKey: true,
+        allowNull: false
+    },
+    team_name:{type: DataTypes.STRING},
+    kills:{type: DataTypes.INTEGER},
+    deaths:{type: DataTypes.INTEGER},
+    kdRatio:{type: DataTypes.FLOAT},
+    wins:{type: DataTypes.INTEGER},
+    losses:{type: DataTypes.INTEGER},
+    mapsplayed:{type: DataTypes.INTEGER},
+    roundsplayed:{type: DataTypes.INTEGER}
+}
+
 const fetchTeamIDByTeamName =
 {
   attributes: ['team_id', 'updated_at'],
@@ -111,6 +130,12 @@ const fetchRosterByTeamID =
   where: { team_id:{} }
 }
 
+const fetchTeamStatsByTeamID =
+{
+  attributes: ['team_id','team_name','kills','deaths','kdRatio','wins','losses','mapsplayed','roundsplayed','updated_at'],
+  where: { team_id:{} }
+}
+
 module.exports =
 {
   QUERYCODES,
@@ -119,7 +144,9 @@ module.exports =
   teamDictionaryTableSchema,
   teamProfilesTableSchema,
   rosterTableSchema,
+  teamStatsTableSchema,
   fetchTeamIDByTeamName,
   fetchTeamProfileByTeamID,
-  fetchRosterByTeamID
+  fetchRosterByTeamID,
+  fetchTeamStatsByTeamID
 }
