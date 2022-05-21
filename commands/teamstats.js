@@ -35,7 +35,7 @@ module.exports =
                         else
                             database.handleTeamProfileUpdate(res, new Date(result.updated_at))
                     });
-                    HLTV.getTeamStats({name: res.id}).then((res)=>
+                    HLTV.getTeamStats({id: res.id}).then((res)=>
                     {
                         database.insertTeamStats(res);
                         func.handleTeamStats(interaction, res, botData);
@@ -43,13 +43,7 @@ module.exports =
                 }).catch((err) =>
                 {
                     console.log(err);
-                    var embed = new MessageEmbed()
-                    .setTitle("Invalid Team")
-                    .setColor(0x00AE86)
-                    .setTimestamp()
-                    .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
-                    .setDescription(`Error whilst checking ${teamName} and/or accessing the database. Please try again or visit [hltv.org](${botData.hltvURL})`);
-                    interaction.editReply({ embeds: [embed] });
+                    interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:TS1", "Error whilst accessing HLTV API using provided team name", botData)] });
                 });
             }
             else
@@ -65,13 +59,7 @@ module.exports =
                         }).catch((err) =>
                         {
                             console.log(err);
-                            var embed = new MessageEmbed()
-                            .setTitle("Invalid Team")
-                            .setColor(0x00AE86)
-                            .setTimestamp()
-                            .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
-                            .setDescription(`Error whilst checking ${teamDictResult.team_id} and/or accessing the database. Please try again or visit [hltv.org](${botData.hltvURL})`);
-                            interaction.editReply({ embeds: [embed] });
+                            interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:TS2", "Error whilst accessing HLTV API using internal team id", botData)] });
                         });
                     }
                     else
@@ -90,7 +78,6 @@ module.exports =
 
                         database.handleTeamDictUpdate(teamDictResult.team_id, resObj.name, new Date(teamDictResult.updated_at));
                         database.handleTeamStatsUpdate(resObj, new Date(teamStatsResult.dataValues.updated_at));
-
                         func.handleTeamStats(interaction, resObj, botData)
                     }
                 });
@@ -105,16 +92,12 @@ module.exports =
                 {
                     func.handleTeamStats(interaction, res, botData);
                 });
+
+                database.authenticate(false);
             }).catch((err) =>
             {
                 console.log(err);
-                var embed = new MessageEmbed()
-                .setTitle("Invalid Team")
-                .setColor(0x00AE86)
-                .setTimestamp()
-                .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
-                .setDescription(`Error whilst checking ${teamName} and/or accessing the database. Please try again or visit [hltv.org](${botData.hltvURL})`);
-                interaction.editReply({ embeds: [embed] });
+                interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:TS3", "Error whilst accessing HLTV API using provided team name", botData)] });
             });
         });
     }

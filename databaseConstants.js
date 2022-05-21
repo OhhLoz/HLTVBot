@@ -65,6 +65,20 @@ const teamProfilesTableSchema =
     rank:{type: DataTypes.STRING}
 }
 
+var teamProfilesFields = (res) =>
+{
+  return {
+    team_id: res.id,
+    team_name: res.name,
+    logo: res.logo,
+    location: res.country.name,
+    facebook: res.facebook,
+    twitter: res.twitter,
+    instagram: res.instagram,
+    rank: res.rank
+  }
+}
+
 const rosterTableSchema =
 {
     field_id:
@@ -108,8 +122,47 @@ const teamStatsTableSchema =
     kdRatio:{type: DataTypes.FLOAT},
     wins:{type: DataTypes.INTEGER},
     losses:{type: DataTypes.INTEGER},
-    mapsplayed:{type: DataTypes.INTEGER},
-    roundsplayed:{type: DataTypes.INTEGER}
+    mapsPlayed:{type: DataTypes.INTEGER},
+    roundsPlayed:{type: DataTypes.INTEGER}
+}
+
+var teamStatsFields = (res) =>
+{
+  return {
+    team_id: res.id,
+    team_name: res.name,
+    wins: res.overview.wins,
+    losses: res.overview.losses,
+    kills: res.overview.totalKills,
+    deaths: res.overview.totalDeaths,
+    kdRatio: res.overview.kdRatio,
+    roundsPlayed: res.overview.roundsPlayed,
+    mapsPlayed: res.overview.mapsPlayed
+  }
+}
+
+const teamMapsTableSchema =
+{
+  id:
+  {
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
+    primaryKey: true
+  },
+  team_id:
+  {
+      type: DataTypes.STRING,
+      allowNull: false
+  },
+  map_name:{type: DataTypes.STRING},
+  team_name:{type: DataTypes.STRING},
+  wins:{type: DataTypes.INTEGER},
+  draws:{type: DataTypes.INTEGER},
+  losses:{type: DataTypes.FLOAT},
+  winRate:{type: DataTypes.FLOAT},
+  totalRounds:{type: DataTypes.INTEGER},
+  roundWinPAfterFirstKill:{type: DataTypes.FLOAT},
+  roundWinPAfterFirstDeath:{type: DataTypes.FLOAT}
 }
 
 const fetchTeamIDByTeamName =
@@ -132,7 +185,13 @@ const fetchRosterByTeamID =
 
 const fetchTeamStatsByTeamID =
 {
-  attributes: ['team_id','team_name','kills','deaths','kdRatio','wins','losses','mapsplayed','roundsplayed','updated_at'],
+  attributes: ['team_id','team_name','kills','deaths','kdRatio','wins','losses','mapsPlayed','roundsPlayed','updated_at'],
+  where: { team_id:{} }
+}
+
+const fetchMapStatsByTeamID =
+{
+  attributes: ['team_id','team_name','map_name','wins','draws','losses','winRate','totalRounds','roundWinPAfterFirstKill','roundWinPAfterFirstDeath','updated_at'],
   where: { team_id:{} }
 }
 
@@ -143,10 +202,14 @@ module.exports =
   tableOptions,
   teamDictionaryTableSchema,
   teamProfilesTableSchema,
+  teamProfilesFields,
   rosterTableSchema,
   teamStatsTableSchema,
+  teamStatsFields,
+  teamMapsTableSchema,
   fetchTeamIDByTeamName,
   fetchTeamProfileByTeamID,
   fetchRosterByTeamID,
-  fetchTeamStatsByTeamID
+  fetchTeamStatsByTeamID,
+  fetchMapStatsByTeamID
 }

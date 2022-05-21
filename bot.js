@@ -166,7 +166,7 @@ client.on("interactionCreate", async (interaction) =>
     .setColor(0x00AE86)
     .setTimestamp()
     .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
-    .setDescription(`An error occurred whilst executing command. If this persists please add the bot to the server again. Please try again or visit [hltv.org](${hltvURL})`);
+    .setDescription(`An error occurred whilst executing slash command. If this persists please add the bot to the server again to refresh bot permissions. Please try again or visit [hltv.org](${hltvURL})`);
     if(interaction.deferred)
       await interaction.editReply({ embeds: [embed] });
     else
@@ -493,7 +493,6 @@ client.on("messageCreate", async message =>
     {
       HLTV.getTeamStats({id: teamID}).then(res =>
         {
-          console.log(res);
           const embed = new Discord.MessageEmbed()
           .setTitle(teamName + " Stats")
           .setColor(0x00AE86)
@@ -518,18 +517,19 @@ client.on("messageCreate", async message =>
         {
           var currIndex = 0;
           var mapArr = [];
-          var mapNameArr = [];
           var mapcount = 0;
 
           for (var mapKey in res.mapStats)
           {
             var map = res.mapStats[mapKey];
             mapArr[mapcount] = map;
-            mapNameArr[mapcount] = mapKey;
+            map.map_name = mapKey;
+            map.team_id = res.id;
+            map.team_name = res.name;
             mapcount++;
           }
 
-          var embed = func.handleMapPages(res, currIndex, teamName, teamID, mapArr, mapNameArr);
+          var embed = func.handleMapPages(currIndex, teamName, teamID, mapArr);
           var originalAuthor = message.author;
           message.channel.send({ embeds: [embed] }).then((message) =>
           {
@@ -546,14 +546,14 @@ client.on("messageCreate", async message =>
                 {
                   if (currIndex - 3 >= 0)
                     currIndex-=3;
-                  message.edit({embeds: [func.handleMapPages(res, currIndex, teamName, teamID, mapArr, mapNameArr)]});
+                  message.edit({embeds: [func.handleMapPages(currIndex, teamName, teamID, mapArr)]});
                   break;
                 }
                 case reactionControls.NEXT_PAGE:
                 {
                   if (currIndex + 3 <= mapArr.length - 1)
                     currIndex+=3;
-                  message.edit({embeds: [func.handleMapPages(res, currIndex, teamName, teamID, mapArr, mapNameArr)]});
+                  message.edit({embeds: [func.handleMapPages(currIndex, teamName, teamID, mapArr)]});
                   break;
                 }
                 case reactionControls.STOP:

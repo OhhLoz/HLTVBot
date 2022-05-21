@@ -2,7 +2,8 @@ const { SlashCommandBuilder } = require("@discordjs/builders");
 const { MessageEmbed } = require('discord.js');
 const { HLTV } = require('hltv');
 const teamDictionary = require("../teams.json");
-const func = require("../functions.js");
+const func = require("../functions.js")
+const database = require("../databaseWrapper.js")
 
 module.exports =
 {
@@ -12,7 +13,7 @@ module.exports =
     .addStringOption(option => option.setName('teamname').setDescription('Team to display the map statistics for').setRequired(true)),
 	async execute(interaction, client, botData)
     {
-        var inputTeamName = interaction.options.getString('teamname');
+        var teamName = interaction.options.getString('teamname');
 
         if(teamDictionary.hasOwnProperty(inputTeamName.toUpperCase()))
         {
@@ -23,18 +24,19 @@ module.exports =
           {
             var currIndex = 0;
             var mapArr = [];
-            var mapNameArr = [];
             var mapcount = 0;
 
             for (var mapKey in res.mapStats)
             {
               var map = res.mapStats[mapKey];
               mapArr[mapcount] = map;
-              mapNameArr[mapcount] = mapKey;
+              map.map_name = mapKey;
+              map.team_id = res.id;
+              map.team_name = res.name;
               mapcount++;
             }
 
-            var embed = func.handleMapPages(res, currIndex, teamName, teamID, mapArr, mapNameArr);
+            var embed = func.handleMapPages(currIndex, teamName, teamID, mapArr);
 
             var originalMember = interaction.user;
             interaction.editReply({ embeds: [embed], ephemeral: false, components: [botData.interactionRow] });
@@ -56,14 +58,14 @@ module.exports =
                   {
                     if (currIndex - 3 >= 0)
                       currIndex-=3;
-                      interaction.editReply({embeds: [func.handleMapPages(res, currIndex, teamName, teamID, mapArr, mapNameArr)]});
+                      interaction.editReply({embeds: [func.handleMapPages(currIndex, teamName, teamID, mapArr)]});
                     break;
                   }
                   case botData.reactionControls.NEXT_PAGE:
                   {
                     if (currIndex + 3 <= mapArr.length - 1)
                       currIndex+=3;
-                      interaction.editReply({embeds: [func.handleMapPages(res, currIndex, teamName, teamID, mapArr, mapNameArr)]});
+                      interaction.editReply({embeds: [func.handleMapPages(currIndex, teamName, teamID, mapArr)]});
                     break;
                   }
                   case botData.reactionControls.STOP:

@@ -217,7 +217,7 @@ var handlePages = (res, startIndex, code) => {
  *
  * @return {MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
  */
-var handleMapPages = (res, startIndex, teamName, teamID, mapArr, mapNameArr) =>
+var handleMapPages = (startIndex, teamName, teamID, mapArr) =>
 {
   var pageSize = 3;
   var embed = new MessageEmbed()
@@ -230,7 +230,7 @@ var handleMapPages = (res, startIndex, teamName, teamID, mapArr, mapNameArr) =>
     {
       var map = mapArr[i];
       //console.log(map);
-      var mapName = mapDictionary[mapNameArr[i]];
+      var mapName = mapDictionary[map.map_name];
       //console.log(mapName);
       var pages = mapArr.length/pageSize;
 
@@ -408,12 +408,18 @@ var checkStats = (guild, botData, isJoin) =>
 var handleTeamProfile = (interaction, res, botData) =>
 {
   var playerRosterOutputStr = '';
-  for (var i = 0; i < res.players.length; i++)
+  if(res.players.length != 0)
   {
-      playerRosterOutputStr += `[${res.players[i].name}](${botData.hltvURL}/stats/players/${res.players[i].id}/${res.players[i].name}): ${res.players[i].type} (${res.players[i].timeOnTeam})`
-      if(i != res.players.length - 1)
-      playerRosterOutputStr += '\n';
+    for (var i = 0; i < res.players.length; i++)
+    {
+        playerRosterOutputStr += `[${res.players[i].name}](${botData.hltvURL}/stats/players/${res.players[i].id}/${res.players[i].name}): ${res.players[i].type} (${res.players[i].timeOnTeam})`
+        if(i != res.players.length - 1)
+        playerRosterOutputStr += '\n';
+    }
   }
+  else
+      playerRosterOutputStr += "Error"
+
 
   var embed = new MessageEmbed()
     .setTitle(res.name + " Profile")
@@ -457,13 +463,13 @@ var handleTeamProfile = (interaction, res, botData) =>
 }
 
 /**
- * Formats a team profile embed based on the given arguments
+ * Formats a team stats embed based on the given arguments
  *
  *
- * @param {Object}   res     Team profile object to populated the embed with
+ * @param {Object}   res     Team stats object to populated the embed with
  * @param {Object}   botData   Global object used to keep track of necessary botData to avoid reuse.
  *
- * @return {MessageEmbed}            Returns the populated team profile embed object.
+ * @return {MessageEmbed}            Returns the populated team stats embed object.
  */
  var handleTeamStats = (interaction, res, botData) =>
  {
@@ -489,4 +495,15 @@ var handleTeamProfile = (interaction, res, botData) =>
     interaction.editReply({ embeds: [embed] });
  }
 
-module.exports = {handleEventPages, handleMapPages, handleNewsPages, handlePages, reverseMapFromMap, getTime, checkStats, handleTeamProfile, handleTeamStats}
+ var formatErrorEmbed = (title, message, botData) =>
+ {
+  return new MessageEmbed()
+  .setTitle(`${title}`)
+  .setColor(0x00AE86)
+  .setTimestamp()
+  .setFooter({text: "Sent by HLTVBot", iconURL: "https://cdn.discordapp.com/avatars/548165454158495745/222c8d9ccac5d194d8377c5da5b0f95b.png?size=4096"})
+  .setDescription(`${message}.\nPlease try again or visit [hltv.org](${botData.hltvURL})`);
+  //.setDescription(`Error whilst checking ${message} and/or accessing the database.\nPlease try again or visit [hltv.org](${botData.hltvURL})`);
+ }
+
+module.exports = {handleEventPages, handleMapPages, handleNewsPages, handlePages, reverseMapFromMap, getTime, checkStats, handleTeamProfile, handleTeamStats, formatErrorEmbed}

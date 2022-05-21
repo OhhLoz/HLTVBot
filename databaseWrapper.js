@@ -43,6 +43,7 @@ const teamDictionary = databaseClient.define('teamdictionary', databaseConstants
 const teamProfiles = databaseClient.define('teamprofiles', databaseConstants.teamProfilesTableSchema, databaseConstants.tableOptions);
 const roster = databaseClient.define('roster', databaseConstants.rosterTableSchema, databaseConstants.tableOptions);
 const teamStats = databaseClient.define('teamstats', databaseConstants.teamStatsTableSchema, databaseConstants.tableOptions);
+const teamMaps = databaseClient.define('teammaps', databaseConstants.teamMapsTableSchema, databaseConstants.tableOptions);
 
 //teamStats.sync({ alter: true })
 
@@ -138,16 +139,7 @@ module.exports =
   async insertTeamProfile(res)
   {
     return this.queryHandler(teamProfiles,
-    {
-      team_id: res.id,
-      team_name: res.name,
-      logo: res.logo,
-      location: res.country.name,
-      facebook: res.facebook,
-      twitter: res.twitter,
-      instagram: res.instagram,
-      rank: res.rank
-    },
+    databaseConstants.teamProfilesFields(res),
     databaseConstants.QUERYCODES.create);
   },
   async handleTeamProfileUpdate(res, dbDate)
@@ -163,16 +155,7 @@ module.exports =
   async updateTeamProfile(res)
   {
     return this.queryHandler(teamProfiles,
-    ([{
-      team_id: res.id,
-      team_name: res.name,
-      logo: res.logo,
-      location: res.country.name,
-      facebook: res.facebook,
-      twitter: res.twitter,
-      instagram: res.instagram,
-      rank: res.rank
-    }, {where: {team_id: res.id}}]),
+    ([databaseConstants.teamProfilesFields(res), {where: {team_id: res.id}}]),
     databaseConstants.QUERYCODES.update);
   },
   async fetchRoster(teamID)
@@ -203,33 +186,13 @@ module.exports =
   async insertTeamStats(res)
   {
     return this.queryHandler(teamStats,
-    {
-      team_id: res.id,
-      team_name: res.name,
-      wins: res.overview.wins,
-      losses: res.overview.losses,
-      kills: res.overview.totalKills,
-      deaths: res.overview.totalDeaths,
-      kdratio: res.overview.kdRatio,
-      roundsplayed: res.overview.roundsPlayed,
-      mapsplayed: res.overview.mapsPlayed
-    },
+    databaseConstants.teamStatsFields(res),
     databaseConstants.QUERYCODES.create);
   },
   async updateTeamStats(res)
   {
     return this.queryHandler(teamStats,
-    ([{
-      team_id: res.id,
-      team_name: res.name,
-      wins: res.overview.wins,
-      losses: res.overview.losses,
-      kills: res.overview.totalKills,
-      deaths: res.overview.totalDeaths,
-      kdratio: res.overview.kdRatio,
-      roundsplayed: res.overview.roundsPlayed,
-      mapsplayed: res.overview.mapsPlayed
-    }, {where: {team_id: res.id}}]),
+    ([databaseConstants.teamStatsFields(res), {where: {team_id: res.id}}]),
     databaseConstants.QUERYCODES.update);
   },
   async handleTeamStatsUpdate(res, dbDate)
