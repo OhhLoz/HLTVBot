@@ -14,9 +14,9 @@ const QUERYCODES =
 const msinMinutes = 60 * 1000;
 const expiryTime =
 {
-  teamdictionary: 600 * msinMinutes,
+  teamdictionary: 300 * msinMinutes,
   teamprofiles: 60 * msinMinutes,
-  teamstats: 60 * msinMinutes
+  teamstats: 60 * msinMinutes //this is also for teammaps as they share a common HLTV API call
 }
 
 const tableOptions =

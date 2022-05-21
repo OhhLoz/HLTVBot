@@ -202,6 +202,26 @@ module.exports =
     if (dateMilliDifference > databaseConstants.expiryTime.teamstats)
     {
         this.updateTeamStats(res);
+        this.updateTeamMaps(res);
     }
+  },
+  async fetchTeamMaps(teamID)
+  {
+    var attributeTemplate = databaseConstants.fetchTeamMapsByTeamID;
+    attributeTemplate.where.team_id = { [Op.eq]: teamID }
+    return this.queryHandler(teamMaps, attributeTemplate, databaseConstants.QUERYCODES.findAll);
+  },
+  async insertTeamMaps(mapArr, teamID, teamName)
+  {
+    for(var rosterMember of rosterArr)
+    {
+      rosterMember.team_id = teamID.toString();
+      rosterMember.team_name = teamName;
+    }
+    return this.queryHandler(teamMaps, mapArr, databaseConstants.QUERYCODES.bulkCreate);
+  },
+  async updateTeamMaps(mapArr, teamID)
+  {
+    
   }
 }

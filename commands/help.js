@@ -20,7 +20,6 @@ module.exports =
             {name: "/ping", value: "Displays the current ping to the bot & the Discord API"},
             {name: "/stats", value: "Displays bot statistics, invite link and contact information"},
             {name: "\u200b", value: `${botData.titleSpacer}**Team Commands**`},
-            {name: "/teamlist", value: "Lists all of the currently accepted teams for the teamstats & teammaps commands"},
             {name: "/team [teamname]", value: "Displays the profile related to the input team"},
             {name: "/teamstats [teamname]", value: "Displays the statistics related to the input team"},
             {name: "/teammaps [teamname]", value: "Displays the map statistics related to the input team"},

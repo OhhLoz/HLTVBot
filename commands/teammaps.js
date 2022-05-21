@@ -13,7 +13,7 @@ module.exports =
     .addStringOption(option => option.setName('teamname').setDescription('Team to display the map statistics for').setRequired(true)),
 	async execute(interaction, client, botData)
     {
-        var teamName = interaction.options.getString('teamname');
+        var inputTeamName = interaction.options.getString('teamname');
 
         if(teamDictionary.hasOwnProperty(inputTeamName.toUpperCase()))
         {
@@ -23,18 +23,7 @@ module.exports =
           HLTV.getTeamStats({id: teamID}).then(res =>
           {
             var currIndex = 0;
-            var mapArr = [];
-            var mapcount = 0;
-
-            for (var mapKey in res.mapStats)
-            {
-              var map = res.mapStats[mapKey];
-              mapArr[mapcount] = map;
-              map.map_name = mapKey;
-              map.team_id = res.id;
-              map.team_name = res.name;
-              mapcount++;
-            }
+            var mapArr = func.formatMapArr(res.mapStats, res.id, res.name);
 
             var embed = func.handleMapPages(currIndex, teamName, teamID, mapArr);
 

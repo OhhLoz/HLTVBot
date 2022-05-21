@@ -208,12 +208,10 @@ var handlePages = (res, startIndex, code) => {
  *
  * startIndex is used to ensure a different startIndex can be provided to move along the pages. The res object contains the data to be published. teamName, teamID, mapArr and mapNameArr
  *
- * @param {Object}   res            Object containing the data to be formatted into pages.
  * @param {int}      startIndex     Which index within the Object to start populating the pages with.
  * @param {string}   teamName       The name of the team that this command was called for.
  * @param {int}      teamID         The ID of the team that this command was called for.
  * @param {string[]}   mapArr       A string array containing all the map codes the team has played.
- * @param {string[]}   mapNameArr   A string array containing all the map names the team has played.
  *
  * @return {MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
  */
@@ -229,13 +227,10 @@ var handleMapPages = (startIndex, teamName, teamID, mapArr) =>
   for (var i = startIndex; i < startIndex+pageSize; i++)
     {
       var map = mapArr[i];
-      //console.log(map);
+      if(map == null) //Error with live matches, assumes will have enough to fill 1 page so less than that throws an error
+        return embed;
       var mapName = mapDictionary[map.map_name];
-      //console.log(mapName);
       var pages = mapArr.length/pageSize;
-
-      // if(map == null) //Error with live matches, assumes will have enough to fill 1 page so less than that throws an error
-      //   return embed;
 
       embed.setFooter({text: `Page ${startIndex/pageSize + 1} of ${Math.ceil(pages)}`, iconURL: "https://cdn.discordapp.com/avatars/548165454158495745/222c8d9ccac5d194d8377c5da5b0f95b.png?size=4096"});
 
@@ -255,7 +250,7 @@ var handleMapPages = (startIndex, teamName, teamID, mapArr) =>
         )
       }
 
-      if(i != startIndex+(pageSize - 1))
+      if(i != startIndex+(pageSize - 1) && i != mapArr.length-1)
         embed.addField('\u200b', '\u200b');
     }
     return embed;
@@ -495,6 +490,23 @@ var handleTeamProfile = (interaction, res, botData) =>
     interaction.editReply({ embeds: [embed] });
  }
 
+ var formatMapArr = (inputArr, teamID, teamName) =>
+ {
+  var mapArr = [];
+
+  for (var mapKey in inputArr)
+  {
+    var map = inputArr[mapKey];
+    mapArr.push(map);
+    map.map_name = mapKey;
+    map.team_id = teamID;
+    map.team_name = teamName;
+  }
+
+  //console.log(mapArr)
+  return mapArr;
+ }
+
  var formatErrorEmbed = (title, message, botData) =>
  {
   return new MessageEmbed()
@@ -506,4 +518,4 @@ var handleTeamProfile = (interaction, res, botData) =>
   //.setDescription(`Error whilst checking ${message} and/or accessing the database.\nPlease try again or visit [hltv.org](${botData.hltvURL})`);
  }
 
-module.exports = {handleEventPages, handleMapPages, handleNewsPages, handlePages, reverseMapFromMap, getTime, checkStats, handleTeamProfile, handleTeamStats, formatErrorEmbed}
+module.exports = {handleEventPages, handleMapPages, handleNewsPages, handlePages, reverseMapFromMap, getTime, checkStats, handleTeamProfile, handleTeamStats, formatMapArr, formatErrorEmbed}
