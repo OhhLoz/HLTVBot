@@ -166,7 +166,7 @@ client.on("interactionCreate", async (interaction) =>
     .setColor(0x00AE86)
     .setTimestamp()
     .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
-    .setDescription(`An error occurred whilst executing slash command. If this persists please add the bot to the server again to refresh bot permissions. Please try again or visit [hltv.org](${hltvURL})`);
+    .setDescription(`An error occurred whilst executing slash command.\nPlease try again or visit [hltv.org](${hltvURL})\nIf this persists please re-add the bot to the server to refresh bot permissions.`);
     if(interaction.deferred)
       await interaction.editReply({ embeds: [embed] });
     else
