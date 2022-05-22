@@ -302,11 +302,15 @@ var handleEventPages = (eventArray, startIndex) =>
       (
         {name:"Name", value: `[${event.name}](${hltvURL}/events/${event.id}/${eventNameURLFormat})`},
         {name:"Start", value: matchStartDate.toUTCString()},
-        {name:"End", value: matchEndDate.toUTCString()},
-        {name:"Prize Pool", value: event.prizePool == undefined ? "Not Available" : event.prizePool},
-        {name:"Number of Teams", value: event.numberOfTeams == undefined ? "Not Available" : event.numberOfTeams.toString()},
-        {name:"Location", value: event.location == undefined ? "Not Available" : event.location.name},
+        {name:"End", value: matchEndDate.toUTCString()}
       )
+
+      if (event.prizePool)
+        embed.addField("Prize Pool", event.prizePool)
+      if (event.numberOfTeams)
+        embed.addField("Number of Teams", event.numberOfTeams.toString())
+      if (event.location)
+        embed.addField("Location", event.location.name)
 
       if(i != startIndex+(pageSize - 1))
         embed.addField('\u200b', '\u200b');
