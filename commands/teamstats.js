@@ -3,6 +3,8 @@ const { MessageEmbed } = require('discord.js');
 const { HLTV } = require('hltv');
 const func = require("../functions.js")
 const database = require("../databaseWrapper.js")
+const databaseConstants = require("../databaseConstants.js")
+const conv = require("../databaseConverters.js")
 
 module.exports =
 {
@@ -21,24 +23,20 @@ module.exports =
             {
                 HLTV.getTeamByName({name: teamName}).then((res)=>
                 {
+                    //var convertedRes = conv.teamDictHLTVtoDB(res);
                     database.insertTeamDict(res.id, res.name);
                     if (teamName.toLowerCase() != res.name.toLowerCase())
                         database.insertTeamDict(res.id, teamName);
 
-                    database.fetchTeamProfiles(res.id).then((teamProfileResult) =>
-                    {
-                        if (teamProfileResult == undefined)
-                        {
-                            database.insertTeamProfile(res);
-                            database.insertRoster(res.players, res.id);
-                        }
-                        else
-                            database.handleTeamProfileUpdate(res, new Date(result.updated_at))
-                    });
+                    database.checkUpdateTeamProfile(res);
                     HLTV.getTeamStats({id: res.id}).then((res)=>
                     {
-                        database.insertTeamStats(res);
-                        func.handleTeamStats(interaction, res, botData);
+                        var convertedStatsRes = conv.teamStatsHLTVtoDB(res);
+                        //var convertedMapsRes = conv.teamMapsHLTVtoDB(res);
+                        database.insertTeamStats(convertedRes);
+                        func.handleTeamStats(interaction, convertedStatsRes, botData);
+
+                        //database.checkUpdateTeamMaps(res);
                     });
                 }).catch((err) =>
                 {
@@ -54,8 +52,11 @@ module.exports =
                     {
                         HLTV.getTeamStats({id: teamDictResult.team_id}).then((res)=>
                         {
-                            database.insertTeamStats(res);
-                            func.handleTeamStats(interaction, res, botData)
+                            var convertedRes = conv.teamStatsHLTVtoDB(res);
+                            database.insertTeamStats(convertedRes);
+                            func.handleTeamStats(interaction, convertedRes, botData)
+
+                            //database.checkUpdateTeamMaps(res);
                         }).catch((err) =>
                         {
                             console.log(err);
@@ -64,21 +65,26 @@ module.exports =
                     }
                     else
                     {
-                        var resObj = teamStatsResult.dataValues;
-                        resObj.id = resObj.team_id;
-                        resObj.name = resObj.team_name;
-                        resObj.overview = {};
-                        resObj.overview.wins = resObj.wins;
-                        resObj.overview.losses = resObj.losses;
-                        resObj.overview.totalKills = resObj.kills;
-                        resObj.overview.totalDeaths = resObj.deaths;
-                        resObj.overview.kdRatio = resObj.kdRatio;
-                        resObj.overview.roundsPlayed = resObj.roundsPlayed;
-                        resObj.overview.mapsPlayed = resObj.mapsPlayed;
-
-                        database.handleTeamDictUpdate(teamDictResult.team_id, resObj.name, new Date(teamDictResult.updated_at));
-                        database.handleTeamStatsUpdate(resObj, new Date(teamStatsResult.dataValues.updated_at));
-                        func.handleTeamStats(interaction, resObj, botData)
+                        //database.checkTeamDictUpdate(teamStatsResult.dataValues);
+                        database.isExpired(new Date(teamStatsResult.dataValues.updated_at), databaseConstants.expiryTime.teamstats).then((needsUpdating) =>
+                        {
+                            if (needsUpdating)
+                            {
+                                HLTV.getTeamStats({id: teamDictResult.team_id}).then((res)=>
+                                {
+                                    var convertedRes = conv.teamStatsHLTVtoDB(res);
+                                    database.updateTeamStats(convertedRes);
+                                    //database.checkUpdateTeamMaps(res);
+                                    func.handleTeamStats(interaction, convertedRes, botData)
+                                }).catch((err) =>
+                                {
+                                    console.log(err);
+                                    interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:TS3", "Error whilst accessing HLTV API using internal team id", botData)] });
+                                });
+                            }
+                            else
+                                func.handleTeamStats(interaction, teamStatsResult.dataValues, botData)
+                        });
                     }
                 });
             }
@@ -90,14 +96,14 @@ module.exports =
             {
                 HLTV.getTeamStats({name: res.id}).then((res)=>
                 {
-                    func.handleTeamStats(interaction, res, botData);
+                    func.handleTeamStats(interaction, conv.teamStatsHLTVtoDB(res), botData);
                 });
 
                 database.authenticate(false);
             }).catch((err) =>
             {
                 console.log(err);
-                interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:TS3", "Error whilst accessing HLTV API using provided team name", botData)] });
+                interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:TS4", "Error whilst accessing HLTV API using provided team name", botData)] });
             });
         });
     }

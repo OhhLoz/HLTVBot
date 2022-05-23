@@ -1,9 +1,8 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
-const { MessageEmbed } = require('discord.js');
 const { HLTV } = require('hltv');
-const teamDictionary = require("../teams.json");
 const func = require("../functions.js")
 const database = require("../databaseWrapper.js")
+const conv = require("../databaseConverters.js")
 
 module.exports =
 {
@@ -12,103 +11,89 @@ module.exports =
 		.setDescription("Displays the map statistics related to the input team")
     .addStringOption(option => option.setName('teamname').setDescription('Team to display the map statistics for').setRequired(true)),
 	async execute(interaction, client, botData)
+  {
+    var teamName = interaction.options.getString('teamname');
+
+    database.fetchTeamDict(teamName).then(teamDictResult =>
     {
-        var inputTeamName = interaction.options.getString('teamname');
-
-        if(teamDictionary.hasOwnProperty(inputTeamName.toUpperCase()))
+      if (teamDictResult == undefined)    //if teamid not found in teamDictionary
+      {
+        HLTV.getTeamByName({name: teamName}).then((res)=>
         {
-          var teamName = inputTeamName.toUpperCase();
-          var teamID = teamDictionary[teamName];
+            database.insertTeamDict(res.id, res.name);
+            if (teamName.toLowerCase() != res.name.toLowerCase())
+                database.insertTeamDict(res.id, teamName);
 
-          HLTV.getTeamStats({id: teamID}).then(res =>
-          {
-            var currIndex = 0;
-            var mapArr = func.formatMapArr(res.mapStats, res.id, res.name);
-
-            var embed = func.handleMapPages(currIndex, teamName, teamID, mapArr);
-
-            var originalMember = interaction.user;
-            interaction.editReply({ embeds: [embed], ephemeral: false, components: [botData.interactionRow] });
-
-            const filter = (user) =>
+            database.checkUpdateTeamProfile(res);
+            HLTV.getTeamStats({id: res.id}).then((res)=>
             {
-              user.deferUpdate();
-              return user.member.id === originalMember.id;
-            }
-            const collector = interaction.channel.createMessageComponentCollector({filter, componentType: 'BUTTON', time: 60000});
+                database.insertTeamMaps(conv.teamMapsHLTVtoDB(res.mapStats, res.id, res.name));
+                func.handleTeamMaps(interaction, conv.teamMapsHLTVtoDB(res.mapStats, res.id, res.name), res.id, res.name, botData);
 
-            collector.on('collect', (button) =>
-            {
-              try
-              {
-                switch (button.customId)
-                {
-                  case botData.reactionControls.PREV_PAGE:
-                  {
-                    if (currIndex - 3 >= 0)
-                      currIndex-=3;
-                      interaction.editReply({embeds: [func.handleMapPages(currIndex, teamName, teamID, mapArr)]});
-                    break;
-                  }
-                  case botData.reactionControls.NEXT_PAGE:
-                  {
-                    if (currIndex + 3 <= mapArr.length - 1)
-                      currIndex+=3;
-                      interaction.editReply({embeds: [func.handleMapPages(currIndex, teamName, teamID, mapArr)]});
-                    break;
-                  }
-                  case botData.reactionControls.STOP:
-                  {
-                    // stop listening for reactions
-                    collector.stop();
-                    break;
-                  }
-                }
-              }
-              catch(err)
-              {
-                  if (err)
-                      console.log(err);
-
-                  var embed = new MessageEmbed()
-                  .setTitle("Error Occurred")
-                  .setColor(0x00AE86)
-                  .setTimestamp()
-                  .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
-                  .setDescription(`An error occurred during button interaction. Please try again or visit [hltv.org](${botData.hltvURL})`);
-                  interaction.editReply({ embeds: [embed] });
-              }
+                database.checkUpdateTeamStats(res);
             });
-
-            collector.on('end', async () =>
-            {
-              interaction.deleteReply().catch(err =>
-                {
-                    if (err.code !== 10008)
-                        console.log(err);
-                });
-            });
-          }).catch((err) =>
-          {
+        }).catch((err) =>
+        {
             console.log(err);
-            var embed = new MessageEmbed()
-            .setTitle("Invalid Team")
-            .setColor(0x00AE86)
-            .setTimestamp()
-            .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
-            .setDescription(`${teamName} is not a valid team or another error occurred. Please try again or visit [hltv.org](${botData.hltvURL})`);
-            interaction.editReply({ embeds: [embed] });
-          });
-        }
-        else
+            interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:TM1", "Error whilst accessing HLTV API using provided team name", botData)] });
+        });
+      }
+      else
+      {
+        database.fetchTeamMaps(teamDictResult.team_id).then((teamMapsResult) =>
         {
-          var embed = new MessageEmbed()
-          .setTitle("Invalid Team")
-          .setColor(0x00AE86)
-          .setTimestamp()
-          .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
-          .setDescription(`${teamName} is not a valid team or another error occurred. Please try again or visit [hltv.org](${botData.hltvURL})`);
-          interaction.editReply({ embeds: [embed] });
-        }
-    }
+          if (teamMapsResult.length == 0)
+          {
+            HLTV.getTeamStats({id: teamDictResult.team_id}).then((res)=>
+            {
+                database.insertTeamMaps(conv.teamMapsHLTVtoDB(res.mapStats, res.id, res.name));
+                func.handleTeamMaps(interaction, conv.teamMapsHLTVtoDB(res.mapStats, res.id, res.name), res.id, res.name, botData)
+                database.checkUpdateTeamStats(res);
+            }).catch((err) =>
+            {
+                console.log(err);
+                interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:TM2", "Error whilst accessing HLTV API using internal team id", botData)] });
+            });
+          }
+          else
+          {
+            var mapArr = []
+            var teamName, updated_at;
+            for(var key in teamMapsResult)
+            {
+              teamMapsResult[key].dataValues.id = teamDictResult.team_id
+              teamMapsResult[key].dataValues.name = teamMapsResult[key].team_name
+              mapArr.push(teamMapsResult[key].dataValues);
+              updated_at = teamMapsResult[key].dataValues.updated_at;
+              teamName = teamMapsResult[key].dataValues.team_name;
+            }
+
+            //update the same as roster if cant actually update
+            //I believe .id being present in the objects being passed is causing the error, maybe renamed the autoincrement id to field_id
+
+            database.handleTeamDictUpdate(teamDictResult.team_id, teamName, new Date(teamDictResult.updated_at));
+            //database.handleTeamMapsUpdate(mapArr, teamDictResult.team_id, teamName, new Date(updated_at));
+            func.handleTeamMaps(interaction, mapArr, teamDictResult.team_id, teamName, botData)           //DBToHLTV needed
+          }
+        });
+      }
+    }).catch((err) =>
+    {
+      if (err)
+          console.log(err)
+      HLTV.getTeamByName({name: teamName}).then((res)=>
+      {
+          HLTV.getTeamStats({name: res.id}).then((res)=>
+          {
+              func.handleTeamMaps(interaction, conv.teamMapsHLTVtoDB(res.mapStats, res.id, res.name), res.id, res.name, botData);
+          });
+
+          database.authenticate(false);
+      }).catch((err) =>
+      {
+          console.log(err);
+          interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:TM4", "Error whilst accessing HLTV API using provided team name", botData)] });
+      });
+    });
+  }
 }

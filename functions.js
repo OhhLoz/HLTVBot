@@ -211,18 +211,19 @@ var handlePages = (res, startIndex, code) => {
  * @param {int}      startIndex     Which index within the Object to start populating the pages with.
  * @param {string}   teamName       The name of the team that this command was called for.
  * @param {int}      teamID         The ID of the team that this command was called for.
- * @param {string[]}   mapArr       A string array containing all the map codes the team has played.
+ * @param {Object[]}   mapArr       An object array containing all the map objects the team has played.
  *
  * @return {MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
  */
 var handleMapPages = (startIndex, teamName, teamID, mapArr) =>
 {
+  var teamnameformatted = teamName.replace(/\s+/g, '-').toLowerCase();
   var pageSize = 3;
   var embed = new MessageEmbed()
       .setColor(0x00AE86)
       .setTimestamp()
       .setTitle(teamName + " Maps")
-      .setURL(`${hltvURL}/stats/teams/${teamID}/${teamName}`);
+      .setURL(`${hltvURL}/stats/teams/${teamID}/${teamnameformatted}`);
 
   for (var i = startIndex; i < startIndex+pageSize; i++)
     {
@@ -407,7 +408,7 @@ var checkStats = (guild, botData, isJoin) =>
 var handleTeamProfile = (interaction, res, botData) =>
 {
   var playerRosterOutputStr = '';
-  if(res.players.length != 0)
+  if(res.players != undefined)
   {
     for (var i = 0; i < res.players.length; i++)
     {
@@ -419,16 +420,21 @@ var handleTeamProfile = (interaction, res, botData) =>
   else
       playerRosterOutputStr += "Error"
 
+    var footerStr = "Sent by HLTVBot - Last Updated ";
+    if(res.updated_at != undefined)
+      footerStr += getTime(Date.now() - new Date(res.updated_at).getTime()) + " Ago"
+    else
+      footerStr += "Now"
 
   var embed = new MessageEmbed()
-    .setTitle(res.name + " Profile")
+    .setTitle(res.team_name + " Profile")
     .setColor(0x00AE86)
     .setThumbnail(res.logo)
     //.setImage(res.coverImage)
     .setTimestamp()
-    .setFooter({text: "Sent by HLTVBot", iconURL: "https://cdn.discordapp.com/avatars/548165454158495745/222c8d9ccac5d194d8377c5da5b0f95b.png?size=4096"})
-    .setURL(`${botData.hltvURL}/team/${res.id}/${res.name.replace(/\s+/g, '')}`)
-    .addField("Location", res.country.name == undefined ? "Not Available" : res.country.name)
+    .setFooter({text: footerStr, iconURL: "https://cdn.discordapp.com/avatars/548165454158495745/222c8d9ccac5d194d8377c5da5b0f95b.png?size=4096"})
+    .setURL(`${botData.hltvURL}/team/${res.team_id}/${res.team_name.replace(/\s+/g, '')}`)
+    .addField("Location", res.location == undefined ? "Not Available" : res.location)
     if (res.facebook)
       embed.addField("Facebook", res.facebook);
     if (res.twitter)
@@ -438,26 +444,26 @@ var handleTeamProfile = (interaction, res, botData) =>
     embed.addField("Players", playerRosterOutputStr);
     embed.addField("Rank", res.rank.toString());
 
-  if (res.logo.includes(".svg"))
-  {
-    nodeHtmlToImage({
-      html: `<img src='${res.logo}' />`,
-      quality: 100,
-      type: 'png',
-      transparent: true,
-      puppeteerArgs: {
-        args: ['--no-sandbox'],
-      },
-      encoding: 'buffer',
-    }).then(imageResult =>
-    {
-      var thumbnail = new MessageAttachment(imageResult, 'logo.png')
-      embed.setThumbnail('attachment://logo.png');
+  // if (res.logo.includes(".svg"))
+  // {
+  //   nodeHtmlToImage({
+  //     html: `<img src='${res.logo}' />`,
+  //     quality: 100,
+  //     type: 'png',
+  //     transparent: true,
+  //     puppeteerArgs: {
+  //       args: ['--no-sandbox'],
+  //     },
+  //     encoding: 'buffer',
+  //   }).then(imageResult =>
+  //   {
+  //     var thumbnail = new MessageAttachment(imageResult, 'logo.png')
+  //     embed.setThumbnail('attachment://logo.png');
 
-      interaction.editReply({ embeds: [embed], files: [thumbnail] });
-    })
-  }
-  else
+  //     interaction.editReply({ embeds: [embed], files: [thumbnail] });
+  //   })
+  // }
+  // else
       interaction.editReply({ embeds: [embed] });
 }
 
@@ -472,43 +478,32 @@ var handleTeamProfile = (interaction, res, botData) =>
  */
  var handleTeamStats = (interaction, res, botData) =>
  {
-    var teamnameformatted = res.name.replace(/\s+/g, '-').toLowerCase();
+    var teamnameformatted = res.team_name.replace(/\s+/g, '-').toLowerCase();
+    var footerStr = "Sent by HLTVBot - Last Updated ";
+    if(res.updated_at != undefined)
+      footerStr += getTime(Date.now() - new Date(res.updated_at).getTime()) + " Ago"
+    else
+      footerStr += "Now"
     const embed = new MessageEmbed()
-    .setTitle(res.name + " Stats")
+    .setTitle(res.team_name + " Stats")
     .setColor(0x00AE86)
     .setTimestamp()
-    .setFooter({text: "Sent by HLTVBot", iconURL: "https://cdn.discordapp.com/avatars/548165454158495745/222c8d9ccac5d194d8377c5da5b0f95b.png?size=4096"})
-    .setURL(`${botData.hltvURL}/stats/teams/${res.id}/${teamnameformatted}`)
+    .setFooter({text: footerStr, iconURL: "https://cdn.discordapp.com/avatars/548165454158495745/222c8d9ccac5d194d8377c5da5b0f95b.png?size=4096"})
+    .setURL(`${botData.hltvURL}/stats/teams/${res.team_id}/${teamnameformatted}`)
     .addFields
     (
-        {name: "Maps Played", value: res.overview.mapsPlayed == undefined ? "Not Available" : res.overview.mapsPlayed.toString(), inline: true},
-        {name: "Wins", value: res.overview.wins == undefined ? "Not Available" : res.overview.wins.toString(), inline: true},
-        {name: "Losses", value: res.overview.losses == undefined ? "Not Available" : res.overview.losses.toString(), inline: true},
-        {name: "Kills", value: res.overview.totalKills == undefined ? "Not Available" : res.overview.totalKills.toString(), inline: true},
-        {name: "Deaths", value: res.overview.totalDeaths == undefined ? "Not Available" : res.overview.totalDeaths.toString(), inline: true},
-        {name: "KD Ratio", value: res.overview.kdRatio == undefined ? "Not Available" : res.overview.kdRatio.toString(), inline: true},
-        {name: "Average Kills Per Round", value: res.overview.totalKills == undefined || res.overview.roundsPlayed == undefined ? "Not Available" : (Math.round(res.overview.totalKills / res.overview.roundsPlayed * 100) / 100).toString(), inline: true},
-        {name: "Rounds Played", value: res.overview.roundsPlayed == undefined ? "Not Available" : res.overview.roundsPlayed.toString(), inline: true},
-        {name: "Overall Win%", value: res.overview.wins == undefined || res.overview.losses == undefined ? "Not Available" : (Math.round(res.overview.wins / (res.overview.losses + res.overview.wins) * 10000) / 100).toString() + "%", inline: true},
+        {name: "Maps Played", value: res.mapsPlayed == undefined ? "Not Available" : res.mapsPlayed.toString(), inline: true},
+        {name: "Wins", value: res.wins == undefined ? "Not Available" : res.wins.toString(), inline: true},
+        {name: "Losses", value: res.losses == undefined ? "Not Available" : res.losses.toString(), inline: true},
+        {name: "Kills", value: res.totalKills == undefined ? "Not Available" : res.totalKills.toString(), inline: true},
+        {name: "Deaths", value: res.totalDeaths == undefined ? "Not Available" : res.totalDeaths.toString(), inline: true},
+        {name: "KD Ratio", value: res.kdRatio == undefined ? "Not Available" : res.kdRatio.toString(), inline: true},
+        {name: "Average Kills Per Round", value: res.totalKills == undefined || res.roundsPlayed == undefined ? "Not Available" : (Math.round(res.totalKills / res.roundsPlayed * 100) / 100).toString(), inline: true},
+        {name: "Rounds Played", value: res.roundsPlayed == undefined ? "Not Available" : res.roundsPlayed.toString(), inline: true},
+        {name: "Overall Win%", value: res.wins == undefined || res.losses == undefined ? "Not Available" : (Math.round(res.wins / (res.losses + res.wins) * 10000) / 100).toString() + "%", inline: true},
     )
+
     interaction.editReply({ embeds: [embed] });
- }
-
- var formatMapArr = (inputArr, teamID, teamName) =>
- {
-  var mapArr = [];
-
-  for (var mapKey in inputArr)
-  {
-    var map = inputArr[mapKey];
-    mapArr.push(map);
-    map.map_name = mapKey;
-    map.team_id = teamID;
-    map.team_name = teamName;
-  }
-
-  //console.log(mapArr)
-  return mapArr;
  }
 
  var formatErrorEmbed = (title, message, botData) =>
@@ -519,7 +514,71 @@ var handleTeamProfile = (interaction, res, botData) =>
   .setTimestamp()
   .setFooter({text: "Sent by HLTVBot", iconURL: "https://cdn.discordapp.com/avatars/548165454158495745/222c8d9ccac5d194d8377c5da5b0f95b.png?size=4096"})
   .setDescription(`${message}.\nPlease try again or visit [hltv.org](${botData.hltvURL})`);
-  //.setDescription(`Error whilst checking ${message} and/or accessing the database.\nPlease try again or visit [hltv.org](${botData.hltvURL})`);
  }
 
-module.exports = {handleEventPages, handleMapPages, handleNewsPages, handlePages, reverseMapFromMap, getTime, checkStats, handleTeamProfile, handleTeamStats, formatMapArr, formatErrorEmbed}
+ var handleTeamMaps = (interaction, mapArr, teamID, teamName, botData) =>
+ {
+  var currIndex = 0;
+  //console.log(mapArr);
+  //var mapArr = conv.teamMapsHLTVtoDB(res.mapStats, res.id, res.name);
+
+  var embed = handleMapPages(currIndex, teamName, teamID, mapArr);
+
+  var originalMember = interaction.user;
+  interaction.editReply({ embeds: [embed], ephemeral: false, components: [botData.interactionRow] });
+
+  const filter = (user) =>
+  {
+    user.deferUpdate();
+    return user.member.id === originalMember.id;
+  }
+  const collector = interaction.channel.createMessageComponentCollector({filter, componentType: 'BUTTON', time: 60000});
+
+  collector.on('collect', (button) =>
+  {
+    try
+    {
+      switch (button.customId)
+      {
+        case botData.reactionControls.PREV_PAGE:
+        {
+          if (currIndex - 3 >= 0)
+            currIndex-=3;
+            interaction.editReply({embeds: [handleMapPages(currIndex, teamName, teamID, mapArr)]});
+          break;
+        }
+        case botData.reactionControls.NEXT_PAGE:
+        {
+          if (currIndex + 3 <= mapArr.length - 1)
+            currIndex+=3;
+            interaction.editReply({embeds: [handleMapPages(currIndex, teamName, teamID, mapArr)]});
+          break;
+        }
+        case botData.reactionControls.STOP:
+        {
+          // stop listening for reactions
+          collector.stop();
+          break;
+        }
+      }
+    }
+    catch(err)
+    {
+      if (err)
+          console.log(err);
+
+      interaction.editReply({ embeds: [formatErrorEmbed("Error Occurred - Error Code:TM3", "An error occurred during button interaction", botData)] });
+    }
+  });
+
+  collector.on('end', async () =>
+  {
+    interaction.deleteReply().catch(err =>
+      {
+          if (err.code !== 10008)
+              console.log(err);
+      });
+  });
+}
+
+module.exports = {handleEventPages, handleMapPages, handleNewsPages, handlePages, reverseMapFromMap, getTime, checkStats, handleTeamProfile, handleTeamStats, handleTeamMaps, formatErrorEmbed}

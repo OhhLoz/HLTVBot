@@ -3,6 +3,8 @@ const { MessageEmbed } = require('discord.js');
 const { HLTV } = require('hltv');
 const database = require("../databaseWrapper.js")
 const func = require("../functions.js")
+const conv = require("../databaseConverters.js");
+const databaseConstants = require("../databaseConstants.js")
 
 module.exports =
 {
@@ -21,21 +23,14 @@ module.exports =
             {
                 HLTV.getTeamByName({name: teamName}).then((res)=>
                 {
+                    //var convertedDictRes = conv.teamDictHLTVtoDB(res);
+                    var convertedRes = conv.teamProfilesHLTVtoDB(res);
                     database.insertTeamDict(res.id, res.name);
                     if (teamName.toLowerCase() != res.name.toLowerCase())
                         database.insertTeamDict(res.id, teamName);
 
-                    database.fetchTeamProfiles(res.id).then((teamProfileResult) =>
-                    {
-                        if (teamProfileResult == undefined)
-                        {
-                            database.insertTeamProfile(res);
-                            database.insertRoster(res.players, res.id);
-                        }
-                        else
-                            database.handleTeamProfileUpdate(res, new Date(result.updated_at))
-                    });
-                    func.handleTeamProfile(interaction, res, botData)
+                    database.checkUpdateTeamProfile(convertedRes);
+                    func.handleTeamProfile(interaction, convertedRes, botData)
                 }).catch((err) =>
                 {
                     console.log(err);
@@ -50,9 +45,11 @@ module.exports =
                     {
                         HLTV.getTeam({id: teamDictResult.team_id}).then((res)=>
                         {
-                            database.insertTeamProfile(res);
-                            database.insertRoster(res.players, res.id);
-                            func.handleTeamProfile(interaction, res, botData)
+                            var convertedRes = conv.teamProfilesHLTVtoDB(res);
+
+                            database.insertTeamProfile(convertedRes);
+                            database.insertRoster(convertedRes.players, convertedRes.team_id);
+                            func.handleTeamProfile(interaction, convertedRes, botData);
                         }).catch((err) =>
                         {
                             console.log(err);
@@ -61,25 +58,39 @@ module.exports =
                     }
                     else
                     {
-                        database.fetchRoster(teamDictResult.team_id).then((fetchedRoster) =>
+                        //database.checkTeamDictUpdate(teamStatsResult.dataValues);
+                        database.isExpired(new Date(teamProfileResult.dataValues.updated_at), databaseConstants.expiryTime.teamprofiles).then((needsUpdating) =>
                         {
-                            var resObj = teamProfileResult.dataValues;
-                            resObj.id = resObj.team_id;
-                            resObj.name = resObj.team_name;
-                            resObj.country = {name: resObj.location};
-                            var playersArr = []
-
-                            for(var key in fetchedRoster)
+                            if (needsUpdating)
                             {
-                                playersArr.push(fetchedRoster[key].dataValues);
+                                HLTV.getTeam({id: teamDictResult.team_id}).then((res)=>
+                                {
+                                    var convertedRes = conv.teamProfilesHLTVtoDB(res);
+
+                                    database.updateTeamProfile(convertedRes);
+                                    database.updateRoster(convertedRes.players, convertedRes.team_id);
+                                    func.handleTeamProfile(interaction, convertedRes, botData)
+                                }).catch((err) =>
+                                {
+                                    console.log(err);
+                                    interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:T3", "Error whilst accessing HLTV API using internal team id", botData)] });
+                                });
                             }
+                            else
+                            {
+                                database.fetchRoster(teamProfileResult.dataValues.team_id).then((fetchedRoster) =>
+                                {
+                                    var playersArr = []
 
-                            resObj.players = playersArr;
+                                    for(var key in fetchedRoster)
+                                    {
+                                        playersArr.push(fetchedRoster[key].dataValues);
+                                    }
 
-                            database.handleTeamDictUpdate(teamDictResult.team_id, resObj.name, new Date(teamDictResult.updated_at));
-                            database.handleTeamProfileUpdate(resObj, new Date(teamProfileResult.dataValues.updated_at));
-
-                            func.handleTeamProfile(interaction, resObj, botData)
+                                    teamProfileResult.dataValues.players = playersArr;
+                                    func.handleTeamProfile(interaction, teamProfileResult.dataValues, botData)
+                                })
+                            }
                         });
                     }
                 });
@@ -96,7 +107,7 @@ module.exports =
             }).catch((err) =>
             {
                 console.log(err);
-                interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:T3", "Error whilst accessing HLTV API using provided team name", botData)] });
+                interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:T4", "Error whilst accessing HLTV API using provided team name", botData)] });
             });
         });
     }

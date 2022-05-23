@@ -1,6 +1,8 @@
 const testConfig = require('./config.json');
 const { Sequelize, Op } = require('sequelize');
 const databaseConstants = require("./databaseConstants.js");
+const conv = require("./databaseConverters.js");
+const func = require("./functions.js");
 process.env.DATABASE_URL = testConfig.databaseURL;
 
 const databaseClient = new Sequelize(process.env.DATABASE_URL,
@@ -29,7 +31,9 @@ if (false)
   });
 
   client.connect();
-  client.query(`TRUNCATE TABLE teamstats;`, (err, res) => {
+  var truncate = `TRUNCATE TABLE teamstats,teammaps,teamprofiles, roster;`
+  var update = `UPDATE teamdictionary SET team_id = '4608' where team_name = 'navi';`
+  client.query(truncate, (err, res) => {
     if (err) throw err;
     for (let row of res.rows) {
       console.log(JSON.stringify(row));
@@ -45,7 +49,7 @@ const roster = databaseClient.define('roster', databaseConstants.rosterTableSche
 const teamStats = databaseClient.define('teamstats', databaseConstants.teamStatsTableSchema, databaseConstants.tableOptions);
 const teamMaps = databaseClient.define('teammaps', databaseConstants.teamMapsTableSchema, databaseConstants.tableOptions);
 
-//teamStats.sync({ alter: true })
+//teamMaps.sync({ alter: true })
 
 module.exports =
 {
@@ -88,6 +92,9 @@ module.exports =
           break;
         case databaseConstants.QUERYCODES.findOne:
           response = await model.findOne(attributes);
+          break;
+        case databaseConstants.QUERYCODES.bulkUpdate:
+          response = await model.bulkCreate(attributes[0], attributes[1]);
           break;
       }
       return response;
@@ -139,24 +146,38 @@ module.exports =
   async insertTeamProfile(res)
   {
     return this.queryHandler(teamProfiles,
-    databaseConstants.teamProfilesFields(res),
+    res,
     databaseConstants.QUERYCODES.create);
   },
   async handleTeamProfileUpdate(res, dbDate)
   {
-    //var dateMilliDifference = new Date(new Date().toUTCString().substr(0, 25)).getTime() - new Date(dbDate.toUTCString().substr(0, 25)).getTime();
-    var dateMilliDifference = Date.now() - dbDate.getTime();
-    if (dateMilliDifference > databaseConstants.expiryTime.teamprofiles)
+    this.isExpired(dbDate, databaseConstants.expiryTime.teamprofiles).then((result) =>
     {
-        this.updateRoster(res.players, res.id);
+      if(result)
+      {
         this.updateTeamProfile(res);
-    }
+        this.updateRoster(res.players, res.team_id);
+      }
+    });
   },
   async updateTeamProfile(res)
   {
     return this.queryHandler(teamProfiles,
-    ([databaseConstants.teamProfilesFields(res), {where: {team_id: res.id}}]),
+    ([res, {where: {team_id: res.id}}]),
     databaseConstants.QUERYCODES.update);
+  },
+  async checkUpdateTeamProfile(res)
+  {
+    this.fetchTeamProfiles(res.team_id).then((teamProfilesResult) =>
+    {
+        if (teamProfilesResult == undefined)
+        {
+          this.insertTeamProfile(res);
+          this.insertRoster(res.players, res.team_id);
+        }
+        else
+            this.handleTeamProfilesUpdate(res, new Date(teamProfilesResult.updated_at))
+    });
   },
   async fetchRoster(teamID)
   {
@@ -186,24 +207,32 @@ module.exports =
   async insertTeamStats(res)
   {
     return this.queryHandler(teamStats,
-    databaseConstants.teamStatsFields(res),
+    res,
     databaseConstants.QUERYCODES.create);
   },
   async updateTeamStats(res)
   {
     return this.queryHandler(teamStats,
-    ([databaseConstants.teamStatsFields(res), {where: {team_id: res.id}}]),
+    ([res, {where: {team_id: res.team_id}}]),
     databaseConstants.QUERYCODES.update);
   },
   async handleTeamStatsUpdate(res, dbDate)
   {
-    //var dateMilliDifference = new Date(new Date().toUTCString().substr(0, 25)).getTime() - new Date(dbDate.toUTCString().substr(0, 25)).getTime();
-    var dateMilliDifference = Date.now() - dbDate.getTime();
-    if (dateMilliDifference > databaseConstants.expiryTime.teamstats)
+    this.isExpired(dbDate, databaseConstants.expiryTime.teamstats).then((result) =>
     {
+      if(result)
         this.updateTeamStats(res);
-        this.updateTeamMaps(res);
-    }
+    });
+  },
+  async checkUpdateTeamStats(res)
+  {
+    this.fetchTeamStats(res.team_id).then((teamStatsResult) =>
+    {
+        if (teamStatsResult == undefined)
+            this.insertTeamStats(res);
+        else
+            this.handleTeamStatsUpdate(res, new Date(teamStatsResult.updated_at))
+    });
   },
   async fetchTeamMaps(teamID)
   {
@@ -211,17 +240,46 @@ module.exports =
     attributeTemplate.where.team_id = { [Op.eq]: teamID }
     return this.queryHandler(teamMaps, attributeTemplate, databaseConstants.QUERYCODES.findAll);
   },
-  async insertTeamMaps(mapArr, teamID, teamName)
+  async insertTeamMaps(mapArr)
   {
-    for(var rosterMember of rosterArr)
-    {
-      rosterMember.team_id = teamID.toString();
-      rosterMember.team_name = teamName;
-    }
     return this.queryHandler(teamMaps, mapArr, databaseConstants.QUERYCODES.bulkCreate);
   },
-  async updateTeamMaps(mapArr, teamID)
+  async updateTeamMaps(mapArr, teamID, teamName)
   {
-    
+    return this.queryHandler(teamMaps,
+    [mapArr,
+    {
+      fields: databaseConstants.fetchTeamMapsByTeamID.attributes,
+      updateOnDuplicate: ['wins','draws','losses','winRate','totalRounds','roundWinPAfterFirstKill','roundWinPAfterFirstDeath','updated_at']
+    }],
+    databaseConstants.QUERYCODES.bulkUpdate);
+    // await this.queryHandler(teamMaps, {where: {team_id: teamID}}, databaseConstants.QUERYCODES.delete);
+    // await this.insertTeamMaps(mapArr, teamID);
+  },
+  async handleTeamMapsUpdate(mapArr, teamID, teamName, dbDate)
+  {
+    //var dateMilliDifference = new Date(new Date().toUTCString().substr(0, 25)).getTime() - new Date(dbDate.toUTCString().substr(0, 25)).getTime();
+    var dateMilliDifference = Date.now() - dbDate.getTime();
+    if (dateMilliDifference > databaseConstants.expiryTime.teammaps)
+    {
+        this.updateTeamMaps(mapArr, teamID, teamName);
+    }
+  },
+  async checkUpdateTeamMaps(res)
+  {
+    this.fetchTeamMaps(res.id).then((teamMapsResult) =>
+    {
+        if (teamMapsResult.length == 0)
+            this.insertTeamMaps(conv.teamMapsHLTVtoDB(res.mapStats, res.id, res.name));
+        else
+            this.handleTeamMapsUpdate(conv.teamMapsHLTVtoDB(res.mapStats, res.id, res.name), new Date(teamMapsResult.updated_at))
+    });
+  },
+  async isExpired(dbDate, expiryTime)
+  {
+    var dateMilliDifference = Date.now() - dbDate.getTime();
+    if (dateMilliDifference > expiryTime)
+        return true;
+    return false;
   }
 }
