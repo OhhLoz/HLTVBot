@@ -32,11 +32,11 @@ module.exports =
                     HLTV.getTeamStats({id: res.id}).then((res)=>
                     {
                         var convertedStatsRes = conv.teamStatsHLTVtoDB(res);
-                        //var convertedMapsRes = conv.teamMapsHLTVtoDB(res);
+                        var convertedMapsRes = conv.teamMapsHLTVtoDB(res);
                         database.insertTeamStats(convertedRes);
                         func.handleTeamStats(interaction, convertedStatsRes, botData);
 
-                        //database.checkUpdateTeamMaps(res);
+                        database.checkUpdateTeamMaps(convertedMapsRes);
                     });
                 }).catch((err) =>
                 {
@@ -53,10 +53,11 @@ module.exports =
                         HLTV.getTeamStats({id: teamDictResult.team_id}).then((res)=>
                         {
                             var convertedRes = conv.teamStatsHLTVtoDB(res);
+                            var convertedMapsRes = conv.teamMapsHLTVtoDB(res);
                             database.insertTeamStats(convertedRes);
                             func.handleTeamStats(interaction, convertedRes, botData)
 
-                            //database.checkUpdateTeamMaps(res);
+                            database.checkUpdateTeamMaps(convertedMapsRes);
                         }).catch((err) =>
                         {
                             console.log(err);
@@ -73,8 +74,9 @@ module.exports =
                                 HLTV.getTeamStats({id: teamDictResult.team_id}).then((res)=>
                                 {
                                     var convertedRes = conv.teamStatsHLTVtoDB(res);
+                                    var convertedMapsRes = conv.teamMapsHLTVtoDB(res);
                                     database.updateTeamStats(convertedRes);
-                                    //database.checkUpdateTeamMaps(res);
+                                    database.checkUpdateTeamMaps(convertedMapsRes);
                                     func.handleTeamStats(interaction, convertedRes, botData)
                                 }).catch((err) =>
                                 {

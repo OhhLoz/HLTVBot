@@ -225,15 +225,18 @@ var handleMapPages = (startIndex, teamName, teamID, mapArr) =>
       .setTitle(teamName + " Maps")
       .setURL(`${hltvURL}/stats/teams/${teamID}/${teamnameformatted}`);
 
+  var footerStr = ""
+
   for (var i = startIndex; i < startIndex+pageSize; i++)
     {
       var map = mapArr[i];
-      if(map == null) //Error with live matches, assumes will have enough to fill 1 page so less than that throws an error
-        return embed;
-      var mapName = mapDictionary[map.map_name];
       var pages = mapArr.length/pageSize;
 
-      embed.setFooter({text: `Page ${startIndex/pageSize + 1} of ${Math.ceil(pages)}`, iconURL: "https://cdn.discordapp.com/avatars/548165454158495745/222c8d9ccac5d194d8377c5da5b0f95b.png?size=4096"});
+      footerStr = `Page ${startIndex/pageSize + 1} of ${Math.ceil(pages)}`;
+      if(map == null) //Error with live matches, assumes will have enough to fill 1 page so less than that throws an error
+        break;
+
+      var mapName = mapDictionary[map.map_name];
 
       if (mapName == undefined)
          mapName = "Other";
@@ -251,9 +254,15 @@ var handleMapPages = (startIndex, teamName, teamID, mapArr) =>
         )
       }
 
-      if(i != startIndex+(pageSize - 1) && i != mapArr.length-1)
+      if(i != startIndex+(pageSize - 1) && i != mapArr.length-1 && map!=null)
         embed.addField('\u200b', '\u200b');
     }
+    footerStr += " - Last Updated ";
+    if(mapArr[0].updated_at != undefined)
+      footerStr += getTime(Date.now() - new Date(mapArr[0].updated_at).getTime()) + " Ago"
+    else
+      footerStr += "Now"
+    embed.setFooter({text: footerStr, iconURL: "https://cdn.discordapp.com/avatars/548165454158495745/222c8d9ccac5d194d8377c5da5b0f95b.png?size=4096"});
     return embed;
 }
 
@@ -420,11 +429,6 @@ var handleTeamProfile = (interaction, res, botData) =>
   else
       playerRosterOutputStr += "Error"
 
-    var footerStr = "Sent by HLTVBot - Last Updated ";
-    if(res.updated_at != undefined)
-      footerStr += getTime(Date.now() - new Date(res.updated_at).getTime()) + " Ago"
-    else
-      footerStr += "Now"
 
   var embed = new MessageEmbed()
     .setTitle(res.team_name + " Profile")

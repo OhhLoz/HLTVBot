@@ -15,7 +15,7 @@ const QUERYCODES =
 const msinMinutes = 60 * 1000;
 const expiryTime =
 {
-  teamdictionary: 300 * msinMinutes,
+  teamdictionary: 600 * msinMinutes,
   teamprofiles: 60 * msinMinutes,
   teamstats: 60 * msinMinutes,
   teammaps: 60 * msinMinutes

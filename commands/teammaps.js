@@ -3,6 +3,7 @@ const { HLTV } = require('hltv');
 const func = require("../functions.js")
 const database = require("../databaseWrapper.js")
 const conv = require("../databaseConverters.js")
+const databaseConstants = require("../databaseConstants.js")
 
 module.exports =
 {
@@ -27,10 +28,11 @@ module.exports =
             database.checkUpdateTeamProfile(res);
             HLTV.getTeamStats({id: res.id}).then((res)=>
             {
-                database.insertTeamMaps(conv.teamMapsHLTVtoDB(res.mapStats, res.id, res.name));
-                func.handleTeamMaps(interaction, conv.teamMapsHLTVtoDB(res.mapStats, res.id, res.name), res.id, res.name, botData);
-
-                database.checkUpdateTeamStats(res);
+              var convertedStatsRes = conv.teamStatsHLTVtoDB(res);
+              var convertedMapsRes = conv.teamMapsHLTVtoDB(res.mapStats, res.id, res.name);
+              func.handleTeamMaps(interaction, convertedMapsRes, res.id, res.name, botData);
+              database.insertTeamMaps(convertedMapsRes);
+              database.checkUpdateTeamStats(convertedStatsRes);
             });
         }).catch((err) =>
         {
@@ -46,9 +48,11 @@ module.exports =
           {
             HLTV.getTeamStats({id: teamDictResult.team_id}).then((res)=>
             {
-                database.insertTeamMaps(conv.teamMapsHLTVtoDB(res.mapStats, res.id, res.name));
-                func.handleTeamMaps(interaction, conv.teamMapsHLTVtoDB(res.mapStats, res.id, res.name), res.id, res.name, botData)
-                database.checkUpdateTeamStats(res);
+              var convertedStatsRes = conv.teamStatsHLTVtoDB(res);
+              var convertedMapsRes = conv.teamMapsHLTVtoDB(res.mapStats, res.id, res.name);
+              func.handleTeamMaps(interaction, convertedMapsRes, res.id, res.name, botData);
+              database.insertTeamMaps(convertedMapsRes);
+              database.checkUpdateTeamStats(convertedStatsRes);
             }).catch((err) =>
             {
                 console.log(err);
@@ -58,22 +62,32 @@ module.exports =
           else
           {
             var mapArr = []
-            var teamName, updated_at;
             for(var key in teamMapsResult)
             {
-              teamMapsResult[key].dataValues.id = teamDictResult.team_id
-              teamMapsResult[key].dataValues.name = teamMapsResult[key].team_name
               mapArr.push(teamMapsResult[key].dataValues);
-              updated_at = teamMapsResult[key].dataValues.updated_at;
-              teamName = teamMapsResult[key].dataValues.team_name;
             }
 
-            //update the same as roster if cant actually update
-            //I believe .id being present in the objects being passed is causing the error, maybe renamed the autoincrement id to field_id
-
-            database.handleTeamDictUpdate(teamDictResult.team_id, teamName, new Date(teamDictResult.updated_at));
-            //database.handleTeamMapsUpdate(mapArr, teamDictResult.team_id, teamName, new Date(updated_at));
-            func.handleTeamMaps(interaction, mapArr, teamDictResult.team_id, teamName, botData)           //DBToHLTV needed
+            //database.checkTeamDictUpdate(teamMapsResult.dataValues);
+            database.isExpired(new Date(mapArr[0].updated_at), databaseConstants.expiryTime.teammaps).then((needsUpdating) =>
+            {
+                if (needsUpdating)
+                {
+                    HLTV.getTeamStats({id: teamDictResult.team_id}).then((res)=>
+                    {
+                        var convertedStatsRes = conv.teamStatsHLTVtoDB(res);
+                        var convertedRes = conv.teamMapsHLTVtoDB(res.mapStats, res.id, res.name);
+                        func.handleTeamMaps(interaction, convertedRes, res.id, res.name, botData);
+                        database.updateTeamMaps(convertedRes, res.id, res.name);
+                        database.checkUpdateTeamStats(convertedStatsRes);
+                    }).catch((err) =>
+                    {
+                        console.log(err);
+                        interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:TM3", "Error whilst accessing HLTV API using internal team id", botData)] });
+                    });
+                }
+                else
+                    func.handleTeamMaps(interaction, mapArr, teamDictResult.team_id, mapArr[0].team_name, botData)
+            });
           }
         });
       }

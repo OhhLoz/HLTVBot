@@ -31,7 +31,8 @@ if (false)
   });
 
   client.connect();
-  var truncate = `TRUNCATE TABLE teamstats,teammaps,teamprofiles, roster;`
+  var truncateAll = `TRUNCATE TABLE teamstats,teammaps,teamprofiles, roster;`
+  var truncate = `TRUNCATE TABLE teammaps;`
   var update = `UPDATE teamdictionary SET team_id = '4608' where team_name = 'navi';`
   client.query(truncate, (err, res) => {
     if (err) throw err;
@@ -246,33 +247,32 @@ module.exports =
   },
   async updateTeamMaps(mapArr, teamID, teamName)
   {
-    return this.queryHandler(teamMaps,
-    [mapArr,
-    {
-      fields: databaseConstants.fetchTeamMapsByTeamID.attributes,
-      updateOnDuplicate: ['wins','draws','losses','winRate','totalRounds','roundWinPAfterFirstKill','roundWinPAfterFirstDeath','updated_at']
-    }],
-    databaseConstants.QUERYCODES.bulkUpdate);
-    // await this.queryHandler(teamMaps, {where: {team_id: teamID}}, databaseConstants.QUERYCODES.delete);
-    // await this.insertTeamMaps(mapArr, teamID);
+    // return this.queryHandler(teamMaps,
+    // [mapArr,
+    // {
+    //   fields: databaseConstants.fetchTeamMapsByTeamID.attributes,
+    //   updateOnDuplicate: ['wins','draws','losses','winRate','totalRounds','roundWinPAfterFirstKill','roundWinPAfterFirstDeath','updated_at']
+    // }],
+    // databaseConstants.QUERYCODES.bulkUpdate);
+    await this.queryHandler(teamMaps, {where: {team_id: teamID}}, databaseConstants.QUERYCODES.delete);
+    await this.insertTeamMaps(mapArr);
   },
   async handleTeamMapsUpdate(mapArr, teamID, teamName, dbDate)
   {
-    //var dateMilliDifference = new Date(new Date().toUTCString().substr(0, 25)).getTime() - new Date(dbDate.toUTCString().substr(0, 25)).getTime();
-    var dateMilliDifference = Date.now() - dbDate.getTime();
-    if (dateMilliDifference > databaseConstants.expiryTime.teammaps)
+    this.isExpired(dbDate, databaseConstants.expiryTime.teammaps).then((result) =>
     {
+      if(result)
         this.updateTeamMaps(mapArr, teamID, teamName);
-    }
+    });
   },
   async checkUpdateTeamMaps(res)
   {
     this.fetchTeamMaps(res.id).then((teamMapsResult) =>
     {
         if (teamMapsResult.length == 0)
-            this.insertTeamMaps(conv.teamMapsHLTVtoDB(res.mapStats, res.id, res.name));
+            this.insertTeamMaps(res);
         else
-            this.handleTeamMapsUpdate(conv.teamMapsHLTVtoDB(res.mapStats, res.id, res.name), new Date(teamMapsResult.updated_at))
+            this.handleTeamMapsUpdate(res, new Date(teamMapsResult.updated_at))
     });
   },
   async isExpired(dbDate, expiryTime)
