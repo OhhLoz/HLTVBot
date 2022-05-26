@@ -4,6 +4,7 @@ const client = new Discord.Client({ intents: [Discord.Intents.FLAGS.GUILDS, Disc
 const { HLTV } = require('hltv');
 const func = require("./functions.js");
 const fs = require("fs");
+const database = require("./databaseWrapper.js");
 
 //   SET TRUE WHEN TESTING TO DISABLE TOPGG Posting & TO USE TEST BOT TOKEN
 const TESTING = false;
@@ -111,6 +112,8 @@ client.on("ready", () =>
     botData = func.checkStats(guild, botData, true);
   })
 
+  database.authenticate(true);
+
   const guild = client.guilds.cache.get('509391645226172420'); //development server guildid
 
   if(TESTING)
@@ -163,7 +166,7 @@ client.on("interactionCreate", async (interaction) =>
     .setColor(0x00AE86)
     .setTimestamp()
     .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
-    .setDescription(`An error occurred whilst executing command. Please try again or visit [hltv.org](${hltvURL})`);
+    .setDescription(`An error occurred whilst executing slash command.\nPlease try again or visit [hltv.org](${hltvURL})\nIf this persists please re-add the bot to the server to refresh bot permissions.`);
     if(interaction.deferred)
       await interaction.editReply({ embeds: [embed] });
     else
@@ -268,7 +271,11 @@ client.on("messageCreate", async message =>
         });
 
         collector.on('end', async () => {
-            message.delete();
+            message.delete().catch(err =>
+            {
+                if (err.code !== 10008)
+                    console.log(err);
+            });
         });
       });
     });
@@ -461,7 +468,7 @@ client.on("messageCreate", async message =>
           var embed = new Discord.MessageEmbed()
           .setTitle(teamName + " Profile")
           .setColor(0x00AE86)
-          //.setThumbnail(thumbnailBuffer)
+          .setThumbnail(res.logo)
           //.setImage(res.coverImage)
           .setTimestamp()
           .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
@@ -486,7 +493,6 @@ client.on("messageCreate", async message =>
     {
       HLTV.getTeamStats({id: teamID}).then(res =>
         {
-          console.log(res);
           const embed = new Discord.MessageEmbed()
           .setTitle(teamName + " Stats")
           .setColor(0x00AE86)
@@ -510,19 +516,9 @@ client.on("messageCreate", async message =>
       HLTV.getTeamStats({id: teamID}).then(res =>
         {
           var currIndex = 0;
-          var mapArr = [];
-          var mapNameArr = [];
-          var mapcount = 0;
+          var mapArr = func.teamMapsHLTVtoDB(res.mapStats, res.id, res.name);
 
-          for (var mapKey in res.mapStats)
-          {
-            var map = res.mapStats[mapKey];
-            mapArr[mapcount] = map;
-            mapNameArr[mapcount] = mapKey;
-            mapcount++;
-          }
-
-          var embed = func.handleMapPages(res, currIndex, teamName, teamID, mapArr, mapNameArr);
+          var embed = func.handleMapPages(currIndex, teamName, teamID, mapArr);
           var originalAuthor = message.author;
           message.channel.send({ embeds: [embed] }).then((message) =>
           {
@@ -539,14 +535,14 @@ client.on("messageCreate", async message =>
                 {
                   if (currIndex - 3 >= 0)
                     currIndex-=3;
-                  message.edit({embeds: [func.handleMapPages(res, currIndex, teamName, teamID, mapArr, mapNameArr)]});
+                  message.edit({embeds: [func.handleMapPages(currIndex, teamName, teamID, mapArr)]});
                   break;
                 }
                 case reactionControls.NEXT_PAGE:
                 {
                   if (currIndex + 3 <= mapArr.length - 1)
                     currIndex+=3;
-                  message.edit({embeds: [func.handleMapPages(res, currIndex, teamName, teamID, mapArr, mapNameArr)]});
+                  message.edit({embeds: [func.handleMapPages(currIndex, teamName, teamID, mapArr)]});
                   break;
                 }
                 case reactionControls.STOP:
@@ -559,7 +555,11 @@ client.on("messageCreate", async message =>
             });
 
             collector.on('end', async () => {
-                message.delete();
+                message.delete().catch(err =>
+                {
+                    if (err.code !== 10008)
+                        console.log(err);
+                });
             });
           });
         });
@@ -617,7 +617,11 @@ client.on("messageCreate", async message =>
         });
 
         collector.on('end', async () => {
-            message.delete();
+            message.delete().catch(err =>
+            {
+                if (err.code !== 10008)
+                    console.log(err);
+            });
         });
       });
     });
@@ -664,8 +668,11 @@ client.on("messageCreate", async message =>
         });
 
         collector.on('end', async () => {
-          message.delete();
-            //message.reactions.removeAll().catch(error => console.error('Failed to clear reactions: ', error));
+            message.delete().catch(err =>
+            {
+                if (err.code !== 10008)
+                    console.log(err);
+            });
         });
       });
     });
@@ -736,7 +743,11 @@ client.on("messageCreate", async message =>
           });
 
           collector.on('end', async () => {
-              message.delete();
+              message.delete().catch(err =>
+              {
+                  if (err.code !== 10008)
+                      console.log(err);
+              });
           });
         });
       }
@@ -784,7 +795,11 @@ client.on("messageCreate", async message =>
         });
 
         collector.on('end', async () => {
-            message.delete();
+            message.delete().catch(err =>
+            {
+                if (err.code !== 10008)
+                    console.log(err);
+            });
         });
       })
     });

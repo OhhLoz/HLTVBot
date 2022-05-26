@@ -9,5 +9,6 @@
     "de_cbble" : "Cobblestone",
     "de_vertigo" : "Vertigo",
     "de_ancient" : "Ancient",
+    "default" : "Other",
     "-" : "Other"
 }
