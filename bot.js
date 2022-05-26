@@ -5,7 +5,6 @@ const { HLTV } = require('hltv');
 const func = require("./functions.js");
 const fs = require("fs");
 const database = require("./databaseWrapper.js");
-const conv = require("./databaseConverters.js");
 
 //   SET TRUE WHEN TESTING TO DISABLE TOPGG Posting & TO USE TEST BOT TOKEN
 const TESTING = true;
@@ -517,7 +516,7 @@ client.on("messageCreate", async message =>
       HLTV.getTeamStats({id: teamID}).then(res =>
         {
           var currIndex = 0;
-          var mapArr = conv.teamMapsHLTVtoDB(res.mapStats, res.id, res.name);
+          var mapArr = func.teamMapsHLTVtoDB(res.mapStats, res.id, res.name);
 
           var embed = func.handleMapPages(currIndex, teamName, teamID, mapArr);
           var originalAuthor = message.author;

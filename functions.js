@@ -3,7 +3,7 @@ const COMMANDCODE = require("./commandcodes.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
 const hltvURL = "https://www.hltv.org";
-const nodeHtmlToImage = require('node-html-to-image')
+//const nodeHtmlToImage = require('node-html-to-image')
 
 var id = function(x) {return x;};
 
@@ -421,14 +421,20 @@ var handleTeamProfile = (interaction, res, botData) =>
   {
     for (var i = 0; i < res.players.length; i++)
     {
-        playerRosterOutputStr += `[${res.players[i].name}](${botData.hltvURL}/stats/players/${res.players[i].id}/${res.players[i].name}): ${res.players[i].type} (${res.players[i].timeOnTeam})`
-        if(i != res.players.length - 1)
-        playerRosterOutputStr += '\n';
+      var formattedPlayerName = res.players[i].name.replace(/\s+/g, '-').toLowerCase();
+      playerRosterOutputStr += `[${res.players[i].name}](${botData.hltvURL}/stats/players/${res.players[i].id}/${formattedPlayerName}): ${res.players[i].type} (${res.players[i].timeOnTeam})`
+      if(i != res.players.length - 1)
+      playerRosterOutputStr += '\n';
     }
   }
   else
       playerRosterOutputStr += "Error"
 
+  var footerStr = "Sent by HLTVBot - Last Updated ";
+  if(res.updated_at != undefined)
+    footerStr += getTime(Date.now() - new Date(res.updated_at).getTime()) + " Ago"
+  else
+    footerStr += "Now"
 
   var embed = new MessageEmbed()
     .setTitle(res.team_name + " Profile")
@@ -524,7 +530,7 @@ var handleTeamProfile = (interaction, res, botData) =>
  {
   var currIndex = 0;
   //console.log(mapArr);
-  //var mapArr = conv.teamMapsHLTVtoDB(res.mapStats, res.id, res.name);
+  //var mapArr = func.teamMapsHLTVtoDB(res.mapStats, res.id, res.name);
 
   var embed = handleMapPages(currIndex, teamName, teamID, mapArr);
 
@@ -585,4 +591,42 @@ var handleTeamProfile = (interaction, res, botData) =>
   });
 }
 
-module.exports = {handleEventPages, handleMapPages, handleNewsPages, handlePages, reverseMapFromMap, getTime, checkStats, handleTeamProfile, handleTeamStats, handleTeamMaps, formatErrorEmbed}
+var teamStatsHLTVtoDB = (res) =>
+{
+  var returnObj = Object.assign({}, res.overview);
+  returnObj.team_id = res.id;
+  returnObj.team_name = res.name;
+  return returnObj;
+}
+
+var teamProfilesHLTVtoDB = (res) =>
+{
+  return {
+    team_id: res.id,
+    team_name: res.name,
+    logo: res.logo,
+    location: res.country.name,
+    facebook: res.facebook,
+    twitter: res.twitter,
+    instagram: res.instagram,
+    rank: res.rank,
+    players: res.players
+  }
+}
+
+var teamMapsHLTVtoDB = (inputArr, teamID, teamName) =>
+ {
+  var mapArr = [];
+
+  for (var mapKey in inputArr)
+  {
+    var map = inputArr[mapKey];
+    mapArr.push(map);
+    map.map_name = mapKey;
+    map.team_id = teamID;
+    map.team_name = teamName;
+  }
+  return mapArr;
+ }
+
+module.exports = {handleEventPages, handleMapPages, handleNewsPages, handlePages, reverseMapFromMap, getTime, checkStats, handleTeamProfile, handleTeamStats, handleTeamMaps, formatErrorEmbed, teamProfilesHLTVtoDB, teamMapsHLTVtoDB, teamStatsHLTVtoDB};

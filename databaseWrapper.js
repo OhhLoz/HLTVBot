@@ -1,8 +1,6 @@
 const testConfig = require('./config.json');
 const { Sequelize, Op } = require('sequelize');
 const databaseConstants = require("./databaseConstants.js");
-const conv = require("./databaseConverters.js");
-const func = require("./functions.js");
 process.env.DATABASE_URL = testConfig.databaseURL;
 
 const databaseClient = new Sequelize(process.env.DATABASE_URL,
@@ -164,7 +162,7 @@ module.exports =
   async updateTeamProfile(res)
   {
     return this.queryHandler(teamProfiles,
-    ([res, {where: {team_id: res.id}}]),
+    ([res, {where: {team_id: res.team_id}}]),
     databaseConstants.QUERYCODES.update);
   },
   async checkUpdateTeamProfile(res)
@@ -267,7 +265,7 @@ module.exports =
   },
   async checkUpdateTeamMaps(res)
   {
-    this.fetchTeamMaps(res.id).then((teamMapsResult) =>
+    this.fetchTeamMaps(res.team_id).then((teamMapsResult) =>
     {
         if (teamMapsResult.length == 0)
             this.insertTeamMaps(res);

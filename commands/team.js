@@ -1,9 +1,7 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
-const { MessageEmbed } = require('discord.js');
 const { HLTV } = require('hltv');
 const database = require("../databaseWrapper.js")
 const func = require("../functions.js")
-const conv = require("../databaseConverters.js");
 const databaseConstants = require("../databaseConstants.js")
 
 module.exports =
@@ -11,104 +9,319 @@ module.exports =
 	data: new SlashCommandBuilder()
 		.setName("team")
 		.setDescription("Displays the profile related to the input team")
+        .addStringOption(option => option.setName('function').setDescription('What to display about the specified team').setRequired(true).addChoices({name:"profile", value:"profile"},
+                                                                                                                                                      {name:"stats", value:"stats"},
+                                                                                                                                                      {name:"maps", value:"maps"}))
         .addStringOption(option => option.setName('teamname').setDescription('Team to display the profile for').setRequired(true)),
 	async execute(interaction, client, botData)
     {
+        var category = interaction.options.getString("function");
         var teamName = interaction.options.getString('teamname');
         //sanitize teamName to prevent sql injection
-
-        database.fetchTeamDict(teamName).then(teamDictResult =>
+        switch(category)
         {
-            if (teamDictResult == undefined)    //if teamid not found in teamDictionary
+            case ("profile"):
             {
-                HLTV.getTeamByName({name: teamName}).then((res)=>
+                database.fetchTeamDict(teamName).then(teamDictResult =>
                 {
-                    //var convertedDictRes = conv.teamDictHLTVtoDB(res);
-                    var convertedRes = conv.teamProfilesHLTVtoDB(res);
-                    database.insertTeamDict(res.id, res.name);
-                    if (teamName.toLowerCase() != res.name.toLowerCase())
-                        database.insertTeamDict(res.id, teamName);
-
-                    database.checkUpdateTeamProfile(convertedRes);
-                    func.handleTeamProfile(interaction, convertedRes, botData)
-                }).catch((err) =>
-                {
-                    console.log(err);
-                    interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:T1", "Error whilst accessing HLTV API using provided team name", botData)] });
-                });
-            }
-            else
-            {
-                database.fetchTeamProfiles(teamDictResult.team_id).then((teamProfileResult) =>
-                {
-                    if (teamProfileResult == undefined)
+                    if (teamDictResult == undefined)    //if teamid not found in teamDictionary
                     {
-                        HLTV.getTeam({id: teamDictResult.team_id}).then((res)=>
+                        HLTV.getTeamByName({name: teamName}).then((res)=>
                         {
-                            var convertedRes = conv.teamProfilesHLTVtoDB(res);
+                            //var convertedDictRes = func.teamDictHLTVtoDB(res);
+                            var convertedRes = func.teamProfilesHLTVtoDB(res);
+                            func.handleTeamProfile(interaction, convertedRes, botData)
+                            database.insertTeamDict(res.id, res.name);
+                            if (teamName.toLowerCase() != res.name.toLowerCase())
+                                database.insertTeamDict(res.id, teamName);
 
-                            database.insertTeamProfile(convertedRes);
-                            database.insertRoster(convertedRes.players, convertedRes.team_id);
-                            func.handleTeamProfile(interaction, convertedRes, botData);
+                            database.checkUpdateTeamProfile(convertedRes);
                         }).catch((err) =>
                         {
                             console.log(err);
-                            interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:T2", "Error whilst accessing HLTV API using internal team id", botData)] });
+                            var errorMessage = "Error whilst accessing HLTV API using provided team name";
+                            if(err.message.includes(`Team ${teamName} not found`))
+                                errorMessage = `"${teamName}" was not found using the HLTV API`
+
+                            interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:T1", errorMessage, botData)] });
                         });
                     }
                     else
                     {
-                        //database.checkTeamDictUpdate(teamStatsResult.dataValues);
-                        database.isExpired(new Date(teamProfileResult.dataValues.updated_at), databaseConstants.expiryTime.teamprofiles).then((needsUpdating) =>
+                        database.fetchTeamProfiles(teamDictResult.team_id).then((teamProfileResult) =>
                         {
-                            if (needsUpdating)
+                            if (teamProfileResult == undefined)
                             {
                                 HLTV.getTeam({id: teamDictResult.team_id}).then((res)=>
                                 {
-                                    var convertedRes = conv.teamProfilesHLTVtoDB(res);
-
-                                    database.updateTeamProfile(convertedRes);
-                                    database.updateRoster(convertedRes.players, convertedRes.team_id);
-                                    func.handleTeamProfile(interaction, convertedRes, botData)
+                                    var convertedRes = func.teamProfilesHLTVtoDB(res);
+                                    func.handleTeamProfile(interaction, convertedRes, botData);
+                                    database.insertTeamProfile(convertedRes);
+                                    database.insertRoster(convertedRes.players, convertedRes.team_id);
                                 }).catch((err) =>
                                 {
                                     console.log(err);
-                                    interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:T3", "Error whilst accessing HLTV API using internal team id", botData)] });
+                                    interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:T2", "Error whilst accessing HLTV API using internal team id", botData)] });
                                 });
                             }
                             else
                             {
-                                database.fetchRoster(teamProfileResult.dataValues.team_id).then((fetchedRoster) =>
+                                //database.checkTeamDictUpdate(teamStatsResult.dataValues);
+                                database.isExpired(new Date(teamProfileResult.dataValues.updated_at), databaseConstants.expiryTime.teamprofiles).then((needsUpdating) =>
                                 {
-                                    var playersArr = []
-
-                                    for(var key in fetchedRoster)
+                                    if (needsUpdating)
                                     {
-                                        playersArr.push(fetchedRoster[key].dataValues);
+                                        HLTV.getTeam({id: teamDictResult.team_id}).then((res)=>
+                                        {
+                                            var convertedRes = func.teamProfilesHLTVtoDB(res);
+                                            func.handleTeamProfile(interaction, convertedRes, botData)
+                                            database.updateTeamProfile(convertedRes);
+                                            database.updateRoster(convertedRes.players, convertedRes.team_id);
+                                        }).catch((err) =>
+                                        {
+                                            console.log(err);
+                                            interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:T3", "Error whilst accessing HLTV API using internal team id", botData)] });
+                                        });
                                     }
+                                    else
+                                    {
+                                        database.fetchRoster(teamProfileResult.dataValues.team_id).then((fetchedRoster) =>
+                                        {
+                                            var playersArr = []
 
-                                    teamProfileResult.dataValues.players = playersArr;
-                                    func.handleTeamProfile(interaction, teamProfileResult.dataValues, botData)
-                                })
+                                            for(var key in fetchedRoster)
+                                            {
+                                                playersArr.push(fetchedRoster[key].dataValues);
+                                            }
+
+                                            teamProfileResult.dataValues.players = playersArr;
+                                            func.handleTeamProfile(interaction, teamProfileResult.dataValues, botData)
+                                        })
+                                    }
+                                });
                             }
                         });
                     }
+                }).catch((err) =>
+                {
+                    if (err)
+                        console.log(err)
+                    HLTV.getTeamByName({name: teamName}).then((res)=>
+                    {
+                        func.handleTeamProfile(interaction, res, botData).then(() => {
+                            database.authenticate(false);
+                        })
+                    }).catch((err) =>
+                    {
+                        console.log(err);
+                        interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:T4", "Error whilst accessing HLTV API using provided team name", botData)] });
+                    });
                 });
+                break;
             }
-        }).catch((err) =>
-        {
-            if (err)
-                console.log(err)
-            HLTV.getTeamByName({name: teamName}).then((res)=>
+            case ("stats"):
             {
-                func.handleTeamProfile(interaction, res, botData).then(() => {
-                    database.authenticate(false);
-                })
-            }).catch((err) =>
+                database.fetchTeamDict(teamName).then(teamDictResult =>
+                {
+                    if (teamDictResult == undefined)    //if teamid not found in teamDictionary
+                    {
+                        HLTV.getTeamByName({name: teamName}).then((res)=>
+                        {
+                            //var convertedRes = func.teamDictHLTVtoDB(res);
+                            var convertedRes = func.teamProfilesHLTVtoDB(res);
+                            database.insertTeamDict(res.id, res.name);
+                            if (teamName.toLowerCase() != res.name.toLowerCase())
+                                database.insertTeamDict(res.id, teamName);
+
+                            database.checkUpdateTeamProfile(convertedRes);
+                            HLTV.getTeamStats({id: res.id}).then((res)=>
+                            {
+                                var convertedStatsRes = func.teamStatsHLTVtoDB(res);
+                                var convertedMapsRes = func.teamMapsHLTVtoDB(res);
+                                func.handleTeamStats(interaction, convertedStatsRes, botData);
+                                database.insertTeamStats(convertedRes);
+
+                                database.checkUpdateTeamMaps(convertedMapsRes);
+                            });
+                        }).catch((err) =>
+                        {
+                            console.log(err);
+                            var errorMessage = "Error whilst accessing HLTV API using provided team name";
+                            if(err.message.includes(`Team ${teamName} not found`))
+                                errorMessage = `"${teamName}" was not found using the HLTV API`
+
+                            interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:TS1", errorMessage, botData)] });
+                        });
+                    }
+                    else
+                    {
+                        database.fetchTeamStats(teamDictResult.team_id).then((teamStatsResult) =>
+                        {
+                            if (teamStatsResult == undefined)
+                            {
+                                HLTV.getTeamStats({id: teamDictResult.team_id}).then((res)=>
+                                {
+                                    var convertedRes = func.teamStatsHLTVtoDB(res);
+                                    var convertedMapsRes = func.teamMapsHLTVtoDB(res);
+                                    func.handleTeamStats(interaction, convertedRes, botData)
+                                    database.insertTeamStats(convertedRes);
+
+                                    database.checkUpdateTeamMaps(convertedMapsRes);
+                                }).catch((err) =>
+                                {
+                                    console.log(err);
+                                    interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:TS2", "Error whilst accessing HLTV API using internal team id", botData)] });
+                                });
+                            }
+                            else
+                            {
+                                //database.checkTeamDictUpdate(teamStatsResult.dataValues);
+                                database.isExpired(new Date(teamStatsResult.dataValues.updated_at), databaseConstants.expiryTime.teamstats).then((needsUpdating) =>
+                                {
+                                    if (needsUpdating)
+                                    {
+                                        HLTV.getTeamStats({id: teamDictResult.team_id}).then((res)=>
+                                        {
+                                            var convertedRes = func.teamStatsHLTVtoDB(res);
+                                            var convertedMapsRes = func.teamMapsHLTVtoDB(res);
+                                            func.handleTeamStats(interaction, convertedRes, botData)
+                                            database.updateTeamStats(convertedRes);
+                                            database.checkUpdateTeamMaps(convertedMapsRes);
+                                        }).catch((err) =>
+                                        {
+                                            console.log(err);
+                                            interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:TS3", "Error whilst accessing HLTV API using internal team id", botData)] });
+                                        });
+                                    }
+                                    else
+                                        func.handleTeamStats(interaction, teamStatsResult.dataValues, botData)
+                                });
+                            }
+                        });
+                    }
+                }).catch((err) =>
+                {
+                    if (err)
+                        console.log(err)
+                    HLTV.getTeamByName({name: teamName}).then((res)=>
+                    {
+                        HLTV.getTeamStats({name: res.id}).then((res)=>
+                        {
+                            func.handleTeamStats(interaction, func.teamStatsHLTVtoDB(res), botData);
+                        });
+
+                        database.authenticate(false);
+                    }).catch((err) =>
+                    {
+                        console.log(err);
+                        interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:TS4", "Error whilst accessing HLTV API using provided team name", botData)] });
+                    });
+                });
+                break;
+            }
+            case "maps":
             {
-                console.log(err);
-                interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:T4", "Error whilst accessing HLTV API using provided team name", botData)] });
-            });
-        });
+                database.fetchTeamDict(teamName).then(teamDictResult =>
+                {
+                    if (teamDictResult == undefined)    //if teamid not found in teamDictionary
+                    {
+                    HLTV.getTeamByName({name: teamName}).then((res)=>
+                    {
+                        var convertedRes = func.teamProfilesHLTVtoDB(res);
+                        database.insertTeamDict(res.id, res.name);
+                        if (teamName.toLowerCase() != res.name.toLowerCase())
+                            database.insertTeamDict(res.id, teamName);
+
+                        database.checkUpdateTeamProfile(convertedRes);
+                        HLTV.getTeamStats({id: res.id}).then((res)=>
+                        {
+                            var convertedStatsRes = func.teamStatsHLTVtoDB(res);
+                            var convertedMapsRes = func.teamMapsHLTVtoDB(res.mapStats, res.id, res.name);
+                            func.handleTeamMaps(interaction, convertedMapsRes, res.id, res.name, botData);
+                            database.insertTeamMaps(convertedMapsRes);
+                            database.checkUpdateTeamStats(convertedStatsRes);
+                        });
+                    }).catch((err) =>
+                    {
+                        console.log(err);
+                        var errorMessage = "Error whilst accessing HLTV API using provided team name";
+                        if(err.message.includes(`Team ${teamName} not found`))
+                            errorMessage = `"${teamName}" was not found using the HLTV API`
+
+                        interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:TM1", errorMessage, botData)] });
+                    });
+                    }
+                    else
+                    {
+                    database.fetchTeamMaps(teamDictResult.team_id).then((teamMapsResult) =>
+                    {
+                        if (teamMapsResult.length == 0)
+                        {
+                        HLTV.getTeamStats({id: teamDictResult.team_id}).then((res)=>
+                        {
+                            var convertedStatsRes = func.teamStatsHLTVtoDB(res);
+                            var convertedMapsRes = func.teamMapsHLTVtoDB(res.mapStats, res.id, res.name);
+                            func.handleTeamMaps(interaction, convertedMapsRes, res.id, res.name, botData);
+                            database.insertTeamMaps(convertedMapsRes);
+                            database.checkUpdateTeamStats(convertedStatsRes);
+                        }).catch((err) =>
+                        {
+                            console.log(err);
+                            interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:TM2", "Error whilst accessing HLTV API using internal team id", botData)] });
+                        });
+                        }
+                        else
+                        {
+                        var mapArr = []
+                        for(var key in teamMapsResult)
+                        {
+                            mapArr.push(teamMapsResult[key].dataValues);
+                        }
+
+                        //database.checkTeamDictUpdate(teamMapsResult.dataValues);
+                        database.isExpired(new Date(mapArr[0].updated_at), databaseConstants.expiryTime.teammaps).then((needsUpdating) =>
+                        {
+                            if (needsUpdating)
+                            {
+                                HLTV.getTeamStats({id: teamDictResult.team_id}).then((res)=>
+                                {
+                                    var convertedStatsRes = func.teamStatsHLTVtoDB(res);
+                                    var convertedRes = func.teamMapsHLTVtoDB(res.mapStats, res.id, res.name);
+                                    func.handleTeamMaps(interaction, convertedRes, res.id, res.name, botData);
+                                    database.updateTeamMaps(convertedRes, res.id, res.name);
+                                    database.checkUpdateTeamStats(convertedStatsRes);
+                                }).catch((err) =>
+                                {
+                                    console.log(err);
+                                    interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:TM3", "Error whilst accessing HLTV API using internal team id", botData)] });
+                                });
+                            }
+                            else
+                                func.handleTeamMaps(interaction, mapArr, teamDictResult.team_id, mapArr[0].team_name, botData)
+                        });
+                        }
+                    });
+                    }
+                }).catch((err) =>
+                {
+                    if (err)
+                        console.log(err)
+                    HLTV.getTeamByName({name: teamName}).then((res)=>
+                    {
+                        HLTV.getTeamStats({name: res.id}).then((res)=>
+                        {
+                            func.handleTeamMaps(interaction, func.teamMapsHLTVtoDB(res.mapStats, res.id, res.name), res.id, res.name, botData);
+                        });
+
+                        database.authenticate(false);
+                    }).catch((err) =>
+                    {
+                        console.log(err);
+                        interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:TM4", "Error whilst accessing HLTV API using provided team name", botData)] });
+                    });
+                });
+                break;
+            }
+        }
     }
 }
