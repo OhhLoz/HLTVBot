@@ -18,7 +18,7 @@ const COMMANDCODE = require("./commandcodes.json");
 //    URLS & TEXT FORMATTING
 const hltvURL = "https://www.hltv.org";
 const topggVoteURL = "https://top.gg/bot/548165454158495745/vote";
-var titleSpacer = "\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800";
+var titleSpacer = "\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800";
 
 //    GLOBAL VARIABLES
 const reactionControls =
