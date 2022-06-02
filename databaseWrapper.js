@@ -1,7 +1,7 @@
 const { Sequelize, Op } = require('sequelize');
 const databaseConstants = require("./databaseConstants.js");
-// const testConfig = require('./config.json');
-// process.env.DATABASE_URL = testConfig.databaseURL;
+const testConfig = require('./config.json');
+process.env.DATABASE_URL = testConfig.databaseURL;
 
 const databaseClient = new Sequelize(process.env.DATABASE_URL,
 {
@@ -31,8 +31,9 @@ if (false)
   client.connect();
   var truncateAll = `TRUNCATE TABLE teamstats,teammaps,teamprofiles, roster;`
   var truncate = `TRUNCATE TABLE teammaps;`
+  var drop = `DROP TABLE player;`
   var update = `UPDATE teamdictionary SET team_id = '4608' where team_name = 'navi';`
-  client.query(truncate, (err, res) => {
+  client.query(drop, (err, res) => {
     if (err) throw err;
     for (let row of res.rows) {
       console.log(JSON.stringify(row));
@@ -47,8 +48,9 @@ const teamProfiles = databaseClient.define('teamprofiles', databaseConstants.tea
 const roster = databaseClient.define('roster', databaseConstants.rosterTableSchema, databaseConstants.tableOptions);
 const teamStats = databaseClient.define('teamstats', databaseConstants.teamStatsTableSchema, databaseConstants.tableOptions);
 const teamMaps = databaseClient.define('teammaps', databaseConstants.teamMapsTableSchema, databaseConstants.tableOptions);
+const players = databaseClient.define('players', databaseConstants.playersTableSchema, databaseConstants.tableOptions);
 
-//teamMaps.sync({ alter: true })
+//players.sync({ alter: true })
 
 module.exports =
 {
@@ -271,6 +273,44 @@ module.exports =
             this.insertTeamMaps(res);
         else
             this.handleTeamMapsUpdate(res, new Date(teamMapsResult.updated_at))
+    });
+  },
+  async fetchPlayer(IGN)
+  {
+    var attributeTemplate = databaseConstants.fetchPlayerByIGN;
+    attributeTemplate.where.ign = { [Op.iLike]: IGN }
+    return this.queryHandler(players, attributeTemplate, databaseConstants.QUERYCODES.findOne);
+  },
+  async insertPlayer(res)
+  {
+    return this.queryHandler(players,
+    res,
+    databaseConstants.QUERYCODES.create);
+  },
+  async handlePlayerUpdate(res, dbDate)
+  {
+    this.isExpired(dbDate, databaseConstants.expiryTime.players).then((result) =>
+    {
+      if(result)
+        this.updatePlayer(res);
+    });
+  },
+  async updatePlayer(res)
+  {
+    return this.queryHandler(players,
+    ([res, {where: {id: res.id}}]),
+    databaseConstants.QUERYCODES.update);
+  },
+  async checkUpdatePlayer(res)
+  {
+    this.fetchPlayer(res.ign).then((playerResult) =>
+    {
+        if (playerResult == undefined)
+        {
+          this.insertPlayer(res);
+        }
+        else
+            this.handlePlayerUpdate(res, new Date(playerResult.updated_at))
     });
   },
   async isExpired(dbDate, expiryTime)

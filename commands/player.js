@@ -1,6 +1,8 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
-const { MessageEmbed } = require('discord.js');
 const { HLTV } = require('hltv');
+const database = require("../databaseWrapper.js")
+const func = require("../functions.js")
+const databaseConstants = require("../databaseConstants.js")
 
 module.exports =
 {
@@ -11,38 +13,61 @@ module.exports =
 	async execute(interaction, client, botData)
     {
         var playerName = interaction.options.getString('player');
-        HLTV.getPlayerByName({name: playerName}).then((res)=>
+
+        database.fetchPlayer(playerName).then((playerResult) =>
         {
-            var embed = new MessageEmbed()
-            .setTitle(playerName + " Player Profile")
-            .setColor(0x00AE86)
-            .setThumbnail(res.image)
-            .setTimestamp()
-            .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
-            .setURL(`${botData.hltvURL}/player/${res.id}/${res.ign}/`)
-            .addFields
-            (
-                {name: "Name", value: res.name == undefined ? "Not Available" : res.name},
-                {name: "IGN", value:  res.ign == undefined ? "Not Available" : res.ign},
-                {name: "Age", value:  res.age == undefined ? "Not Available" : res.age.toString()},
-                {name: "Country", value:  res.country.name == undefined ? "Not Available" : res.country.name},
-                {name: "Facebook", value:  res.facebook == undefined ? "Not Available" : res.facebook},
-                {name: "Twitch", value:  res.twitch == undefined ? "Not Available" : res.twitch},
-                {name: "Twitter", value:  res.twitter == undefined ? "Not Available" : res.twitter},
-                {name: "Team", value:  `[${res.team.name}](${botData.hltvURL}/team/${res.team.id}/${res.team.name.replace(/\s+/g, '')})`},
-                {name: "Rating", value:  res.statistics.rating == undefined ? "Not Available" : res.statistics.rating.toString()},
-            )
-            interaction.editReply({ embeds: [embed] });
+            if(playerResult == undefined)   //player not found in database
+            {
+                HLTV.getPlayerByName({name: playerName}).then((res)=>
+                {
+                    var convertedRes = func.playersHLTVtoDB(res);
+                    func.handlePlayer(interaction, convertedRes, botData)
+                    database.insertPlayer(convertedRes);
+                }).catch((err) =>
+                {
+                    console.log(err);
+                    var errorMessage = "Error whilst accessing HLTV API using provided player name";
+                    if(err.message.includes(`Player ${playerName} not found`))
+                        errorMessage = `"${playerName}" was not found using the HLTV API`
+
+                    interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:P1", errorMessage, botData)] });
+                });
+            }
+            else    //player found in database
+            {
+                database.isExpired(new Date(playerResult.dataValues.updated_at), databaseConstants.expiryTime.players).then((needsUpdating) =>
+                {
+                    if (needsUpdating)
+                    {
+                        HLTV.getPlayer({id: playerResult.id}).then((res)=>
+                        {
+                            var convertedRes = func.playersHLTVtoDB(res);
+                            func.handlePlayer(interaction, convertedRes, botData)
+                            database.updatePlayer(convertedRes);
+                        }).catch((err) =>
+                        {
+                            console.log(err);
+                            interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:P2", "Error whilst accessing HLTV API using internal team id", botData)] });
+                        });
+                    }
+                    else
+                            func.handlePlayer(interaction, playerResult.dataValues, botData)
+                });
+            }
         }).catch((err) =>
         {
-            console.log(err);
-            var embed = new MessageEmbed()
-            .setTitle("Invalid Player")
-            .setColor(0x00AE86)
-            .setTimestamp()
-            .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
-            .setDescription(`${playerName} is not a valid playername. Please try again or visit [hltv.org](${botData.hltvURL})`);
-            interaction.editReply({ embeds: [embed] });
+            if (err)
+                console.log(err)
+            HLTV.getPlayerByName({name: playerName}).then((res)=>
+            {
+                func.handlePlayer(interaction, res, botData).then(() => {
+                    database.authenticate(false);
+                })
+            }).catch((err) =>
+            {
+                console.log(err);
+                interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:P3", "Error whilst accessing HLTV API using provided player name", botData)] });
+            });
         });
     }
 }
