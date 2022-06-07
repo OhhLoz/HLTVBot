@@ -16,9 +16,10 @@ const msinMinutes = 60 * 1000;
 const expiryTime =
 {
   teamdictionary: 600 * msinMinutes,
-  teamprofiles: 60 * msinMinutes,
-  teamstats: 60 * msinMinutes,
-  teammaps: 60 * msinMinutes
+  teamprofiles: 120 * msinMinutes,
+  teamstats: 120 * msinMinutes,
+  teammaps: 120 * msinMinutes,
+  players: 120 * msinMinutes
 }
 
 const tableOptions =
@@ -138,6 +139,35 @@ const teamMapsTableSchema =
   roundWinPAfterFirstDeath:{type: DataTypes.FLOAT}
 }
 
+const playersTableSchema =
+{
+  id:
+  {
+    type: DataTypes.INTEGER,
+    primaryKey: true
+  },
+  name:
+  {
+      type: DataTypes.STRING,
+      allowNull: false
+  },
+  ign:
+  {
+      type: DataTypes.STRING,
+      allowNull: false
+  },
+  image:{type: DataTypes.STRING},
+  age:{type: DataTypes.INTEGER},
+  twitter:{type: DataTypes.STRING},
+  twitch:{type: DataTypes.STRING},
+  facebook:{type: DataTypes.STRING},
+  instagram:{type: DataTypes.STRING},
+  country:{type: DataTypes.STRING},
+  team_name:{type: DataTypes.STRING},
+  team_id:{type: DataTypes.STRING},
+  rating:{type: DataTypes.FLOAT}
+}
+
 const fetchTeamIDByTeamName =
 {
   attributes: ['team_id', 'updated_at'],
@@ -168,6 +198,12 @@ const fetchTeamMapsByTeamID =
   where: { team_id:{} }
 }
 
+const fetchPlayerByIGN =
+{
+  attributes: ['id','name','ign','image','age','twitter','twitch','facebook','instagram','country','team_name','team_id','rating','updated_at'],
+  where: { ign:{} }
+}
+
 module.exports =
 {
   QUERYCODES,
@@ -178,9 +214,11 @@ module.exports =
   rosterTableSchema,
   teamStatsTableSchema,
   teamMapsTableSchema,
+  playersTableSchema,
   fetchTeamIDByTeamName,
   fetchTeamProfileByTeamID,
   fetchRosterByTeamID,
   fetchTeamStatsByTeamID,
-  fetchTeamMapsByTeamID
+  fetchTeamMapsByTeamID,
+  fetchPlayerByIGN
 }

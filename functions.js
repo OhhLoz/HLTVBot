@@ -408,11 +408,10 @@ var checkStats = (guild, botData, isJoin) =>
 /**
  * Formats a team profile embed based on the given arguments
  *
- *
+ * @param {Object}   interaction     Interaction object to reply to
  * @param {Object}   res     Team profile object to populated the embed with
  * @param {Object}   botData   Global object used to keep track of necessary botData to avoid reuse.
  *
- * @return {MessageEmbed}            Returns the populated team profile embed object.
  */
 var handleTeamProfile = (interaction, res, botData) =>
 {
@@ -480,11 +479,10 @@ var handleTeamProfile = (interaction, res, botData) =>
 /**
  * Formats a team stats embed based on the given arguments
  *
- *
+ * @param {Object}   interaction     Interaction object to reply to
  * @param {Object}   res     Team stats object to populated the embed with
  * @param {Object}   botData   Global object used to keep track of necessary botData to avoid reuse.
  *
- * @return {MessageEmbed}            Returns the populated team stats embed object.
  */
  var handleTeamStats = (interaction, res, botData) =>
  {
@@ -591,6 +589,72 @@ var handleTeamProfile = (interaction, res, botData) =>
   });
 }
 
+/**
+ * Formats a player profile embed based on the given arguments
+ *
+ *
+ * @param {Object}   interaction     Interaction object to reply to
+ * @param {Object}   res       Team profile object to populated the embed with
+ * @param {Object}   botData   Global object used to keep track of necessary botData to avoid reuse.
+ *
+ */
+var handlePlayer = (interaction, res, botData) =>
+{
+  var footerStr = "Sent by HLTVBot - Last Updated ";
+  if(res.updated_at != undefined)
+    footerStr += getTime(Date.now() - new Date(res.updated_at).getTime()) + " Ago"
+  else
+    footerStr += "Now"
+
+  var embed = new MessageEmbed()
+    .setTitle(res.ign + " Player Profile")
+    .setColor(0x00AE86)
+    .setThumbnail(res.image)
+    //.setImage(res.image)
+    .setTimestamp()
+    .setFooter({text: footerStr, iconURL: "https://cdn.discordapp.com/avatars/548165454158495745/222c8d9ccac5d194d8377c5da5b0f95b.png?size=4096"})
+    .setURL(`${botData.hltvURL}/team/${res.team_id}/${res.ign.replace(/\s+/g, '')}`)
+    .addFields
+    (
+        {name: "Name", value: res.name == undefined ? "Not Available" : res.name},
+        {name: "IGN", value:  res.ign == undefined ? "Not Available" : res.ign},
+        {name: "Age", value:  res.age == undefined ? "Not Available" : res.age.toString()},
+        {name: "Country", value:  res.country == undefined ? "Not Available" : res.country},
+    )
+    if (res.twitch)
+      embed.addField("Twitch", res.twitch);
+    if (res.facebook)
+      embed.addField("Facebook", res.facebook);
+    if (res.twitter)
+      embed.addField("Twitter", res.twitter);
+    if (res.instagram)
+      embed.addField("Instagram", res.instagram);
+    embed.addField("Team", `[${res.team_name}](${botData.hltvURL}/team/${res.team_id}/${res.team_name.replace(/\s+/g, '')})`)
+    embed.addField("Rating", res.rating.toString());
+
+  // if (res.logo.includes(".svg"))
+  // {
+  //   nodeHtmlToImage({
+  //     html: `<img src='${res.logo}' />`,
+  //     quality: 100,
+  //     type: 'png',
+  //     transparent: true,
+  //     puppeteerArgs: {
+  //       args: ['--no-sandbox'],
+  //     },
+  //     encoding: 'buffer',
+  //   }).then(imageResult =>
+  //   {
+  //     var thumbnail = new MessageAttachment(imageResult, 'logo.png')
+  //     embed.setThumbnail('attachment://logo.png');
+
+  //     interaction.editReply({ embeds: [embed], files: [thumbnail] });
+  //   })
+  // }
+  // else
+      interaction.editReply({ embeds: [embed] });
+}
+
 var teamStatsHLTVtoDB = (res) =>
 {
   var returnObj = Object.assign({}, res.overview);
@@ -629,4 +693,23 @@ var teamMapsHLTVtoDB = (inputArr, teamID, teamName) =>
   return mapArr;
  }
 
-module.exports = {handleEventPages, handleMapPages, handleNewsPages, handlePages, reverseMapFromMap, getTime, checkStats, handleTeamProfile, handleTeamStats, handleTeamMaps, formatErrorEmbed, teamProfilesHLTVtoDB, teamMapsHLTVtoDB, teamStatsHLTVtoDB};
+ var playersHLTVtoDB = (res) =>
+{
+  return {
+    id: res.id,
+    name: res.name,
+    ign: res.ign,
+    image: res.image,
+    age: res.age,
+    twitter: res.twitter,
+    twitch: res.twitch,
+    facebook: res.facebook,
+    instagram: res.instagram,
+    country: res.country.name,
+    team_id: res.team.id,
+    team_name: res.team.name,
+    rating:res.statistics.rating
+  }
+}
+
+module.exports = {handleEventPages, handleMapPages, handleNewsPages, handlePages, reverseMapFromMap, getTime, checkStats, handleTeamProfile, handleTeamStats, handleTeamMaps, handlePlayer, formatErrorEmbed, teamProfilesHLTVtoDB, teamMapsHLTVtoDB, teamStatsHLTVtoDB, playersHLTVtoDB};
