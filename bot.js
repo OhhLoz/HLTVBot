@@ -7,7 +7,7 @@ const fs = require("fs");
 const database = require("./databaseWrapper.js");
 
 //   SET TRUE WHEN TESTING TO DISABLE TOPGG Posting & TO USE TEST BOT TOKEN
-const TESTING = true;
+const TESTING = false;
 
 //    DATA IMPORT
 const teamDictionary = require("./teams.json");
