@@ -280,4 +280,93 @@ var handleTeamStats = (teamName, response, botData, isLegacy) =>
     });
 }
 
-module.exports = {handleTeamProfile, handleTeamStats};
+var handlePlayer = (playerName, response, botData, isLegacy) =>
+{
+    database.fetchPlayer(playerName).then((playerResult) =>
+        {
+            if(playerResult == undefined)   //player not found in database
+            {
+                HLTV.getPlayerByName({name: playerName}).then((res)=>
+                {
+                    var convertedRes = func.playersHLTVtoDB(res);
+                    var embed = func.formatPlayerEmbed(convertedRes, botData);
+                    if(isLegacy)
+                        response.channel.send({ embeds: [embed] });
+                    else
+                        response.editReply({ embeds: [embed] });
+                    database.insertPlayer(convertedRes);
+                }).catch((err) =>
+                {
+                    console.log(err);
+                    var errorMessage = "Error whilst accessing HLTV API using provided player name";
+                    if(err.message.includes(`Player ${playerName} not found`))
+                        errorMessage = `"${playerName}" was not found using the HLTV API`
+
+                    var embed = func.formatErrorEmbed("HLTV API Error - Error Code:P1", errorMessage, botData);
+                    if(isLegacy)
+                        response.channel.send({ embeds: [embed] });
+                    else
+                        response.editReply({ embeds: [embed] });
+                });
+            }
+            else    //player found in database
+            {
+                database.isExpired(new Date(playerResult.dataValues.updated_at), databaseConstants.expiryTime.players).then((needsUpdating) =>
+                {
+                    if (needsUpdating)
+                    {
+                        HLTV.getPlayer({id: playerResult.id}).then((res)=>
+                        {
+                            var convertedRes = func.playersHLTVtoDB(res);
+                            var embed = func.formatPlayerEmbed(convertedRes, botData);
+                            if(isLegacy)
+                                response.channel.send({ embeds: [embed] });
+                            else
+                                response.editReply({ embeds: [embed] });
+                            database.updatePlayer(convertedRes);
+                        }).catch((err) =>
+                        {
+                            console.log(err);
+                            var embed = func.formatErrorEmbed("HLTV API Error - Error Code:P2", "Error whilst accessing HLTV API using internal player id", botData);
+                            if(isLegacy)
+                                response.channel.send({ embeds: [embed] });
+                            else
+                                response.editReply({ embeds: [embed] });
+                        });
+                    }
+                    else
+                    {
+                        var embed = func.formatPlayerEmbed(playerResult.dataValues, botData);
+                        if(isLegacy)
+                            response.channel.send({ embeds: [embed] });
+                        else
+                            response.editReply({ embeds: [embed] });
+                    }
+                });
+            }
+        }).catch((err) =>
+        {
+            if (err)
+                console.log(err)
+            HLTV.getPlayerByName({name: playerName}).then((res)=>
+            {
+                func.formatPlayerEmbed(res, botData).then((result) => {
+                    if(isLegacy)
+                        response.channel.send({ embeds: [result] });
+                    else
+                        response.editReply({ embeds: [result] });
+                    database.authenticate(false);
+                })
+            }).catch((err) =>
+            {
+                console.log(err);
+                var embed = func.formatErrorEmbed("HLTV API Error - Error Code:P3", "Error whilst accessing HLTV API using provided player name", botData);
+                if(isLegacy)
+                    response.channel.send({ embeds: [embed] });
+                else
+                    response.editReply({ embeds: [embed] });
+            });
+        });
+}
+
+module.exports = {handleTeamProfile, handleTeamStats, handlePlayer};

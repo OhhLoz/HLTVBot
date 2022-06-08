@@ -325,65 +325,7 @@ client.on("messageCreate", async message =>
     }
     case "player":
     {
-      var outputStr = "";
-      database.fetchPlayer(args[0]).then((playerResult) =>
-      {
-        if(playerResult == undefined)   //player not found in database
-        {
-          HLTV.getPlayerByName({name: args[0]}).then((res)=>
-          {
-              var convertedRes = func.playersHLTVtoDB(res);
-              var embed = func.formatPlayerEmbed(convertedRes, botData);
-              message.channel.send({ embeds: [embed] });
-              database.insertPlayer(convertedRes);
-          }).catch((err) =>
-          {
-              console.log(err);
-              var errorMessage = "Error whilst accessing HLTV API using provided player name";
-              if(err.message.includes(`Player ${args[0]} not found`))
-                  errorMessage = `"${args[0]}" was not found using the HLTV API`
-
-              message.channel.send({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:LP1", errorMessage, botData)] });
-          });
-        }
-        else    //player found in database
-        {
-          database.isExpired(new Date(playerResult.dataValues.updated_at), databaseConstants.expiryTime.players).then((needsUpdating) =>
-          {
-            if (needsUpdating)
-            {
-                HLTV.getPlayer({id: playerResult.id}).then((res)=>
-                {
-                    var convertedRes = func.playersHLTVtoDB(res);
-                    var embed = func.formatPlayerEmbed(convertedRes, botData);
-                    message.channel.send({ embeds: [embed] });
-                    database.updatePlayer(convertedRes);
-                }).catch((err) =>
-                {
-                    console.log(err);
-                    message.channel.send({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:LP2", "Error whilst accessing HLTV API using internal player id", botData)] });
-                });
-            }
-            else
-              message.channel.send({ embeds: [func.formatPlayerEmbed(playerResult.dataValues, botData)] });
-          });
-        }
-      }).catch((err) =>
-      {
-          if (err)
-              console.log(err)
-          HLTV.getPlayerByName({name: args[0]}).then((res)=>
-          {
-            func.formatPlayerEmbed(res, botData).then((result) => {
-              message.channel.send({ embeds: [result] });
-              database.authenticate(false);
-            })
-          }).catch((err) =>
-          {
-            console.log(err);
-            message.channel.send({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:LP3", "Error whilst accessing HLTV API using provided player name", botData)] });
-          });
-      });
+      databaseHandler.handlePlayer(args[0], message, botData, true);
       break;
     }
     case "hltv":
