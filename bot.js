@@ -5,7 +5,6 @@ const { HLTV } = require('hltv');
 const func = require("./functions.js");
 const fs = require("fs");
 const database = require("./databaseWrapper.js");
-const databaseConstants = require("./databaseConstants.js");
 const databaseHandler = require("./databaseHandler.js");
 
 //   SET TRUE WHEN TESTING TO DISABLE TOPGG Posting & TO USE TEST BOT TOKEN
