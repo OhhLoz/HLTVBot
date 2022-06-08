@@ -6,6 +6,7 @@ const func = require("./functions.js");
 const fs = require("fs");
 const database = require("./databaseWrapper.js");
 const databaseConstants = require("./databaseConstants.js");
+const databaseHandler = require("./databaseHandler.js");
 
 //   SET TRUE WHEN TESTING TO DISABLE TOPGG Posting & TO USE TEST BOT TOKEN
 process.env.TESTING = true;
@@ -14,46 +15,7 @@ process.env.TESTING = true;
 const package = require("./package.json");
 const COMMANDCODE = require("./commandcodes.json");
 
-//    URLS & TEXT FORMATTING
-const hltvURL = "https://www.hltv.org";
-const topggVoteURL = "https://top.gg/bot/548165454158495745/vote";
-var titleSpacer = "\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800";
-
 //    GLOBAL VARIABLES
-const reactionControls =
-{
-  PREV_PAGE: '⬅',
-  NEXT_PAGE: '➡',
-  STOP: '⏹',
-}
-
-const row = new Discord.MessageActionRow()
-.addComponents(
-  new Discord.MessageButton()
-  .setStyle('LINK')
-  .setLabel("Vote!")
-  .setURL(topggVoteURL),
-  new Discord.MessageButton()
-  .setCustomId(reactionControls.PREV_PAGE)
-  .setStyle('SECONDARY')
-  .setLabel(" ")
-  .setEmoji(reactionControls.PREV_PAGE),
-  new Discord.MessageButton()
-  .setCustomId(reactionControls.STOP)
-  .setStyle('SECONDARY')
-  .setLabel(" ")
-  .setEmoji(reactionControls.STOP),
-  new Discord.MessageButton()
-  .setCustomId(reactionControls.NEXT_PAGE)
-  .setStyle('SECONDARY')
-  .setLabel(" ")
-  .setEmoji(reactionControls.NEXT_PAGE),
-  new Discord.MessageButton()
-  .setStyle('LINK')
-  .setLabel("HLTV")
-  .setURL(hltvURL)
-);
-
 var botData =
 {
   servercount: 0,
@@ -61,13 +23,46 @@ var botData =
   botcount: 0,
   channelcount: 0,
   version: package.version,
-  hltvURL: hltvURL,
-  titleSpacer: titleSpacer,
-  interactionRow: row,
-  reactionControls: reactionControls,
+  hltvURL: "https://www.hltv.org",
+  topggVoteURL: "https://top.gg/bot/548165454158495745/vote",
+  titleSpacer: "\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800\u2800",
+  interactionRow: {},
+  reactionControls:
+  {
+    PREV_PAGE: '⬅',
+    NEXT_PAGE: '➡',
+    STOP: '⏹',
+  },
   COMMANDCODE: COMMANDCODE,
   hltvIMG: ""
 }
+
+const row = new Discord.MessageActionRow()
+.addComponents(
+  new Discord.MessageButton()
+  .setStyle('LINK')
+  .setLabel("Vote!")
+  .setURL(botData.topggVoteURL),
+  new Discord.MessageButton()
+  .setCustomId(botData.reactionControls.PREV_PAGE)
+  .setStyle('SECONDARY')
+  .setLabel(" ")
+  .setEmoji(botData.reactionControls.PREV_PAGE),
+  new Discord.MessageButton()
+  .setCustomId(botData.reactionControls.STOP)
+  .setStyle('SECONDARY')
+  .setLabel(" ")
+  .setEmoji(botData.reactionControls.STOP),
+  new Discord.MessageButton()
+  .setCustomId(botData.reactionControls.NEXT_PAGE)
+  .setStyle('SECONDARY')
+  .setLabel(" ")
+  .setEmoji(botData.reactionControls.NEXT_PAGE),
+  new Discord.MessageButton()
+  .setStyle('LINK')
+  .setLabel("HLTV")
+  .setURL(botData.hltvURL)
+);
 
 if(!process.env.TESTING)
 {
@@ -114,6 +109,7 @@ client.on("ready", () =>
 
   database.authenticate(true);
   botData.hltvIMG = client.user.displayAvatarURL();
+  botData.interactionRow = row;
 
   const guild = client.guilds.cache.get('509391645226172420'); //development server guildid
 
@@ -166,7 +162,7 @@ client.on("interactionCreate", async (interaction) =>
     .setColor(0x00AE86)
     .setTimestamp()
     .setFooter({text: "Sent by HLTVBot", iconURL: botData.hltvIMG})
-    .setDescription(`An error occurred whilst executing slash command.\nPlease try again or visit [hltv.org](${hltvURL})\nIf this persists please re-add the bot to the server to refresh bot permissions.`);
+    .setDescription(`An error occurred whilst executing slash command.\nPlease try again or visit [hltv.org](${botData.hltvURL})\nIf this persists please re-add the bot to the server to refresh bot permissions.`);
     if(interaction.deferred)
       await interaction.editReply({ embeds: [embed] });
     else
@@ -219,7 +215,7 @@ client.on("messageCreate", async message =>
         {
           if(res[index].title != undefined && res[index].category == 'cs')
           {
-            embed.addField(`${res[index].title}`, `[Link](${hltvURL + res[index].link}) Replies: ${res[index].replies} Category: ${res[index].category}`);
+            embed.addField(`${res[index].title}`, `[Link](${botData.hltvURL + res[index].link}) Replies: ${res[index].replies} Category: ${res[index].category}`);
             embedcount++;
           }
           if(embedcount >= 24)
@@ -242,28 +238,28 @@ client.on("messageCreate", async message =>
         {
           message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
 
-          const filter = (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id);
+          const filter = (reaction, user) => (Object.values(botData.reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id);
           const collector = message.createReactionCollector({filter, time: 60000});
 
           collector.on('collect', (reaction, user) =>
           {
             switch (reaction.emoji.name)
             {
-              case reactionControls.PREV_PAGE:
+              case botData.reactionControls.PREV_PAGE:
               {
                 if (currIndex - 8 >= 0)
                   currIndex-=8;
                 message.edit({embeds: [func.handleNewsPages(res, currIndex)]});
                 break;
               }
-              case reactionControls.NEXT_PAGE:
+              case botData.reactionControls.NEXT_PAGE:
               {
                 if (currIndex + 8 <= res.length - 1)
                   currIndex+=8;
                 message.edit({embeds: [func.handleNewsPages(res, currIndex)]});
                 break;
               }
-              case reactionControls.STOP:
+              case botData.reactionControls.STOP:
               {
                 // stop listening for reactions
                 collector.stop();
@@ -401,25 +397,25 @@ client.on("messageCreate", async message =>
         .setFooter({text: "Sent by HLTVBot", iconURL: botData.hltvIMG})
         .addFields
         (
-            {name: "\u200b", value: `${titleSpacer}**Bot Commands**`},
+            {name: "\u200b", value: `${botData.titleSpacer}**Bot Commands**`},
             {name: ".hltv", value: "Lists all current commands"},
             {name: ".hltv ping", value: "Displays the current ping to the bot & the Discord API"},
             {name: ".hltv stats", value: "Displays bot statistics, invite link and contact information"},
-            {name: "\u200b", value: `${titleSpacer}**Team Commands**`},
+            {name: "\u200b", value: `${botData.titleSpacer}**Team Commands**`},
             {name: ".team profile [teamname]", value: "Displays the profile related to the input team"},
             {name: ".team stats [teamname]", value: "Displays the statistics related to the input team"},
             {name: ".team maps [teamname]", value: "Displays the map statistics related to the input team"},
-            {name: "\u200b", value: `${titleSpacer}**Player Commands**`},
+            {name: "\u200b", value: `${botData.titleSpacer}**Player Commands**`},
             {name: ".player [player]", value: "Displays player statistics from the given player"},
-            {name: "\u200b", value: `${titleSpacer}**Rankings Commands**`},
+            {name: "\u200b", value: `${botData.titleSpacer}**Rankings Commands**`},
             {name: ".rankings player", value: "Displays the top 30 player rankings."},
             {name: ".rankings team", value: "Displays the top 30 team rankings."},
-            {name: "\u200b", value: `${titleSpacer}**Match Commands**`},
+            {name: "\u200b", value: `${botData.titleSpacer}**Match Commands**`},
             {name: ".livematches", value: "Displays all currently live matches"},
             {name: ".matches", value: "Displays all known scheduled matches"},
             {name: ".results", value: "Displays match results from the last 7 days"},
             {name: ".events", value: "Displays info on current & upcoming events"},
-            {name: "\u200b", value: `${titleSpacer}**Info Commands**`},
+            {name: "\u200b", value: `${botData.titleSpacer}**Info Commands**`},
             {name: ".threads", value: "Displays the most recent hltv user threads"},
             {name: ".news", value: "Displays the most recent hltv news & match info"}
         )
@@ -463,213 +459,11 @@ client.on("messageCreate", async message =>
     }
     case "team":
     {
-      // IF JUST TEAMNAME display a team overview
       if(args[0] == "profile")
-      {
-        database.fetchTeamDict(args[1]).then(teamDictResult =>
-        {
-            if (teamDictResult == undefined)    //if teamid not found in teamDictionary
-            {
-                HLTV.getTeamByName({name: args[1]}).then((res)=>
-                {
-                    //var convertedDictRes = func.teamDictHLTVtoDB(res);
-                    var convertedRes = func.teamProfilesHLTVtoDB(res);
-                    var embed = func.formatTeamProfileEmbed(convertedRes, botData)
-                    message.channel.send({ embeds: [embed] });
-                    database.insertTeamDict(res.id, res.name);
-                    if (args[1].toLowerCase() != res.name.toLowerCase())
-                        database.insertTeamDict(res.id, args[1]);
-
-                    database.checkUpdateTeamProfile(convertedRes);
-                }).catch((err) =>
-                {
-                    console.log(err);
-                    var errorMessage = "Error whilst accessing HLTV API using provided team name";
-                    if(err.message.includes(`Team ${args[1]} not found`))
-                        errorMessage = `"${args[1]}" was not found using the HLTV API`
-
-                    message.channel.send({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:LT1", errorMessage, botData)] });
-                });
-            }
-            else
-            {
-              database.fetchTeamProfiles(teamDictResult.team_id).then((teamProfileResult) =>
-              {
-                  if (teamProfileResult == undefined)
-                  {
-                      HLTV.getTeam({id: teamDictResult.team_id}).then((res)=>
-                      {
-                          var convertedRes = func.teamProfilesHLTVtoDB(res);
-                          var embed = func.formatTeamProfileEmbed(convertedRes, botData)
-                          message.channel.send({ embeds: [embed] });
-                          database.insertTeamProfile(convertedRes);
-                          database.insertRoster(convertedRes.players, convertedRes.team_id);
-                      }).catch((err) =>
-                      {
-                          console.log(err);
-                          message.channel.send({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:LT2", "Error whilst accessing HLTV API using internal team id", botData)] });
-                      });
-                  }
-                  else
-                  {
-                      //database.checkTeamDictUpdate(teamStatsResult.dataValues);
-                      database.isExpired(new Date(teamProfileResult.dataValues.updated_at), databaseConstants.expiryTime.teamprofiles).then((needsUpdating) =>
-                      {
-                        if (needsUpdating)
-                        {
-                            HLTV.getTeam({id: teamDictResult.team_id}).then((res)=>
-                            {
-                                var convertedRes = func.teamProfilesHLTVtoDB(res);
-                                var embed = func.formatTeamProfileEmbed(convertedRes, botData)
-                                message.channel.send({ embeds: [embed] });
-                                database.updateTeamProfile(convertedRes);
-                                database.updateRoster(convertedRes.players, convertedRes.team_id);
-                            }).catch((err) =>
-                            {
-                                console.log(err);
-                                message.channel.send({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:LT3", "Error whilst accessing HLTV API using internal team id", botData)] });
-                            });
-                        }
-                        else
-                        {
-                            database.fetchRoster(teamProfileResult.dataValues.team_id).then((fetchedRoster) =>
-                            {
-                                var playersArr = []
-
-                                for(var key in fetchedRoster)
-                                {
-                                    playersArr.push(fetchedRoster[key].dataValues);
-                                }
-
-                                teamProfileResult.dataValues.players = playersArr;
-                                var embed = func.formatTeamProfileEmbed(teamProfileResult.dataValues, botData)
-                                message.channel.send({ embeds: [embed] });
-                            })
-                        }
-                    });
-                  }
-                });
-            }
-          }).catch((err) =>
-          {
-              if (err)
-                  console.log(err)
-              HLTV.getTeamByName({name: args[1]}).then((res)=>
-              {
-                  func.formatTeamProfileEmbed(interaction, res, botData).then(() => {
-                      database.authenticate(false);
-                  })
-              }).catch((err) =>
-              {
-                  console.log(err);
-                  message.channel.send({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:LT4", "Error whilst accessing HLTV API using provided team name", botData)] });
-              });
-          });
-      }
-      else if (args[0] == "stats")     // If stats after teamname display a team stats page
-      {
-        database.fetchTeamDict(args[1]).then(teamDictResult =>
-          {
-            if (teamDictResult == undefined)    //if teamid not found in teamDictionary
-            {
-                HLTV.getTeamByName({name: args[1]}).then((res)=>
-                {
-                    //var convertedRes = func.teamDictHLTVtoDB(res);
-                    var convertedRes = func.teamProfilesHLTVtoDB(res);
-                    database.insertTeamDict(res.id, res.name);
-                    if (args[1].toLowerCase() != res.name.toLowerCase())
-                        database.insertTeamDict(res.id, args[1]);
-
-                    database.checkUpdateTeamProfile(convertedRes);
-                    HLTV.getTeamStats({id: res.id}).then((res)=>
-                    {
-                        var convertedStatsRes = func.teamStatsHLTVtoDB(res);
-                        var convertedMapsRes = func.teamMapsHLTVtoDB(res);
-                        var embed = func.formatTeamStatsEmbed(convertedStatsRes, botData);
-                        message.channel.send({ embeds: [embed] });
-                        database.insertTeamStats(convertedRes);
-
-                        database.checkUpdateTeamMaps(convertedMapsRes);
-                    });
-                }).catch((err) =>
-                {
-                    console.log(err);
-                    var errorMessage = "Error whilst accessing HLTV API using provided team name";
-                    if(err.message.includes(`Team ${args[1]} not found`))
-                        errorMessage = `"${args[1]}" was not found using the HLTV API`
-
-                    message.channel.send({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:LTS1", errorMessage, botData)] });
-                });
-              }
-              else
-              {
-                  database.fetchTeamStats(teamDictResult.team_id).then((teamStatsResult) =>
-                  {
-                      if (teamStatsResult == undefined)
-                      {
-                          HLTV.getTeamStats({id: teamDictResult.team_id}).then((res)=>
-                          {
-                              var convertedRes = func.teamStatsHLTVtoDB(res);
-                              var convertedMapsRes = func.teamMapsHLTVtoDB(res);
-                              var embed = func.formatTeamStatsEmbed(convertedRes, botData);
-                              message.channel.send({ embeds: [embed] });
-                              database.insertTeamStats(convertedRes);
-
-                              database.checkUpdateTeamMaps(convertedMapsRes);
-                          }).catch((err) =>
-                          {
-                              console.log(err);
-                              message.channel.send({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:LTS2", "Error whilst accessing HLTV API using internal team id", botData)] });
-                          });
-                      }
-                      else
-                      {
-                          //database.checkTeamDictUpdate(teamStatsResult.dataValues);
-                          database.isExpired(new Date(teamStatsResult.dataValues.updated_at), databaseConstants.expiryTime.teamstats).then((needsUpdating) =>
-                          {
-                              if (needsUpdating)
-                              {
-                                  HLTV.getTeamStats({id: teamDictResult.team_id}).then((res)=>
-                                  {
-                                      var convertedRes = func.teamStatsHLTVtoDB(res);
-                                      var convertedMapsRes = func.teamMapsHLTVtoDB(res);
-                                      var embed = func.formatTeamStatsEmbed(convertedRes, botData);
-                                      message.channel.send({ embeds: [embed] });
-                                      database.updateTeamStats(convertedRes);
-                                      database.checkUpdateTeamMaps(convertedMapsRes);
-                                  }).catch((err) =>
-                                  {
-                                      console.log(err);
-                                      message.channel.send({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:LTS3", "Error whilst accessing HLTV API using internal team id", botData)] });
-                                  });
-                              }
-                              else
-                                  message.channel.send({ embeds: [func.formatTeamStatsEmbed(teamStatsResult.dataValues, botData)] });
-                          });
-                      }
-                  });
-              }
-          }).catch((err) =>
-          {
-              if (err)
-                  console.log(err)
-              HLTV.getTeamByName({name: args[1]}).then((res)=>
-              {
-                  HLTV.getTeamStats({name: res.id}).then((res)=>
-                  {
-                      var embed = func.formatTeamStatsEmbed(func.teamStatsHLTVtoDB(res), botData);
-                      message.channel.send({ embeds: [embed] });
-                  });
-
-                  database.authenticate(false);
-              }).catch((err) =>
-              {
-                  console.log(err);
-                  message.channel.send({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:LTS4", "Error whilst accessing HLTV API using provided team name", botData)] });
-              });
-          });
-      }
-      else if (args[0] == "maps")     // If maps after teamname display a team maps page
+        databaseHandler.handleTeamProfile(args[1], message, botData, true);
+      else if (args[0] == "stats")
+        databaseHandler.handleTeamProfile(args[1], message, botData, true);
+      else if (args[0] == "maps")
       {
         HLTV.getTeamStats({id: teamID}).then(res =>
           {
@@ -682,28 +476,28 @@ client.on("messageCreate", async message =>
             {
               message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
 
-              const filter = (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id);
+              const filter = (reaction, user) => (Object.values(botData.reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id);
               const collector = message.createReactionCollector({filter, time: 60000});
 
               collector.on('collect', (reaction) =>
               {
                 switch (reaction.emoji.name)
                 {
-                  case reactionControls.PREV_PAGE:
+                  case botData.reactionControls.PREV_PAGE:
                   {
                     if (currIndex - 3 >= 0)
                       currIndex-=3;
                     message.edit({embeds: [func.handleMapPages(currIndex, teamName, teamID, mapArr)]});
                     break;
                   }
-                  case reactionControls.NEXT_PAGE:
+                  case botData.reactionControls.NEXT_PAGE:
                   {
                     if (currIndex + 3 <= mapArr.length - 1)
                       currIndex+=3;
                     message.edit({embeds: [func.handleMapPages(currIndex, teamName, teamID, mapArr)]});
                     break;
                   }
-                  case reactionControls.STOP:
+                  case botData.reactionControls.STOP:
                   {
                     // stop listening for reactions
                     collector.stop();
@@ -742,28 +536,28 @@ client.on("messageCreate", async message =>
         {
           message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
 
-          const filter = (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id);
+          const filter = (reaction, user) => (Object.values(botData.reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id);
           const collector = message.createReactionCollector({filter, time: 60000});
 
           collector.on('collect', (reaction) =>
           {
             switch (reaction.emoji.name)
             {
-              case reactionControls.PREV_PAGE:
+              case botData.reactionControls.PREV_PAGE:
               {
                 if (currIndex - 3 >= 0)
                   currIndex-=3;
                 message.edit({embeds: [func.handlePages(res, currIndex, COMMANDCODE.RESULTS)]});
                 break;
               }
-              case reactionControls.NEXT_PAGE:
+              case botData.reactionControls.NEXT_PAGE:
               {
                 if (currIndex + 3 <= res.length)
                   currIndex+=3;
                 message.edit({embeds: [func.handlePages(res, currIndex, COMMANDCODE.RESULTS)]});
                 break;
               }
-              case reactionControls.STOP:
+              case botData.reactionControls.STOP:
               {
                 // stop listening for reactions
                 collector.stop();
@@ -793,28 +587,28 @@ client.on("messageCreate", async message =>
         message.channel.send({ embeds: [embed] }).then((message) =>
         {
           message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
-          const filter = (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id);
+          const filter = (reaction, user) => (Object.values(botData.reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id);
           const collector = message.createReactionCollector({filter, time: 60000});
 
           collector.on('collect', (reaction) =>
           {
             switch (reaction.emoji.name)
             {
-              case reactionControls.PREV_PAGE:
+              case botData.reactionControls.PREV_PAGE:
               {
                 if (currIndex - 3 >= 0)
                   currIndex-=3;
                 message.edit({embeds: [func.handlePages(res, currIndex, COMMANDCODE.MATCHES)]});
                 break;
               }
-              case reactionControls.NEXT_PAGE:
+              case botData.reactionControls.NEXT_PAGE:
               {
                 if (currIndex + 3 <= res.length)
                   currIndex+=3;
                 message.edit({embeds: [func.handlePages(res, currIndex, COMMANDCODE.MATCHES)]});
                 break;
               }
-              case reactionControls.STOP:
+              case botData.reactionControls.STOP:
               {
                 // stop listening for reactions
                 //message.reactions.removeAll().catch(error => console.error('Failed to clear reactions: ', error));
@@ -870,28 +664,28 @@ client.on("messageCreate", async message =>
           message.channel.send({ embeds: [embed] }).then((message) =>
           {
             message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
-            const filter = (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id);
+            const filter = (reaction, user) => (Object.values(botData.reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id);
             const collector = message.createReactionCollector({filter, time: 60000});
 
             collector.on('collect', (reaction, user) =>
             {
               switch (reaction.emoji.name)
               {
-                case reactionControls.PREV_PAGE:
+                case botData.reactionControls.PREV_PAGE:
                 {
                   if (currIndex - 5 >= 0)
                     currIndex-=5;
                   message.edit({embeds: [func.handlePages(liveArr, currIndex, COMMANDCODE.LIVEMATCHES)]});
                   break;
                 }
-                case reactionControls.NEXT_PAGE:
+                case botData.reactionControls.NEXT_PAGE:
                 {
                   if (currIndex + 5 <= liveArr.length)
                     currIndex+=5;
                   message.edit({embeds: [func.handlePages(liveArr, currIndex, COMMANDCODE.LIVEMATCHES)]});
                   break;
                 }
-                case reactionControls.STOP:
+                case botData.reactionControls.STOP:
                 {
                   // stop listening for reactions
                   collector.stop();
@@ -923,28 +717,28 @@ client.on("messageCreate", async message =>
         message.channel.send({ embeds: [embed]}).then((message) =>
         {
           message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
-          const filter = (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id);
+          const filter = (reaction, user) => (Object.values(botData.reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id);
           const collector = message.createReactionCollector({filter, time: 60000});
 
           collector.on('collect', (reaction, user) =>
           {
             switch (reaction.emoji.name)
             {
-              case reactionControls.PREV_PAGE:
+              case botData.reactionControls.PREV_PAGE:
               {
                 if (currIndex - 3 >= 0)
                   currIndex-=3;
                 message.edit({embeds: [func.handleEventPages(res, currIndex)]});
                 break;
               }
-              case reactionControls.NEXT_PAGE:
+              case botData.reactionControls.NEXT_PAGE:
               {
                 if (currIndex + 3 <= res.length)
                   currIndex+=3;
                 message.edit({embeds: [func.handleEventPages(res, currIndex)]});
                 break;
               }
-              case reactionControls.STOP:
+              case botData.reactionControls.STOP:
               {
                 // stop listening for reactions
                 collector.stop();

@@ -671,7 +671,7 @@ var teamMapsHLTVtoDB = (inputArr, teamID, teamName) =>
   return mapArr;
  }
 
- var playersHLTVtoDB = (res) =>
+var playersHLTVtoDB = (res) =>
 {
   return {
     id: res.id,
