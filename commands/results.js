@@ -8,7 +8,7 @@ module.exports =
 	data: new SlashCommandBuilder()
 		.setName("results")
 		.setDescription("Displays the most recent match results"),
-	async execute(interaction, client, botData)
+	async execute(interaction, botData)
   {
       var currDate = new Date();
       var prevDate = new Date();
@@ -65,7 +65,7 @@ module.exports =
               .setTitle("Error Occurred")
               .setColor(0x00AE86)
               .setTimestamp()
-              .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
+              .setFooter({text: "Sent by HLTVBot", iconURL: botData.hltvIMG})
               .setDescription(`An error occurred during button interaction. Please try again or visit [hltv.org](${botData.hltvURL})`);
               interaction.editReply({ embeds: [embed] });
           }
@@ -87,7 +87,7 @@ module.exports =
         .setTitle("Error Occurred")
         .setColor(0x00AE86)
         .setTimestamp()
-        .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
+        .setFooter({text: "Sent by HLTVBot", iconURL: botData.hltvIMG})
         .setDescription(`An error occurred whilst fetching match results. Please try again or visit [hltv.org](${botData.hltvURL})`);
         interaction.editReply({ embeds: [embed] });
       });

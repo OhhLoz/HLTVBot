@@ -7,7 +7,7 @@ module.exports =
 	data: new SlashCommandBuilder()
 		.setName("threads")
 		.setDescription("Lists recent CS related hltv threads"),
-	async execute(interaction, client, botData)
+	async execute(interaction, botData)
     {
       HLTV.getRecentThreads().then((res) =>
       {
@@ -17,7 +17,7 @@ module.exports =
         .setColor(0xff8d00)
         .setURL(`${botData.hltvURL}/forums/counterstrike`)
         .setTimestamp()
-        .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()});
+        .setFooter({text: "Sent by HLTVBot", iconURL: botData.hltvIMG});
         for (index in res)
         {
           if(res[index].title != undefined && res[index].category == 'cs')
@@ -43,7 +43,7 @@ module.exports =
         .setTitle("Error Occurred")
         .setColor(0x00AE86)
         .setTimestamp()
-        .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
+        .setFooter({text: "Sent by HLTVBot", iconURL: botData.hltvIMG})
         .setDescription(`An error occurred whilst fetching recent threads. Please try again or visit [hltv.org](${botData.hltvURL})`);
         interaction.editReply({ embeds: [embed] });
       });

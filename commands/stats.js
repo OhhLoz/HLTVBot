@@ -7,14 +7,14 @@ module.exports =
 	data: new SlashCommandBuilder()
 		.setName("stats")
 		.setDescription("Displays bot statistics, invite link and contact information"),
-	async execute(interaction, client, botData)
+	async execute(interaction, botData)
     {
         var embed = new MessageEmbed()
         .setTitle("Bot Stats")
         .setColor(0xff8d00)
         .setTimestamp()
-        .setThumbnail(client.user.displayAvatarURL())
-        .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
+        .setThumbnail(botData.hltvIMG)
+        .setFooter({text: "Sent by HLTVBot", iconURL: botData.hltvIMG})
         .addFields
         (
             {name: "User Count", value: botData.usercount.toString(), inline:true},

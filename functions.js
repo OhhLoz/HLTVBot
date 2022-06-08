@@ -440,7 +440,7 @@ var formatTeamProfileEmbed = (res, botData) =>
     .setThumbnail(res.logo)
     //.setImage(res.coverImage)
     .setTimestamp()
-    .setFooter({text: footerStr, iconURL: "https://cdn.discordapp.com/avatars/548165454158495745/222c8d9ccac5d194d8377c5da5b0f95b.png?size=4096"})
+    .setFooter({text: footerStr, iconURL: botData.hltvIMG})
     .setURL(`${botData.hltvURL}/team/${res.team_id}/${res.team_name.replace(/\s+/g, '')}`)
     .addField("Location", res.location == undefined ? "Not Available" : res.location)
     if (res.facebook)
@@ -495,7 +495,7 @@ var formatTeamProfileEmbed = (res, botData) =>
     .setTitle(res.team_name + " Stats")
     .setColor(0x00AE86)
     .setTimestamp()
-    .setFooter({text: footerStr, iconURL: "https://cdn.discordapp.com/avatars/548165454158495745/222c8d9ccac5d194d8377c5da5b0f95b.png?size=4096"})
+    .setFooter({text: footerStr, iconURL: botData.hltvIMG})
     .setURL(`${botData.hltvURL}/stats/teams/${res.team_id}/${res.team_name.replace(/\s+/g, '-').toLowerCase()}`)
     .addFields
     (
@@ -519,7 +519,7 @@ var formatTeamProfileEmbed = (res, botData) =>
   .setTitle(`${title}`)
   .setColor(0x00AE86)
   .setTimestamp()
-  .setFooter({text: "Sent by HLTVBot", iconURL: "https://cdn.discordapp.com/avatars/548165454158495745/222c8d9ccac5d194d8377c5da5b0f95b.png?size=4096"})
+  .setFooter({text: "Sent by HLTVBot", iconURL: botData.hltvIMG})
   .setDescription(`${message}.\nPlease try again or visit [hltv.org](${botData.hltvURL})`);
  }
 
@@ -611,7 +611,7 @@ var formatPlayerEmbed = (res, botData) =>
     .setThumbnail(res.image)
     //.setImage(res.image)
     .setTimestamp()
-    .setFooter({text: footerStr, iconURL: "https://cdn.discordapp.com/avatars/548165454158495745/222c8d9ccac5d194d8377c5da5b0f95b.png?size=4096"})
+    .setFooter({text: footerStr, iconURL: botData.hltvIMG})
     .setURL(`${botData.hltvURL}/team/${res.team_id}/${res.ign.replace(/\s+/g, '')}`)
     .addFields
     (

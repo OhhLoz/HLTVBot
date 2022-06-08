@@ -10,13 +10,13 @@ module.exports =
 		.setDescription("Displays the top 30 rankings of teams or players")
         .addStringOption(option => option.setName("category").setDescription("Category of rankings to display").setRequired(true).addChoices({name:"team", value:"team"},
                                                                                                                                             {name:"player", value:"player"})),
-	async execute(interaction, client, botData)
+	async execute(interaction, botData)
     {
         var category = interaction.options.getString("category");
         var embed = new MessageEmbed()
         .setColor(0xff8d00)
         .setTimestamp()
-        .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()});
+        .setFooter({text: "Sent by HLTVBot", iconURL: botData.hltvIMG});
         var outputStr = "";
 
         switch(category)

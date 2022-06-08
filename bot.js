@@ -8,11 +8,9 @@ const database = require("./databaseWrapper.js");
 const databaseConstants = require("./databaseConstants.js");
 
 //   SET TRUE WHEN TESTING TO DISABLE TOPGG Posting & TO USE TEST BOT TOKEN
-const TESTING = true;
+process.env.TESTING = true;
 
 //    DATA IMPORT
-const teamDictionary = require("./teams.json");
-const alternateTeamDictionary = require("./alternateteams.json");
 const package = require("./package.json");
 const COMMANDCODE = require("./commandcodes.json");
 
@@ -67,10 +65,11 @@ var botData =
   titleSpacer: titleSpacer,
   interactionRow: row,
   reactionControls: reactionControls,
-  COMMANDCODE: COMMANDCODE
+  COMMANDCODE: COMMANDCODE,
+  hltvIMG: ""
 }
 
-if(!TESTING)
+if(!process.env.TESTING)
 {
   const { AutoPoster } = require('topgg-autoposter');
   const ap = AutoPoster(process.env.TOPGG_TOKEN, client);
@@ -114,17 +113,17 @@ client.on("ready", () =>
   })
 
   database.authenticate(true);
+  botData.hltvIMG = client.user.displayAvatarURL();
 
   const guild = client.guilds.cache.get('509391645226172420'); //development server guildid
 
-  if(TESTING)
+  if(process.env.TESTING)
     guild.commands.set(commandsArr);
   else
     client.application.commands.set(commandsArr);
 
   console.log(`HLTVBot is currently serving ${botData.usercount} users, in ${botData.channelcount} channels of ${botData.servercount} servers. Alongside ${botData.botcount} bot brothers.`);
   client.user.setActivity(`${botData.servercount} servers | /help | .hltv`, { type: 'WATCHING' });
-  reverseTeamDictionary = func.reverseMapFromMap(teamDictionary);
 });
 
 client.on("guildCreate", guild =>
@@ -154,7 +153,7 @@ client.on("interactionCreate", async (interaction) =>
   try
   {
     await interaction.deferReply();
-    await command.execute(interaction, client, botData);
+    await command.execute(interaction, botData);
   }
   catch(err)
   {
@@ -166,7 +165,7 @@ client.on("interactionCreate", async (interaction) =>
     .setTitle("Error Occurred")
     .setColor(0x00AE86)
     .setTimestamp()
-    .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
+    .setFooter({text: "Sent by HLTVBot", iconURL: botData.hltvIMG})
     .setDescription(`An error occurred whilst executing slash command.\nPlease try again or visit [hltv.org](${hltvURL})\nIf this persists please re-add the bot to the server to refresh bot permissions.`);
     if(interaction.deferred)
       await interaction.editReply({ embeds: [embed] });
@@ -215,7 +214,7 @@ client.on("messageCreate", async message =>
         .setTitle("Recent Threads")
         .setColor(0xff8d00)
         .setTimestamp()
-        .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()});
+        .setFooter({text: "Sent by HLTVBot", iconURL: botData.hltvIMG});
         for (index in res)
         {
           if(res[index].title != undefined && res[index].category == 'cs')
@@ -242,10 +241,10 @@ client.on("messageCreate", async message =>
         message.channel.send({ embeds: [embed] }).then((message) =>
         {
           message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
-  
+
           const filter = (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id);
           const collector = message.createReactionCollector({filter, time: 60000});
-  
+
           collector.on('collect', (reaction, user) =>
           {
             switch (reaction.emoji.name)
@@ -272,7 +271,7 @@ client.on("messageCreate", async message =>
               }
             }
           });
-  
+
           collector.on('end', async () => {
               message.delete().catch(err =>
               {
@@ -289,7 +288,7 @@ client.on("messageCreate", async message =>
       var embed = new Discord.MessageEmbed()
       .setColor(0x00AE86)
       .setTimestamp()
-      .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()});
+      .setFooter({text: "Sent by HLTVBot", iconURL: botData.hltvIMG});
       var outputStr = "";
       if(args[0] == "team")
       {
@@ -347,7 +346,7 @@ client.on("messageCreate", async message =>
               var errorMessage = "Error whilst accessing HLTV API using provided player name";
               if(err.message.includes(`Player ${args[0]} not found`))
                   errorMessage = `"${args[0]}" was not found using the HLTV API`
-  
+
               message.channel.send({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:LP1", errorMessage, botData)] });
           });
         }
@@ -399,7 +398,7 @@ client.on("messageCreate", async message =>
         .setTitle("Help")
         .setColor(0xff8d00)
         .setTimestamp()
-        .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
+        .setFooter({text: "Sent by HLTVBot", iconURL: botData.hltvIMG})
         .addFields
         (
             {name: "\u200b", value: `${titleSpacer}**Bot Commands**`},
@@ -424,7 +423,7 @@ client.on("messageCreate", async message =>
             {name: ".threads", value: "Displays the most recent hltv user threads"},
             {name: ".news", value: "Displays the most recent hltv news & match info"}
         )
-  
+
         message.channel.send({ embeds: [embed] });
       }
       else if (args[0] == "ping")
@@ -440,8 +439,8 @@ client.on("messageCreate", async message =>
         .setTitle("Bot Stats")
         .setColor(0xff8d00)
         .setTimestamp()
-        .setThumbnail(client.user.displayAvatarURL())
-        .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
+        .setThumbnail(botData.hltvIMG)
+        .setFooter({text: "Sent by HLTVBot", iconURL: botData.hltvIMG})
         .addFields
         (
             {name: "User Count", value: botData.usercount.toString(), inline:true},
@@ -480,7 +479,7 @@ client.on("messageCreate", async message =>
                     database.insertTeamDict(res.id, res.name);
                     if (args[1].toLowerCase() != res.name.toLowerCase())
                         database.insertTeamDict(res.id, args[1]);
-  
+
                     database.checkUpdateTeamProfile(convertedRes);
                 }).catch((err) =>
                 {
@@ -488,7 +487,7 @@ client.on("messageCreate", async message =>
                     var errorMessage = "Error whilst accessing HLTV API using provided team name";
                     if(err.message.includes(`Team ${args[1]} not found`))
                         errorMessage = `"${args[1]}" was not found using the HLTV API`
-  
+
                     message.channel.send({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:LT1", errorMessage, botData)] });
                 });
             }
@@ -536,12 +535,12 @@ client.on("messageCreate", async message =>
                             database.fetchRoster(teamProfileResult.dataValues.team_id).then((fetchedRoster) =>
                             {
                                 var playersArr = []
-  
+
                                 for(var key in fetchedRoster)
                                 {
                                     playersArr.push(fetchedRoster[key].dataValues);
                                 }
-  
+
                                 teamProfileResult.dataValues.players = playersArr;
                                 var embed = func.formatTeamProfileEmbed(teamProfileResult.dataValues, botData)
                                 message.channel.send({ embeds: [embed] });
@@ -580,7 +579,7 @@ client.on("messageCreate", async message =>
                     database.insertTeamDict(res.id, res.name);
                     if (args[1].toLowerCase() != res.name.toLowerCase())
                         database.insertTeamDict(res.id, args[1]);
-  
+
                     database.checkUpdateTeamProfile(convertedRes);
                     HLTV.getTeamStats({id: res.id}).then((res)=>
                     {
@@ -589,7 +588,7 @@ client.on("messageCreate", async message =>
                         var embed = func.formatTeamStatsEmbed(convertedStatsRes, botData);
                         message.channel.send({ embeds: [embed] });
                         database.insertTeamStats(convertedRes);
-  
+
                         database.checkUpdateTeamMaps(convertedMapsRes);
                     });
                 }).catch((err) =>
@@ -598,7 +597,7 @@ client.on("messageCreate", async message =>
                     var errorMessage = "Error whilst accessing HLTV API using provided team name";
                     if(err.message.includes(`Team ${args[1]} not found`))
                         errorMessage = `"${args[1]}" was not found using the HLTV API`
-  
+
                     message.channel.send({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:LTS1", errorMessage, botData)] });
                 });
               }
@@ -615,7 +614,7 @@ client.on("messageCreate", async message =>
                               var embed = func.formatTeamStatsEmbed(convertedRes, botData);
                               message.channel.send({ embeds: [embed] });
                               database.insertTeamStats(convertedRes);
-  
+
                               database.checkUpdateTeamMaps(convertedMapsRes);
                           }).catch((err) =>
                           {
@@ -661,7 +660,7 @@ client.on("messageCreate", async message =>
                       var embed = func.formatTeamStatsEmbed(func.teamStatsHLTVtoDB(res), botData);
                       message.channel.send({ embeds: [embed] });
                   });
-  
+
                   database.authenticate(false);
               }).catch((err) =>
               {
@@ -676,16 +675,16 @@ client.on("messageCreate", async message =>
           {
             var currIndex = 0;
             var mapArr = func.teamMapsHLTVtoDB(res.mapStats, res.id, res.name);
-  
+
             var embed = func.handleMapPages(currIndex, teamName, teamID, mapArr);
             var originalAuthor = message.author;
             message.channel.send({ embeds: [embed] }).then((message) =>
             {
               message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
-  
+
               const filter = (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id);
               const collector = message.createReactionCollector({filter, time: 60000});
-  
+
               collector.on('collect', (reaction) =>
               {
                 switch (reaction.emoji.name)
@@ -712,7 +711,7 @@ client.on("messageCreate", async message =>
                   }
                 }
               });
-  
+
               collector.on('end', async () => {
                   message.delete().catch(err =>
                   {
@@ -732,7 +731,7 @@ client.on("messageCreate", async message =>
       var currDate = new Date();
       var prevDate = new Date();
       prevDate.setDate(currDate.getDate() - 7); // last 7 days
-  
+
       //console.log("currDate: " + currDate.toISOString().substring(0, 10) + ", prevDate: " + prevDate.toISOString().substring(0, 10));
       HLTV.getResults({startDate: prevDate.toISOString().substring(0, 10), endDate: currDate.toISOString().substring(0, 10)}).then((res) =>
       {
@@ -742,10 +741,10 @@ client.on("messageCreate", async message =>
         message.channel.send({ embeds: [embed] }).then((message) =>
         {
           message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
-  
+
           const filter = (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id);
           const collector = message.createReactionCollector({filter, time: 60000});
-  
+
           collector.on('collect', (reaction) =>
           {
             switch (reaction.emoji.name)
@@ -772,7 +771,7 @@ client.on("messageCreate", async message =>
               }
             }
           });
-  
+
           collector.on('end', async () => {
               message.delete().catch(err =>
               {
@@ -796,7 +795,7 @@ client.on("messageCreate", async message =>
           message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
           const filter = (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id);
           const collector = message.createReactionCollector({filter, time: 60000});
-  
+
           collector.on('collect', (reaction) =>
           {
             switch (reaction.emoji.name)
@@ -824,7 +823,7 @@ client.on("messageCreate", async message =>
               }
             }
           });
-  
+
           collector.on('end', async () => {
               message.delete().catch(err =>
               {
@@ -842,7 +841,7 @@ client.on("messageCreate", async message =>
       {
         var liveArr = [];
         var livecount = 0;
-  
+
         for (var matchKey in res)
         {
           var match = res[matchKey];
@@ -852,12 +851,12 @@ client.on("messageCreate", async message =>
             livecount++;
           }
         }
-  
+
         var embed = new Discord.MessageEmbed()
         .setColor(0x00AE86)
         .setTimestamp()
-        .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()});
-  
+        .setFooter({text: "Sent by HLTVBot", iconURL: botData.hltvIMG});
+
         if (livecount == 0)
         {
           embed.setTitle("There are currently no live matches.");
@@ -873,7 +872,7 @@ client.on("messageCreate", async message =>
             message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
             const filter = (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id);
             const collector = message.createReactionCollector({filter, time: 60000});
-  
+
             collector.on('collect', (reaction, user) =>
             {
               switch (reaction.emoji.name)
@@ -900,7 +899,7 @@ client.on("messageCreate", async message =>
                 }
               }
             });
-  
+
             collector.on('end', async () => {
                 message.delete().catch(err =>
                 {
@@ -920,13 +919,13 @@ client.on("messageCreate", async message =>
         var currIndex = 0;
         var embed = func.handleEventPages(res, currIndex);
         var originalAuthor = message.author;
-  
+
         message.channel.send({ embeds: [embed]}).then((message) =>
         {
           message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
           const filter = (reaction, user) => (Object.values(reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id);
           const collector = message.createReactionCollector({filter, time: 60000});
-  
+
           collector.on('collect', (reaction, user) =>
           {
             switch (reaction.emoji.name)
@@ -953,7 +952,7 @@ client.on("messageCreate", async message =>
               }
             }
           });
-  
+
           collector.on('end', async () => {
               message.delete().catch(err =>
               {
