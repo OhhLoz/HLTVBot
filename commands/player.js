@@ -21,7 +21,8 @@ module.exports =
                 HLTV.getPlayerByName({name: playerName}).then((res)=>
                 {
                     var convertedRes = func.playersHLTVtoDB(res);
-                    func.handlePlayer(interaction, convertedRes, botData)
+                    var embed = func.formatPlayerEmbed(convertedRes, botData);
+                    interaction.editReply({ embeds: [embed] });
                     database.insertPlayer(convertedRes);
                 }).catch((err) =>
                 {
@@ -42,16 +43,17 @@ module.exports =
                         HLTV.getPlayer({id: playerResult.id}).then((res)=>
                         {
                             var convertedRes = func.playersHLTVtoDB(res);
-                            func.handlePlayer(interaction, convertedRes, botData)
+                            var embed = func.formatPlayerEmbed(convertedRes, botData);
+                            interaction.editReply({ embeds: [embed] });
                             database.updatePlayer(convertedRes);
                         }).catch((err) =>
                         {
                             console.log(err);
-                            interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:P2", "Error whilst accessing HLTV API using internal team id", botData)] });
+                            interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:P2", "Error whilst accessing HLTV API using internal player id", botData)] });
                         });
                     }
                     else
-                            func.handlePlayer(interaction, playerResult.dataValues, botData)
+                        interaction.editReply({ embeds: [func.formatPlayerEmbed(playerResult.dataValues, botData)] });
                 });
             }
         }).catch((err) =>
@@ -60,7 +62,8 @@ module.exports =
                 console.log(err)
             HLTV.getPlayerByName({name: playerName}).then((res)=>
             {
-                func.handlePlayer(interaction, res, botData).then(() => {
+                func.formatPlayerEmbed(res, botData).then((result) => {
+                    interaction.editReply({ embeds: [result] });
                     database.authenticate(false);
                 })
             }).catch((err) =>

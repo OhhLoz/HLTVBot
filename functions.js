@@ -408,12 +408,11 @@ var checkStats = (guild, botData, isJoin) =>
 /**
  * Formats a team profile embed based on the given arguments
  *
- * @param {Object}   interaction     Interaction object to reply to
  * @param {Object}   res     Team profile object to populated the embed with
  * @param {Object}   botData   Global object used to keep track of necessary botData to avoid reuse.
  *
  */
-var handleTeamProfile = (interaction, res, botData) =>
+var formatTeamProfileEmbed = (res, botData) =>
 {
   var playerRosterOutputStr = '';
   if(res.players != undefined)
@@ -473,20 +472,20 @@ var handleTeamProfile = (interaction, res, botData) =>
   //   })
   // }
   // else
-      interaction.editReply({ embeds: [embed] });
+      //interaction.editReply({ embeds: [embed] });
+      return embed;
 }
 
 /**
  * Formats a team stats embed based on the given arguments
  *
- * @param {Object}   interaction     Interaction object to reply to
  * @param {Object}   res     Team stats object to populated the embed with
  * @param {Object}   botData   Global object used to keep track of necessary botData to avoid reuse.
  *
+ * @return {MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
  */
- var handleTeamStats = (interaction, res, botData) =>
+ var formatTeamStatsEmbed = (res, botData) =>
  {
-    var teamnameformatted = res.team_name.replace(/\s+/g, '-').toLowerCase();
     var footerStr = "Sent by HLTVBot - Last Updated ";
     if(res.updated_at != undefined)
       footerStr += getTime(Date.now() - new Date(res.updated_at).getTime()) + " Ago"
@@ -497,7 +496,7 @@ var handleTeamProfile = (interaction, res, botData) =>
     .setColor(0x00AE86)
     .setTimestamp()
     .setFooter({text: footerStr, iconURL: "https://cdn.discordapp.com/avatars/548165454158495745/222c8d9ccac5d194d8377c5da5b0f95b.png?size=4096"})
-    .setURL(`${botData.hltvURL}/stats/teams/${res.team_id}/${teamnameformatted}`)
+    .setURL(`${botData.hltvURL}/stats/teams/${res.team_id}/${res.team_name.replace(/\s+/g, '-').toLowerCase()}`)
     .addFields
     (
         {name: "Maps Played", value: res.mapsPlayed == undefined ? "Not Available" : res.mapsPlayed.toString(), inline: true},
@@ -511,7 +510,7 @@ var handleTeamProfile = (interaction, res, botData) =>
         {name: "Overall Win%", value: res.wins == undefined || res.losses == undefined ? "Not Available" : (Math.round(res.wins / (res.losses + res.wins) * 10000) / 100).toString() + "%", inline: true},
     )
 
-    interaction.editReply({ embeds: [embed] });
+    return embed;
  }
 
  var formatErrorEmbed = (title, message, botData) =>
@@ -593,12 +592,12 @@ var handleTeamProfile = (interaction, res, botData) =>
  * Formats a player profile embed based on the given arguments
  *
  *
- * @param {Object}   interaction     Interaction object to reply to
  * @param {Object}   res       Team profile object to populated the embed with
  * @param {Object}   botData   Global object used to keep track of necessary botData to avoid reuse.
  *
+ * @return {MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
  */
-var handlePlayer = (interaction, res, botData) =>
+var formatPlayerEmbed = (res, botData) =>
 {
   var footerStr = "Sent by HLTVBot - Last Updated ";
   if(res.updated_at != undefined)
@@ -631,28 +630,7 @@ var handlePlayer = (interaction, res, botData) =>
       embed.addField("Instagram", res.instagram);
     embed.addField("Team", `[${res.team_name}](${botData.hltvURL}/team/${res.team_id}/${res.team_name.replace(/\s+/g, '')})`)
     embed.addField("Rating", res.rating.toString());
-
-  // if (res.logo.includes(".svg"))
-  // {
-  //   nodeHtmlToImage({
-  //     html: `<img src='${res.logo}' />`,
-  //     quality: 100,
-  //     type: 'png',
-  //     transparent: true,
-  //     puppeteerArgs: {
-  //       args: ['--no-sandbox'],
-  //     },
-  //     encoding: 'buffer',
-  //   }).then(imageResult =>
-  //   {
-  //     var thumbnail = new MessageAttachment(imageResult, 'logo.png')
-  //     embed.setThumbnail('attachment://logo.png');
-
-  //     interaction.editReply({ embeds: [embed], files: [thumbnail] });
-  //   })
-  // }
-  // else
-      interaction.editReply({ embeds: [embed] });
+    return embed;
 }
 
 var teamStatsHLTVtoDB = (res) =>
@@ -712,4 +690,4 @@ var teamMapsHLTVtoDB = (inputArr, teamID, teamName) =>
   }
 }
 
-module.exports = {handleEventPages, handleMapPages, handleNewsPages, handlePages, reverseMapFromMap, getTime, checkStats, handleTeamProfile, handleTeamStats, handleTeamMaps, handlePlayer, formatErrorEmbed, teamProfilesHLTVtoDB, teamMapsHLTVtoDB, teamStatsHLTVtoDB, playersHLTVtoDB};
+module.exports = {handleEventPages, handleMapPages, handleNewsPages, handlePages, reverseMapFromMap, getTime, checkStats, formatTeamProfileEmbed, formatTeamStatsEmbed, handleTeamMaps, formatPlayerEmbed, formatErrorEmbed, teamProfilesHLTVtoDB, teamMapsHLTVtoDB, teamStatsHLTVtoDB, playersHLTVtoDB};

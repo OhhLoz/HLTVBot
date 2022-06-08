@@ -30,7 +30,8 @@ module.exports =
                         {
                             //var convertedDictRes = func.teamDictHLTVtoDB(res);
                             var convertedRes = func.teamProfilesHLTVtoDB(res);
-                            func.handleTeamProfile(interaction, convertedRes, botData)
+                            var embed = func.formatTeamProfileEmbed(convertedRes, botData);
+                            interaction.editReply({ embeds: [embed] });
                             database.insertTeamDict(res.id, res.name);
                             if (teamName.toLowerCase() != res.name.toLowerCase())
                                 database.insertTeamDict(res.id, teamName);
@@ -55,7 +56,8 @@ module.exports =
                                 HLTV.getTeam({id: teamDictResult.team_id}).then((res)=>
                                 {
                                     var convertedRes = func.teamProfilesHLTVtoDB(res);
-                                    func.handleTeamProfile(interaction, convertedRes, botData);
+                                    var embed = func.formatTeamProfileEmbed(convertedRes, botData);
+                                    interaction.editReply({ embeds: [embed] });
                                     database.insertTeamProfile(convertedRes);
                                     database.insertRoster(convertedRes.players, convertedRes.team_id);
                                 }).catch((err) =>
@@ -74,7 +76,8 @@ module.exports =
                                         HLTV.getTeam({id: teamDictResult.team_id}).then((res)=>
                                         {
                                             var convertedRes = func.teamProfilesHLTVtoDB(res);
-                                            func.handleTeamProfile(interaction, convertedRes, botData)
+                                            var embed = func.formatTeamProfileEmbed(convertedRes, botData);
+                                            interaction.editReply({ embeds: [embed] });
                                             database.updateTeamProfile(convertedRes);
                                             database.updateRoster(convertedRes.players, convertedRes.team_id);
                                         }).catch((err) =>
@@ -95,7 +98,8 @@ module.exports =
                                             }
 
                                             teamProfileResult.dataValues.players = playersArr;
-                                            func.handleTeamProfile(interaction, teamProfileResult.dataValues, botData)
+                                            var embed = func.formatTeamProfileEmbed(teamProfileResult.dataValues, botData);
+                                            interaction.editReply({ embeds: [embed] });
                                         })
                                     }
                                 });
@@ -108,7 +112,8 @@ module.exports =
                         console.log(err)
                     HLTV.getTeamByName({name: teamName}).then((res)=>
                     {
-                        func.handleTeamProfile(interaction, res, botData).then(() => {
+                        func.formatTeamProfileEmbed(res, botData).then((result) => {
+                            interaction.editReply({ embeds: [result] });
                             database.authenticate(false);
                         })
                     }).catch((err) =>
@@ -138,7 +143,8 @@ module.exports =
                             {
                                 var convertedStatsRes = func.teamStatsHLTVtoDB(res);
                                 var convertedMapsRes = func.teamMapsHLTVtoDB(res);
-                                func.handleTeamStats(interaction, convertedStatsRes, botData);
+                                var embed = func.formatTeamStatsEmbed(convertedStatsRes, botData);
+                                interaction.editReply({ embeds: [embed] });
                                 database.insertTeamStats(convertedRes);
 
                                 database.checkUpdateTeamMaps(convertedMapsRes);
@@ -163,7 +169,8 @@ module.exports =
                                 {
                                     var convertedRes = func.teamStatsHLTVtoDB(res);
                                     var convertedMapsRes = func.teamMapsHLTVtoDB(res);
-                                    func.handleTeamStats(interaction, convertedRes, botData)
+                                    var embed = func.formatTeamStatsEmbed(convertedRes, botData);
+                                    interaction.editReply({ embeds: [embed] });
                                     database.insertTeamStats(convertedRes);
 
                                     database.checkUpdateTeamMaps(convertedMapsRes);
@@ -184,7 +191,8 @@ module.exports =
                                         {
                                             var convertedRes = func.teamStatsHLTVtoDB(res);
                                             var convertedMapsRes = func.teamMapsHLTVtoDB(res);
-                                            func.handleTeamStats(interaction, convertedRes, botData)
+                                            var embed = func.formatTeamStatsEmbed(convertedRes, botData);
+                                            interaction.editReply({ embeds: [embed] });
                                             database.updateTeamStats(convertedRes);
                                             database.checkUpdateTeamMaps(convertedMapsRes);
                                         }).catch((err) =>
@@ -194,7 +202,7 @@ module.exports =
                                         });
                                     }
                                     else
-                                        func.handleTeamStats(interaction, teamStatsResult.dataValues, botData)
+                                        interaction.editReply({ embeds: [func.formatTeamStatsEmbed(teamStatsResult.dataValues, botData)] });
                                 });
                             }
                         });
@@ -207,7 +215,8 @@ module.exports =
                     {
                         HLTV.getTeamStats({name: res.id}).then((res)=>
                         {
-                            func.handleTeamStats(interaction, func.teamStatsHLTVtoDB(res), botData);
+                            var embed = func.formatTeamStatsEmbed(func.teamStatsHLTVtoDB(res), botData);
+                            interaction.editReply({ embeds: [embed] });
                         });
 
                         database.authenticate(false);
