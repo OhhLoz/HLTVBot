@@ -405,58 +405,7 @@ client.on("messageCreate", async message =>
       else if (args[0] == "stats")
         databaseHandler.handleTeamProfile(args[1], message, botData, true);
       else if (args[0] == "maps")
-      {
-        HLTV.getTeamStats({id: teamID}).then(res =>
-          {
-            var currIndex = 0;
-            var mapArr = func.teamMapsHLTVtoDB(res.mapStats, res.id, res.name);
-
-            var embed = func.handleMapPages(currIndex, teamName, teamID, mapArr);
-            var originalAuthor = message.author;
-            message.channel.send({ embeds: [embed] }).then((message) =>
-            {
-              message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
-
-              const filter = (reaction, user) => (Object.values(botData.reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id);
-              const collector = message.createReactionCollector({filter, time: 60000});
-
-              collector.on('collect', (reaction) =>
-              {
-                switch (reaction.emoji.name)
-                {
-                  case botData.reactionControls.PREV_PAGE:
-                  {
-                    if (currIndex - 3 >= 0)
-                      currIndex-=3;
-                    message.edit({embeds: [func.handleMapPages(currIndex, teamName, teamID, mapArr)]});
-                    break;
-                  }
-                  case botData.reactionControls.NEXT_PAGE:
-                  {
-                    if (currIndex + 3 <= mapArr.length - 1)
-                      currIndex+=3;
-                    message.edit({embeds: [func.handleMapPages(currIndex, teamName, teamID, mapArr)]});
-                    break;
-                  }
-                  case botData.reactionControls.STOP:
-                  {
-                    // stop listening for reactions
-                    collector.stop();
-                    break;
-                  }
-                }
-              });
-
-              collector.on('end', async () => {
-                  message.delete().catch(err =>
-                  {
-                      if (err.code !== 10008)
-                          console.log(err);
-                  });
-              });
-            });
-          });
-      }
+        databaseHandler.handleTeamMaps(args[1], message, botData, true);
       else  // Error catching for incorrect command
         message.channel.send({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:LT", "Incorrect command format, Please use .hltv for correct format.", botData)] });
       break;

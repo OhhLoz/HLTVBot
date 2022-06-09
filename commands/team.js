@@ -29,7 +29,7 @@ module.exports =
             }
             case "maps":
             {
-                databaseHandler.handleTeamMaps(teamName, botData);
+                databaseHandler.handleTeamMaps(teamName, interaction, botData, false);
                 break;
             }
         }

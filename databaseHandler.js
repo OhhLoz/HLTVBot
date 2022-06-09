@@ -369,7 +369,7 @@ var handlePlayer = (playerName, response, botData, isLegacy) =>
         });
 }
 
-var handleTeamMaps = (teamName, botData) =>
+var handleTeamMaps = (teamName, response, botData, isLegacy) =>
 {
     database.fetchTeamDict(teamName).then(teamDictResult =>
     {
@@ -387,7 +387,7 @@ var handleTeamMaps = (teamName, botData) =>
                 {
                     var convertedStatsRes = func.teamStatsHLTVtoDB(res);
                     var convertedMapsRes = func.teamMapsHLTVtoDB(res.mapStats, res.id, res.name);
-                    func.handleTeamMaps(interaction, convertedMapsRes, res.id, res.name, botData);
+                    func.handleTeamMaps(response, convertedMapsRes, res.id, res.name, botData, isLegacy);
                     database.insertTeamMaps(convertedMapsRes);
                     database.checkUpdateTeamStats(convertedStatsRes);
                 });
@@ -398,7 +398,11 @@ var handleTeamMaps = (teamName, botData) =>
                 if(err.message.includes(`Team ${teamName} not found`))
                     errorMessage = `"${teamName}" was not found using the HLTV API`
 
-                interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:TM1", errorMessage, botData)] });
+                var embed = func.formatErrorEmbed("HLTV API Error - Error Code:TM1", errorMessage, botData);
+                if(isLegacy)
+                    response.channel.send({ embeds: [embed] });
+                else
+                    response.editReply({ embeds: [embed] });
             });
         }
         else
@@ -407,48 +411,56 @@ var handleTeamMaps = (teamName, botData) =>
         {
             if (teamMapsResult.length == 0)
             {
-            HLTV.getTeamStats({id: teamDictResult.team_id}).then((res)=>
-            {
-                var convertedStatsRes = func.teamStatsHLTVtoDB(res);
-                var convertedMapsRes = func.teamMapsHLTVtoDB(res.mapStats, res.id, res.name);
-                func.handleTeamMaps(interaction, convertedMapsRes, res.id, res.name, botData);
-                database.insertTeamMaps(convertedMapsRes);
-                database.checkUpdateTeamStats(convertedStatsRes);
-            }).catch((err) =>
-            {
-                console.log(err);
-                interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:TM2", "Error whilst accessing HLTV API using internal team id", botData)] });
-            });
+                HLTV.getTeamStats({id: teamDictResult.team_id}).then((res)=>
+                {
+                    var convertedStatsRes = func.teamStatsHLTVtoDB(res);
+                    var convertedMapsRes = func.teamMapsHLTVtoDB(res.mapStats, res.id, res.name);
+                    func.handleTeamMaps(response, convertedMapsRes, res.id, res.name, botData, isLegacy);
+                    database.insertTeamMaps(convertedMapsRes);
+                    database.checkUpdateTeamStats(convertedStatsRes);
+                }).catch((err) =>
+                {
+                    console.log(err);
+                    var embed = func.formatErrorEmbed("HLTV API Error - Error Code:TM2", "Error whilst accessing HLTV API using internal team id", botData);
+                    if(isLegacy)
+                        response.channel.send({ embeds: [embed] });
+                    else
+                        response.editReply({ embeds: [embed] });
+                });
             }
             else
             {
-            var mapArr = []
-            for(var key in teamMapsResult)
-            {
-                mapArr.push(teamMapsResult[key].dataValues);
-            }
-
-            //database.checkTeamDictUpdate(teamMapsResult.dataValues);
-            database.isExpired(new Date(mapArr[0].updated_at), databaseConstants.expiryTime.teammaps).then((needsUpdating) =>
-            {
-                if (needsUpdating)
+                var mapArr = []
+                for(var key in teamMapsResult)
                 {
-                    HLTV.getTeamStats({id: teamDictResult.team_id}).then((res)=>
-                    {
-                        var convertedStatsRes = func.teamStatsHLTVtoDB(res);
-                        var convertedRes = func.teamMapsHLTVtoDB(res.mapStats, res.id, res.name);
-                        func.handleTeamMaps(interaction, convertedRes, res.id, res.name, botData);
-                        database.updateTeamMaps(convertedRes, res.id, res.name);
-                        database.checkUpdateTeamStats(convertedStatsRes);
-                    }).catch((err) =>
-                    {
-                        console.log(err);
-                        interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:TM3", "Error whilst accessing HLTV API using internal team id", botData)] });
-                    });
+                    mapArr.push(teamMapsResult[key].dataValues);
                 }
-                else
-                    func.handleTeamMaps(interaction, mapArr, teamDictResult.team_id, mapArr[0].team_name, botData)
-            });
+
+                //database.checkTeamDictUpdate(teamMapsResult.dataValues);
+                database.isExpired(new Date(mapArr[0].updated_at), databaseConstants.expiryTime.teammaps).then((needsUpdating) =>
+                {
+                    if (needsUpdating)
+                    {
+                        HLTV.getTeamStats({id: teamDictResult.team_id}).then((res)=>
+                        {
+                            var convertedStatsRes = func.teamStatsHLTVtoDB(res);
+                            var convertedRes = func.teamMapsHLTVtoDB(res.mapStats, res.id, res.name);
+                            func.handleTeamMaps(response, convertedRes, res.id, res.name, botData, isLegacy);
+                            database.updateTeamMaps(convertedRes, res.id, res.name);
+                            database.checkUpdateTeamStats(convertedStatsRes);
+                        }).catch((err) =>
+                        {
+                            console.log(err);
+                            var embed = func.formatErrorEmbed("HLTV API Error - Error Code:TM3", "Error whilst accessing HLTV API using internal team id", botData);
+                            if(isLegacy)
+                                response.channel.send({ embeds: [embed] });
+                            else
+                                response.editReply({ embeds: [embed] });
+                        });
+                    }
+                    else
+                        func.handleTeamMaps(response, mapArr, teamDictResult.team_id, mapArr[0].team_name, botData, isLegacy)
+                });
             }
         });
         }

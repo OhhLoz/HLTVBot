@@ -215,7 +215,7 @@ var handlePages = (res, startIndex, code) => {
  *
  * @return {MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
  */
-var handleMapPages = (startIndex, teamName, teamID, mapArr) =>
+var formatMapPageEmbed = (startIndex, teamName, teamID, mapArr) =>
 {
   var teamnameformatted = teamName.replace(/\s+/g, '-').toLowerCase();
   var pageSize = 3;
@@ -523,69 +523,118 @@ var formatTeamProfileEmbed = (res, botData) =>
   .setDescription(`${message}.\nPlease try again or visit [hltv.org](${botData.hltvURL})`);
  }
 
- var handleTeamMaps = (interaction, mapArr, teamID, teamName, botData) =>
+ var handleTeamMaps = (response, mapArr, teamID, teamName, botData, isLegacy) =>
  {
   var currIndex = 0;
   //console.log(mapArr);
   //var mapArr = func.teamMapsHLTVtoDB(res.mapStats, res.id, res.name);
 
-  var embed = handleMapPages(currIndex, teamName, teamID, mapArr);
+  var embed = formatMapPageEmbed(currIndex, teamName, teamID, mapArr);
 
-  var originalMember = interaction.user;
-  interaction.editReply({ embeds: [embed], ephemeral: false, components: [botData.interactionRow] });
-
-  const filter = (user) =>
+  if(!isLegacy)
   {
-    user.deferUpdate();
-    return user.member.id === originalMember.id;
-  }
-  const collector = interaction.channel.createMessageComponentCollector({filter, componentType: 'BUTTON', time: 60000});
+    var originalMember = response.user;
+    response.editReply({ embeds: [embed], ephemeral: false, components: [botData.interactionRow] });
 
-  collector.on('collect', (button) =>
-  {
-    try
+    const filter = (user) =>
     {
-      switch (button.customId)
+      user.deferUpdate();
+      return user.member.id === originalMember.id;
+    }
+    const collector = response.channel.createMessageComponentCollector({filter, componentType: 'BUTTON', time: 60000});
+
+    collector.on('collect', (button) =>
+    {
+      try
       {
-        case botData.reactionControls.PREV_PAGE:
+        switch (button.customId)
         {
-          if (currIndex - 3 >= 0)
-            currIndex-=3;
-            interaction.editReply({embeds: [handleMapPages(currIndex, teamName, teamID, mapArr)]});
-          break;
-        }
-        case botData.reactionControls.NEXT_PAGE:
-        {
-          if (currIndex + 3 <= mapArr.length - 1)
-            currIndex+=3;
-            interaction.editReply({embeds: [handleMapPages(currIndex, teamName, teamID, mapArr)]});
-          break;
-        }
-        case botData.reactionControls.STOP:
-        {
-          // stop listening for reactions
-          collector.stop();
-          break;
+          case botData.reactionControls.PREV_PAGE:
+          {
+            if (currIndex - 3 >= 0)
+              currIndex-=3;
+              response.editReply({embeds: [formatMapPageEmbed(currIndex, teamName, teamID, mapArr)]});
+            break;
+          }
+          case botData.reactionControls.NEXT_PAGE:
+          {
+            if (currIndex + 3 <= mapArr.length - 1)
+              currIndex+=3;
+              response.editReply({embeds: [formatMapPageEmbed(currIndex, teamName, teamID, mapArr)]});
+            break;
+          }
+          case botData.reactionControls.STOP:
+          {
+            // stop listening for reactions
+            collector.stop();
+            break;
+          }
         }
       }
-    }
-    catch(err)
-    {
-      if (err)
-          console.log(err);
-
-      interaction.editReply({ embeds: [formatErrorEmbed("Error Occurred - Error Code:TM3", "An error occurred during button interaction", botData)] });
-    }
-  });
-
-  collector.on('end', async () =>
-  {
-    interaction.deleteReply().catch(err =>
+      catch(err)
       {
-          if (err.code !== 10008)
-              console.log(err);
+        if (err)
+            console.log(err);
+
+        response.editReply({ embeds: [formatErrorEmbed("Error Occurred - Error Code:TM3", "An error occurred during button interaction", botData)] });
+      }
+    });
+
+    collector.on('end', async () =>
+    {
+      response.deleteReply().catch(err =>
+        {
+            if (err.code !== 10008)
+                console.log(err);
+        });
+    });
+  }
+  else
+  {
+    var originalAuthor = response.author;
+    response.channel.send({ embeds: [embed] }).then((message) =>
+    {
+      message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
+
+      const filter = (reaction, user) => (Object.values(botData.reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id);
+      const collector = message.createReactionCollector({filter, time: 60000});
+
+      collector.on('collect', (reaction) =>
+      {
+        switch (reaction.emoji.name)
+        {
+          case botData.reactionControls.PREV_PAGE:
+          {
+            if (currIndex - 3 >= 0)
+              currIndex-=3;
+            message.edit({embeds: [formatMapPageEmbed(currIndex, teamName, teamID, mapArr)]});
+            break;
+          }
+          case botData.reactionControls.NEXT_PAGE:
+          {
+            if (currIndex + 3 <= mapArr.length - 1)
+              currIndex+=3;
+            message.edit({embeds: [formatMapPageEmbed(currIndex, teamName, teamID, mapArr)]});
+            break;
+          }
+          case botData.reactionControls.STOP:
+          {
+            // stop listening for reactions
+            collector.stop();
+            break;
+          }
+        }
       });
-  });
+
+      collector.on('end', async () => {
+          message.delete().catch(err =>
+          {
+              if (err.code !== 10008)
+                  console.log(err);
+          });
+      });
+    });
+  }
 }
 
 /**
@@ -690,4 +739,4 @@ var playersHLTVtoDB = (res) =>
   }
 }
 
-module.exports = {handleEventPages, handleMapPages, handleNewsPages, handlePages, reverseMapFromMap, getTime, checkStats, formatTeamProfileEmbed, formatTeamStatsEmbed, handleTeamMaps, formatPlayerEmbed, formatErrorEmbed, teamProfilesHLTVtoDB, teamMapsHLTVtoDB, teamStatsHLTVtoDB, playersHLTVtoDB};
+module.exports = {handleEventPages, formatMapPageEmbed, handleNewsPages, handlePages, reverseMapFromMap, getTime, checkStats, formatTeamProfileEmbed, formatTeamStatsEmbed, handleTeamMaps, formatPlayerEmbed, formatErrorEmbed, teamProfilesHLTVtoDB, teamMapsHLTVtoDB, teamStatsHLTVtoDB, playersHLTVtoDB};
