@@ -648,11 +648,11 @@ client.on("messageCreate", async message =>
       });
       break;
     }
-    default:
-    {
-      message.channel.send({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:LC", "Error whilst reading command, please try again or consult .hltv for a list of accepted commands.", botData)] });
-      break;
-    }
+    // default:
+    // {
+    //   message.channel.send({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:LC", "Error whilst reading command, please try again or consult .hltv for a list of accepted commands.", botData)] });
+    //   break;
+    // }
   }
 });
 
