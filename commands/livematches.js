@@ -8,7 +8,7 @@ module.exports =
 	data: new SlashCommandBuilder()
 		.setName("livematches")
 		.setDescription("Displays all currently live matches"),
-	async execute(interaction, client, botData)
+	async execute(interaction, botData)
     {
         HLTV.getMatches().then((res) =>
         {
@@ -24,7 +24,7 @@ module.exports =
             var embed = new MessageEmbed()
             .setColor(0x00AE86)
             .setTimestamp()
-            .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()});
+            .setFooter({text: "Sent by HLTVBot", iconURL: botData.hltvIMG});
 
             if (liveArr.length == 0)
             {
@@ -82,7 +82,7 @@ module.exports =
                         .setTitle("Error Occurred")
                         .setColor(0x00AE86)
                         .setTimestamp()
-                        .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
+                        .setFooter({text: "Sent by HLTVBot", iconURL: botData.hltvIMG})
                         .setDescription(`An error occurred during button interaction. Please try again or visit [hltv.org](${botData.hltvURL})`);
                         interaction.editReply({ embeds: [embed] });
                     }
@@ -104,7 +104,7 @@ module.exports =
             .setTitle("Error Occurred")
             .setColor(0x00AE86)
             .setTimestamp()
-            .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
+            .setFooter({text: "Sent by HLTVBot", iconURL: botData.hltvIMG})
             .setDescription(`An error occurred whilst fetching live matches. Please try again or visit [hltv.org](${botData.hltvURL})`);
             interaction.editReply({ embeds: [embed] });
         });

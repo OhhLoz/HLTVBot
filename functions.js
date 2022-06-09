@@ -215,15 +215,14 @@ var handlePages = (res, startIndex, code) => {
  *
  * @return {MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
  */
-var handleMapPages = (startIndex, teamName, teamID, mapArr) =>
+var formatMapPageEmbed = (startIndex, teamName, teamID, mapArr) =>
 {
-  var teamnameformatted = teamName.replace(/\s+/g, '-').toLowerCase();
   var pageSize = 3;
   var embed = new MessageEmbed()
       .setColor(0x00AE86)
       .setTimestamp()
       .setTitle(teamName + " Maps")
-      .setURL(`${hltvURL}/stats/teams/${teamID}/${teamnameformatted}`);
+      .setURL(`${hltvURL}/stats/teams/${teamID}/${teamName.replace(/\s+/g, '-').toLowerCase()}`);
 
   var footerStr = ""
 
@@ -408,12 +407,11 @@ var checkStats = (guild, botData, isJoin) =>
 /**
  * Formats a team profile embed based on the given arguments
  *
- * @param {Object}   interaction     Interaction object to reply to
  * @param {Object}   res     Team profile object to populated the embed with
  * @param {Object}   botData   Global object used to keep track of necessary botData to avoid reuse.
  *
  */
-var handleTeamProfile = (interaction, res, botData) =>
+var formatTeamProfileEmbed = (res, botData) =>
 {
   var playerRosterOutputStr = '';
   if(res.players != undefined)
@@ -441,7 +439,7 @@ var handleTeamProfile = (interaction, res, botData) =>
     .setThumbnail(res.logo)
     //.setImage(res.coverImage)
     .setTimestamp()
-    .setFooter({text: footerStr, iconURL: "https://cdn.discordapp.com/avatars/548165454158495745/222c8d9ccac5d194d8377c5da5b0f95b.png?size=4096"})
+    .setFooter({text: footerStr, iconURL: botData.hltvIMG})
     .setURL(`${botData.hltvURL}/team/${res.team_id}/${res.team_name.replace(/\s+/g, '')}`)
     .addField("Location", res.location == undefined ? "Not Available" : res.location)
     if (res.facebook)
@@ -473,20 +471,20 @@ var handleTeamProfile = (interaction, res, botData) =>
   //   })
   // }
   // else
-      interaction.editReply({ embeds: [embed] });
+      //interaction.editReply({ embeds: [embed] });
+      return embed;
 }
 
 /**
  * Formats a team stats embed based on the given arguments
  *
- * @param {Object}   interaction     Interaction object to reply to
  * @param {Object}   res     Team stats object to populated the embed with
  * @param {Object}   botData   Global object used to keep track of necessary botData to avoid reuse.
  *
+ * @return {MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
  */
- var handleTeamStats = (interaction, res, botData) =>
+ var formatTeamStatsEmbed = (res, botData) =>
  {
-    var teamnameformatted = res.team_name.replace(/\s+/g, '-').toLowerCase();
     var footerStr = "Sent by HLTVBot - Last Updated ";
     if(res.updated_at != undefined)
       footerStr += getTime(Date.now() - new Date(res.updated_at).getTime()) + " Ago"
@@ -496,8 +494,8 @@ var handleTeamProfile = (interaction, res, botData) =>
     .setTitle(res.team_name + " Stats")
     .setColor(0x00AE86)
     .setTimestamp()
-    .setFooter({text: footerStr, iconURL: "https://cdn.discordapp.com/avatars/548165454158495745/222c8d9ccac5d194d8377c5da5b0f95b.png?size=4096"})
-    .setURL(`${botData.hltvURL}/stats/teams/${res.team_id}/${teamnameformatted}`)
+    .setFooter({text: footerStr, iconURL: botData.hltvIMG})
+    .setURL(`${botData.hltvURL}/stats/teams/${res.team_id}/${res.team_name.replace(/\s+/g, '-').toLowerCase()}`)
     .addFields
     (
         {name: "Maps Played", value: res.mapsPlayed == undefined ? "Not Available" : res.mapsPlayed.toString(), inline: true},
@@ -511,94 +509,165 @@ var handleTeamProfile = (interaction, res, botData) =>
         {name: "Overall Win%", value: res.wins == undefined || res.losses == undefined ? "Not Available" : (Math.round(res.wins / (res.losses + res.wins) * 10000) / 100).toString() + "%", inline: true},
     )
 
-    interaction.editReply({ embeds: [embed] });
+    return embed;
  }
 
+/**
+ * Formats an error embed based on the given arguments
+ *
+ * @param {string}   title     Title for the embed
+ * @param {string}   message   message for the embed
+ * @param {Object}   botData   Global object used to keep track of necessary botData to avoid reuse.
+ *
+ * @return {MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
+ */
  var formatErrorEmbed = (title, message, botData) =>
  {
   return new MessageEmbed()
   .setTitle(`${title}`)
   .setColor(0x00AE86)
   .setTimestamp()
-  .setFooter({text: "Sent by HLTVBot", iconURL: "https://cdn.discordapp.com/avatars/548165454158495745/222c8d9ccac5d194d8377c5da5b0f95b.png?size=4096"})
+  .setFooter({text: "Sent by HLTVBot", iconURL: botData.hltvIMG})
   .setDescription(`${message}.\nPlease try again or visit [hltv.org](${botData.hltvURL})`);
  }
 
- var handleTeamMaps = (interaction, mapArr, teamID, teamName, botData) =>
+/**
+ * Handles the pagification of the team maps embed
+ *
+ *
+ * @param {Object}   response       Either an interaction or a message object to reply to
+ * @param {Object[]}   mapArr       An object array containing all the map objects the team has played.
+ * @param {string}      teamID         The ID of the team that this command was called for.
+ * @param {string}   teamName       The name of the team that this command was called for.
+ * @param {Object}   botData   Global object used to keep track of necessary botData to avoid reuse.
+ * @param {boolean}   isLegacy   Whether the function call is for a legacy command or not.
+ *
+ * @return {MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
+ */
+ var handleTeamMaps = (response, mapArr, teamID, teamName, botData, isLegacy) =>
  {
   var currIndex = 0;
   //console.log(mapArr);
   //var mapArr = func.teamMapsHLTVtoDB(res.mapStats, res.id, res.name);
 
-  var embed = handleMapPages(currIndex, teamName, teamID, mapArr);
+  var embed = formatMapPageEmbed(currIndex, teamName, teamID, mapArr);
 
-  var originalMember = interaction.user;
-  interaction.editReply({ embeds: [embed], ephemeral: false, components: [botData.interactionRow] });
-
-  const filter = (user) =>
+  if(!isLegacy)
   {
-    user.deferUpdate();
-    return user.member.id === originalMember.id;
-  }
-  const collector = interaction.channel.createMessageComponentCollector({filter, componentType: 'BUTTON', time: 60000});
+    var originalMember = response.user;
+    response.editReply({ embeds: [embed], ephemeral: false, components: [botData.interactionRow] });
 
-  collector.on('collect', (button) =>
-  {
-    try
+    const filter = (user) =>
     {
-      switch (button.customId)
+      user.deferUpdate();
+      return user.member.id === originalMember.id;
+    }
+    const collector = response.channel.createMessageComponentCollector({filter, componentType: 'BUTTON', time: 60000});
+
+    collector.on('collect', (button) =>
+    {
+      try
       {
-        case botData.reactionControls.PREV_PAGE:
+        switch (button.customId)
         {
-          if (currIndex - 3 >= 0)
-            currIndex-=3;
-            interaction.editReply({embeds: [handleMapPages(currIndex, teamName, teamID, mapArr)]});
-          break;
-        }
-        case botData.reactionControls.NEXT_PAGE:
-        {
-          if (currIndex + 3 <= mapArr.length - 1)
-            currIndex+=3;
-            interaction.editReply({embeds: [handleMapPages(currIndex, teamName, teamID, mapArr)]});
-          break;
-        }
-        case botData.reactionControls.STOP:
-        {
-          // stop listening for reactions
-          collector.stop();
-          break;
+          case botData.reactionControls.PREV_PAGE:
+          {
+            if (currIndex - 3 >= 0)
+              currIndex-=3;
+              response.editReply({embeds: [formatMapPageEmbed(currIndex, teamName, teamID, mapArr)]});
+            break;
+          }
+          case botData.reactionControls.NEXT_PAGE:
+          {
+            if (currIndex + 3 <= mapArr.length - 1)
+              currIndex+=3;
+              response.editReply({embeds: [formatMapPageEmbed(currIndex, teamName, teamID, mapArr)]});
+            break;
+          }
+          case botData.reactionControls.STOP:
+          {
+            // stop listening for reactions
+            collector.stop();
+            break;
+          }
         }
       }
-    }
-    catch(err)
-    {
-      if (err)
-          console.log(err);
-
-      interaction.editReply({ embeds: [formatErrorEmbed("Error Occurred - Error Code:TM3", "An error occurred during button interaction", botData)] });
-    }
-  });
-
-  collector.on('end', async () =>
-  {
-    interaction.deleteReply().catch(err =>
+      catch(err)
       {
-          if (err.code !== 10008)
-              console.log(err);
+        if (err)
+            console.log(err);
+
+        response.editReply({ embeds: [formatErrorEmbed("Error Occurred - Error Code:TM3", "An error occurred during button interaction", botData)] });
+      }
+    });
+
+    collector.on('end', async () =>
+    {
+      response.deleteReply().catch(err =>
+        {
+            if (err.code !== 10008)
+                console.log(err);
+        });
+    });
+  }
+  else
+  {
+    var originalAuthor = response.author;
+    response.channel.send({ embeds: [embed] }).then((message) =>
+    {
+      message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
+
+      const filter = (reaction, user) => (Object.values(botData.reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id);
+      const collector = message.createReactionCollector({filter, time: 60000});
+
+      collector.on('collect', (reaction) =>
+      {
+        switch (reaction.emoji.name)
+        {
+          case botData.reactionControls.PREV_PAGE:
+          {
+            if (currIndex - 3 >= 0)
+              currIndex-=3;
+            message.edit({embeds: [formatMapPageEmbed(currIndex, teamName, teamID, mapArr)]});
+            break;
+          }
+          case botData.reactionControls.NEXT_PAGE:
+          {
+            if (currIndex + 3 <= mapArr.length - 1)
+              currIndex+=3;
+            message.edit({embeds: [formatMapPageEmbed(currIndex, teamName, teamID, mapArr)]});
+            break;
+          }
+          case botData.reactionControls.STOP:
+          {
+            // stop listening for reactions
+            collector.stop();
+            break;
+          }
+        }
       });
-  });
+
+      collector.on('end', async () => {
+          message.delete().catch(err =>
+          {
+              if (err.code !== 10008)
+                  console.log(err);
+          });
+      });
+    });
+  }
 }
 
 /**
  * Formats a player profile embed based on the given arguments
  *
  *
- * @param {Object}   interaction     Interaction object to reply to
  * @param {Object}   res       Team profile object to populated the embed with
  * @param {Object}   botData   Global object used to keep track of necessary botData to avoid reuse.
  *
+ * @return {MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
  */
-var handlePlayer = (interaction, res, botData) =>
+var formatPlayerEmbed = (res, botData) =>
 {
   var footerStr = "Sent by HLTVBot - Last Updated ";
   if(res.updated_at != undefined)
@@ -612,7 +681,7 @@ var handlePlayer = (interaction, res, botData) =>
     .setThumbnail(res.image)
     //.setImage(res.image)
     .setTimestamp()
-    .setFooter({text: footerStr, iconURL: "https://cdn.discordapp.com/avatars/548165454158495745/222c8d9ccac5d194d8377c5da5b0f95b.png?size=4096"})
+    .setFooter({text: footerStr, iconURL: botData.hltvIMG})
     .setURL(`${botData.hltvURL}/team/${res.team_id}/${res.ign.replace(/\s+/g, '')}`)
     .addFields
     (
@@ -631,30 +700,17 @@ var handlePlayer = (interaction, res, botData) =>
       embed.addField("Instagram", res.instagram);
     embed.addField("Team", `[${res.team_name}](${botData.hltvURL}/team/${res.team_id}/${res.team_name.replace(/\s+/g, '')})`)
     embed.addField("Rating", res.rating.toString());
-
-  // if (res.logo.includes(".svg"))
-  // {
-  //   nodeHtmlToImage({
-  //     html: `<img src='${res.logo}' />`,
-  //     quality: 100,
-  //     type: 'png',
-  //     transparent: true,
-  //     puppeteerArgs: {
-  //       args: ['--no-sandbox'],
-  //     },
-  //     encoding: 'buffer',
-  //   }).then(imageResult =>
-  //   {
-  //     var thumbnail = new MessageAttachment(imageResult, 'logo.png')
-  //     embed.setThumbnail('attachment://logo.png');
-
-  //     interaction.editReply({ embeds: [embed], files: [thumbnail] });
-  //   })
-  // }
-  // else
-      interaction.editReply({ embeds: [embed] });
+    return embed;
 }
 
+/**
+ * Converts a given input from a hltv api call into a database readable format
+ *
+ *
+ * @param {Object}   res       Result object from the hltv api call
+ *
+ * @return {Object}      Database readable format of the given object
+ */
 var teamStatsHLTVtoDB = (res) =>
 {
   var returnObj = Object.assign({}, res.overview);
@@ -663,6 +719,14 @@ var teamStatsHLTVtoDB = (res) =>
   return returnObj;
 }
 
+/**
+ * Converts a given input from a hltv api call into a database readable format
+ *
+ *
+ * @param {Object}   res       Result object from the hltv api call
+ *
+ * @return {Object}      Database readable format of the given object
+ */
 var teamProfilesHLTVtoDB = (res) =>
 {
   return {
@@ -678,6 +742,16 @@ var teamProfilesHLTVtoDB = (res) =>
   }
 }
 
+/**
+ * Converts a given input from a hltv api call into a database readable format
+ *
+ *
+ * @param {Object}   res       Result object from the hltv api call
+ * @param {string}   teamID       team ID for the team the maps are for
+ * @param {string}   teamName       team name for the team the maps are for
+ *
+ * @return {Object}      Database readable format of the given object
+ */
 var teamMapsHLTVtoDB = (inputArr, teamID, teamName) =>
  {
   var mapArr = [];
@@ -693,7 +767,15 @@ var teamMapsHLTVtoDB = (inputArr, teamID, teamName) =>
   return mapArr;
  }
 
- var playersHLTVtoDB = (res) =>
+ /**
+ * Converts a given input from a hltv api call into a database readable format
+ *
+ *
+ * @param {Object}   res       Result object from the hltv api call
+ *
+ * @return {Object}      Database readable format of the given object
+ */
+var playersHLTVtoDB = (res) =>
 {
   return {
     id: res.id,
@@ -712,4 +794,4 @@ var teamMapsHLTVtoDB = (inputArr, teamID, teamName) =>
   }
 }
 
-module.exports = {handleEventPages, handleMapPages, handleNewsPages, handlePages, reverseMapFromMap, getTime, checkStats, handleTeamProfile, handleTeamStats, handleTeamMaps, handlePlayer, formatErrorEmbed, teamProfilesHLTVtoDB, teamMapsHLTVtoDB, teamStatsHLTVtoDB, playersHLTVtoDB};
+module.exports = {handleEventPages, formatMapPageEmbed, handleNewsPages, handlePages, reverseMapFromMap, getTime, checkStats, formatTeamProfileEmbed, formatTeamStatsEmbed, handleTeamMaps, formatPlayerEmbed, formatErrorEmbed, teamProfilesHLTVtoDB, teamMapsHLTVtoDB, teamStatsHLTVtoDB, playersHLTVtoDB};

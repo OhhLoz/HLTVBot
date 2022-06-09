@@ -8,7 +8,7 @@ module.exports =
 	data: new SlashCommandBuilder()
 		.setName("news")
 		.setDescription("Lists recent hltv news stories"),
-	async execute(interaction, client, botData)
+	async execute(interaction, botData)
     {
         HLTV.getNews().then((res) =>
         {
@@ -62,7 +62,7 @@ module.exports =
                     .setColor(0x00AE86)
                     .setURL(`${botData.hltvURL}`)
                     .setTimestamp()
-                    .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
+                    .setFooter({text: "Sent by HLTVBot", iconURL: botData.hltvIMG})
                     .setDescription(`An error occurred during button interaction. Please try again or visit [hltv.org](${botData.hltvURL})`);
                     interaction.editReply({ embeds: [embed] });
                 }
@@ -84,7 +84,7 @@ module.exports =
             .setTitle("Error Occurred")
             .setColor(0x00AE86)
             .setTimestamp()
-            .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
+            .setFooter({text: "Sent by HLTVBot", iconURL: botData.hltvIMG})
             .setDescription(`An error occurred whilst fetching news. Please try again or visit [hltv.org](${botData.hltvURL})`);
             interaction.editReply({ embeds: [embed] });
         });

@@ -6,13 +6,13 @@ module.exports =
 	data: new SlashCommandBuilder()
 		.setName("help")
 		.setDescription("Lists all bot commands"),
-	async execute(interaction, client, botData)
+	async execute(interaction, botData)
     {
         var embed = new MessageEmbed()
         .setTitle("Help")
         .setColor(0xff8d00)
         .setTimestamp()
-        .setFooter({text: "Sent by HLTVBot", iconURL: client.user.displayAvatarURL()})
+        .setFooter({text: "Sent by HLTVBot", iconURL: botData.hltvIMG})
         .addFields
         (
             {name: "\u200b", value: `${botData.titleSpacer}**Bot Commands**`},
