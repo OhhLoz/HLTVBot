@@ -217,13 +217,12 @@ var handlePages = (res, startIndex, code) => {
  */
 var formatMapPageEmbed = (startIndex, teamName, teamID, mapArr) =>
 {
-  var teamnameformatted = teamName.replace(/\s+/g, '-').toLowerCase();
   var pageSize = 3;
   var embed = new MessageEmbed()
       .setColor(0x00AE86)
       .setTimestamp()
       .setTitle(teamName + " Maps")
-      .setURL(`${hltvURL}/stats/teams/${teamID}/${teamnameformatted}`);
+      .setURL(`${hltvURL}/stats/teams/${teamID}/${teamName.replace(/\s+/g, '-').toLowerCase()}`);
 
   var footerStr = ""
 
@@ -513,6 +512,15 @@ var formatTeamProfileEmbed = (res, botData) =>
     return embed;
  }
 
+/**
+ * Formats an error embed based on the given arguments
+ *
+ * @param {string}   title     Title for the embed
+ * @param {string}   message   message for the embed
+ * @param {Object}   botData   Global object used to keep track of necessary botData to avoid reuse.
+ *
+ * @return {MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
+ */
  var formatErrorEmbed = (title, message, botData) =>
  {
   return new MessageEmbed()
@@ -523,6 +531,19 @@ var formatTeamProfileEmbed = (res, botData) =>
   .setDescription(`${message}.\nPlease try again or visit [hltv.org](${botData.hltvURL})`);
  }
 
+/**
+ * Handles the pagification of the team maps embed
+ *
+ *
+ * @param {Object}   response       Either an interaction or a message object to reply to
+ * @param {Object[]}   mapArr       An object array containing all the map objects the team has played.
+ * @param {string}      teamID         The ID of the team that this command was called for.
+ * @param {string}   teamName       The name of the team that this command was called for.
+ * @param {Object}   botData   Global object used to keep track of necessary botData to avoid reuse.
+ * @param {boolean}   isLegacy   Whether the function call is for a legacy command or not.
+ *
+ * @return {MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
+ */
  var handleTeamMaps = (response, mapArr, teamID, teamName, botData, isLegacy) =>
  {
   var currIndex = 0;
@@ -682,6 +703,14 @@ var formatPlayerEmbed = (res, botData) =>
     return embed;
 }
 
+/**
+ * Converts a given input from a hltv api call into a database readable format
+ *
+ *
+ * @param {Object}   res       Result object from the hltv api call
+ *
+ * @return {Object}      Database readable format of the given object
+ */
 var teamStatsHLTVtoDB = (res) =>
 {
   var returnObj = Object.assign({}, res.overview);
@@ -690,6 +719,14 @@ var teamStatsHLTVtoDB = (res) =>
   return returnObj;
 }
 
+/**
+ * Converts a given input from a hltv api call into a database readable format
+ *
+ *
+ * @param {Object}   res       Result object from the hltv api call
+ *
+ * @return {Object}      Database readable format of the given object
+ */
 var teamProfilesHLTVtoDB = (res) =>
 {
   return {
@@ -705,6 +742,16 @@ var teamProfilesHLTVtoDB = (res) =>
   }
 }
 
+/**
+ * Converts a given input from a hltv api call into a database readable format
+ *
+ *
+ * @param {Object}   res       Result object from the hltv api call
+ * @param {string}   teamID       team ID for the team the maps are for
+ * @param {string}   teamName       team name for the team the maps are for
+ *
+ * @return {Object}      Database readable format of the given object
+ */
 var teamMapsHLTVtoDB = (inputArr, teamID, teamName) =>
  {
   var mapArr = [];
@@ -720,6 +767,14 @@ var teamMapsHLTVtoDB = (inputArr, teamID, teamName) =>
   return mapArr;
  }
 
+ /**
+ * Converts a given input from a hltv api call into a database readable format
+ *
+ *
+ * @param {Object}   res       Result object from the hltv api call
+ *
+ * @return {Object}      Database readable format of the given object
+ */
 var playersHLTVtoDB = (res) =>
 {
   return {
