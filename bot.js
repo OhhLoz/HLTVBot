@@ -8,7 +8,7 @@ const database = require("./databaseWrapper.js");
 const databaseHandler = require("./databaseHandler.js");
 
 //   SET TRUE WHEN TESTING TO DISABLE TOPGG Posting & TO USE TEST BOT TOKEN
-process.env.TESTING = false;
+var TESTING = false;
 
 //    DATA IMPORT
 const package = require("./package.json");
@@ -63,7 +63,7 @@ const row = new Discord.MessageActionRow()
   .setURL(botData.hltvURL)
 );
 
-if(!process.env.TESTING)
+if(!TESTING)
 {
   const { AutoPoster } = require('topgg-autoposter');
   const ap = AutoPoster(process.env.TOPGG_TOKEN, client);
@@ -112,7 +112,7 @@ client.on("ready", () =>
 
   const guild = client.guilds.cache.get('509391645226172420'); //development server guildid
 
-  if(process.env.TESTING)
+  if(TESTING)
     guild.commands.set(commandsArr);
   else
     client.application.commands.set(commandsArr);
