@@ -8,7 +8,7 @@ module.exports =
 	data: new SlashCommandBuilder()
 		.setName("results")
 		.setDescription("Displays the most recent match results"),
-	async execute(interaction, botData)
+  async execute(interaction, client, botData)
   {
       var currDate = new Date();
       var prevDate = new Date();

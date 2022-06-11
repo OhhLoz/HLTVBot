@@ -148,7 +148,7 @@ client.on("interactionCreate", async (interaction) =>
   try
   {
     await interaction.deferReply();
-    await command.execute(interaction, botData);
+    await command.execute(interaction, client, botData);
   }
   catch(err)
   {

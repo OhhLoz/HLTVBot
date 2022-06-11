@@ -5,7 +5,7 @@ module.exports =
 	data: new SlashCommandBuilder()
 		.setName("ping")
 		.setDescription("Displays the current ping to the bot & the API"),
-	async execute(interaction, botData)
+	async execute(interaction, client, botData)
     {
         try
         {
@@ -13,7 +13,7 @@ module.exports =
 
             await interaction.editReply(
             {
-                content: `Bot Latency: \`${message.createdTimestamp - interaction.createdTimestamp}ms\``,//, Websocket Latency: \`${client.ws.ping}ms\``,
+                content: `Bot Latency: \`${message.createdTimestamp - interaction.createdTimestamp}ms\`, Websocket Latency: \`${client.ws.ping}ms\``,
                 ephemeral: true
             });
         }

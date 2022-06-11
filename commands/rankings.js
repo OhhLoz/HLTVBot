@@ -10,7 +10,7 @@ module.exports =
 		.setDescription("Displays the top 30 rankings of teams or players")
         .addStringOption(option => option.setName("category").setDescription("Category of rankings to display").setRequired(true).addChoices({name:"team", value:"team"},
                                                                                                                                             {name:"player", value:"player"})),
-	async execute(interaction, botData)
+    async execute(interaction, client, botData) 
     {
         var category = interaction.options.getString("category");
         var embed = new MessageEmbed()

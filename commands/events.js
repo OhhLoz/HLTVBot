@@ -8,7 +8,7 @@ module.exports =
 	data: new SlashCommandBuilder()
 		.setName("events")
 		.setDescription("Displays the currently running & upcoming CS:GO events"),
-	async execute(interaction, botData)
+    async execute(interaction, client, botData)
     {
         HLTV.getEvents().then((res) =>
         {

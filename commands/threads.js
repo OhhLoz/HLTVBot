@@ -7,7 +7,7 @@ module.exports =
 	data: new SlashCommandBuilder()
 		.setName("threads")
 		.setDescription("Lists recent CS related hltv threads"),
-	async execute(interaction, botData)
+    async execute(interaction, client, botData)
     {
       HLTV.getRecentThreads().then((res) =>
       {

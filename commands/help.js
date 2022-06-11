@@ -6,7 +6,7 @@ module.exports =
 	data: new SlashCommandBuilder()
 		.setName("help")
 		.setDescription("Lists all bot commands"),
-	async execute(interaction, botData)
+    async execute(interaction, client, botData)
     {
         var embed = new MessageEmbed()
         .setTitle("Help")

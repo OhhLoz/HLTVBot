@@ -10,7 +10,7 @@ module.exports =
                                                                                                                                                       {name:"stats", value:"stats"},
                                                                                                                                                       {name:"maps", value:"maps"}))
         .addStringOption(option => option.setName('teamname').setDescription('Team to display the profile for').setRequired(true)),
-	async execute(interaction, botData)
+    async execute(interaction, client, botData)
     {
         var category = interaction.options.getString("function");
         var teamName = interaction.options.getString('teamname');
