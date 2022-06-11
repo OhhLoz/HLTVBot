@@ -8,7 +8,7 @@ const database = require("./databaseWrapper.js");
 const databaseHandler = require("./databaseHandler.js");
 
 //   SET TRUE WHEN TESTING TO DISABLE TOPGG Posting & TO USE TEST BOT TOKEN
-var TESTING = false;
+var TESTING = true;
 
 //    DATA IMPORT
 const package = require("./package.json");

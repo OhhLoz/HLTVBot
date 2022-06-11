@@ -110,7 +110,7 @@ var handlePages = (res, startIndex, code) => {
     embed.setFooter({text: `Page ${startIndex/pageSize + 1} of ${Math.ceil(pages)}`, iconURL: "https://cdn.discordapp.com/avatars/548165454158495745/222c8d9ccac5d194d8377c5da5b0f95b.png?size=4096"});
     embed.addField(`Match`, `${matchOutputStr}`, false);
 
-    if(code == COMMANDCODE.MATCHES)
+    if(code == COMMANDCODE.MATCHES || code == COMMANDCODE.RESULTS)
     {
       var matchDate = new Date(match.date);
       if(match.live)
@@ -131,9 +131,7 @@ var handlePages = (res, startIndex, code) => {
         for (var mapKey in match.map)
         {
           var currMap = mapDictionary[match.map[mapKey]]
-          if (currMap == undefined)
-            mapStr += "Not Selected / Unknown";
-          else
+          if (currMap != undefined)
             mapStr += currMap;
 
           if (mapKey != match.map.length - 1)
@@ -143,9 +141,7 @@ var handlePages = (res, startIndex, code) => {
       else
       {
         var currMap = mapDictionary[match.map];
-        if (currMap == undefined)
-          mapStr += "Not Selected / Unknown";
-        else
+        if (currMap != undefined)
           mapStr += currMap;
       }
     }
@@ -157,9 +153,7 @@ var handlePages = (res, startIndex, code) => {
         for (var mapKey in match.maps)
         {
           var currMap = mapDictionary[match.maps[mapKey]]
-          if (currMap == undefined)
-            mapStr += "Not Selected / Unknown";
-          else
+          if (currMap != undefined)
             mapStr += currMap;
 
           if (mapKey != match.maps.length - 1)
@@ -169,19 +163,16 @@ var handlePages = (res, startIndex, code) => {
       else
       {
         var currMap = mapDictionary[match.maps];
-        if (currMap == undefined)
-          mapStr += "Not Selected / Unknown";
-        else
+        if (currMap != undefined)
           mapStr += currMap;
       }
     }
-    else
-        mapStr += "Not Selected / Unknown";
 
-    embed.addField("Map", `${mapStr}`, false);
+    if (mapStr != "")
+      embed.addField("Map", `${mapStr}`, false);
 
 
-    if (code == COMMANDCODE.MATCHES || COMMANDCODE.LIVEMATCHES)
+    if (code == COMMANDCODE.MATCHES || code == COMMANDCODE.LIVEMATCHES)
     {
       if (match.event != undefined)
       {
