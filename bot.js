@@ -117,7 +117,7 @@ client.on("ready", () =>
   else
     client.application.commands.set(commandsArr);
 
-  console.log(`HLTVBot is currently serving ${botData.usercount} users, in ${botData.channelcount} channels of ${botData.servercount} servers. Alongside ${botData.botcount} bot brothers.`);
+  console.log(`HLTVBot v${botData.version} is currently serving ${botData.usercount} users, in ${botData.channelcount} channels of ${botData.servercount} servers. Alongside ${botData.botcount} bot brothers.`);
   client.user.setActivity(`${botData.servercount} servers | /help | .hltv`, { type: 'WATCHING' });
 });
 
