@@ -7,7 +7,7 @@ module.exports =
 	data: new SlashCommandBuilder()
 		.setName("stats")
 		.setDescription("Displays bot statistics, invite link and contact information"),
-	async execute(interaction, botData)
+    async execute(interaction, client, botData)
     {
         var embed = new MessageEmbed()
         .setTitle("Bot Stats")

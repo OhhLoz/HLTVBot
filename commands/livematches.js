@@ -8,7 +8,7 @@ module.exports =
 	data: new SlashCommandBuilder()
 		.setName("livematches")
 		.setDescription("Displays all currently live matches"),
-	async execute(interaction, botData)
+    async execute(interaction, client, botData)
     {
         HLTV.getMatches().then((res) =>
         {

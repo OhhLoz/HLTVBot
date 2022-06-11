@@ -8,7 +8,7 @@ module.exports =
 	data: new SlashCommandBuilder()
 		.setName("news")
 		.setDescription("Lists recent hltv news stories"),
-	async execute(interaction, botData)
+    async execute(interaction, client, botData)
     {
         HLTV.getNews().then((res) =>
         {

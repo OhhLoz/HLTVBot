@@ -5,7 +5,7 @@ module.exports =
 	data: new SlashCommandBuilder()
 		.setName("ping")
 		.setDescription("Displays the current ping to the bot & the API"),
-	async execute(interaction, client)
+	async execute(interaction, client, botData)
     {
         try
         {
