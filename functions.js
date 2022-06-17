@@ -4,7 +4,9 @@ const mapDictionary = require("./maps.json");
 const mapURLDictionary = require("./mapimages.json");
 const formatDictionary = require("./formats.json");
 const hltvURL = "https://www.hltv.org";
-const nodeHtmlToImage = require('node-html-to-image')
+const { request } = require('undici');
+const Canvas = require('@napi-rs/canvas');
+//const nodeHtmlToImage = require('node-html-to-image')
 
 var id = function(x) {return x;};
 
@@ -430,23 +432,22 @@ var handleTeamProfile = (interaction, res, botData) =>
     embed.addField("Players", playerRosterOutputStr);
     embed.addField("Rank", res.rank.toString());
 
+
   if (res.logo.includes(".svg"))
   {
-    nodeHtmlToImage({
-      html: `<img src='${res.logo}' />`,
-      quality: 100,
-      type: 'png',
-      transparent: true,
-      puppeteerArgs: {
-        args: ['--no-sandbox'],
-      },
-      encoding: 'buffer',
-    }).then(imageResult =>
+    request(res.logo).then(imageResult =>
     {
-      var thumbnail = new MessageAttachment(imageResult, 'logo.png')
-      embed.setThumbnail('attachment://logo.png');
-
-      interaction.editReply({ embeds: [embed], files: [thumbnail] });
+      imageResult.body.arrayBuffer().then(result =>
+      {
+        const canvas = Canvas.createCanvas(100, 100);
+        const context = canvas.getContext('2d');
+        const avatar = new Canvas.Image();
+        avatar.src = Buffer.from(result)
+        context.drawImage(avatar, 0, 0, 100, 100);
+        var thumbnail = new MessageAttachment(canvas.toBuffer(result), 'logo.png');
+        embed.setThumbnail('attachment://logo.png');
+        interaction.editReply({ embeds: [embed], files: [thumbnail] });
+      })
     })
   }
   else

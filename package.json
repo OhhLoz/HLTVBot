@@ -5,6 +5,7 @@
   "main": "bot.js",
   "dependencies": {
     "@discordjs/builders": "^0.13.0",
+    "@napi-rs/canvas": "^0.1.22",
     "@top-gg/sdk": "^3.1.3",
     "discord.js": "^13.6.0",
     "hltv": "^3.4.0",
@@ -12,7 +13,8 @@
     "pg": "^8.7.3",
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.19.0",
-    "topgg-autoposter": "^2.0.1"
+    "topgg-autoposter": "^2.0.1",
+    "undici": "^5.5.1"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
