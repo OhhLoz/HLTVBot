@@ -19,17 +19,17 @@ module.exports =
         {
             case ("profile"):
             {
-                databaseHandler.handleTeamProfile(teamName, interaction, botData, false);
+                databaseHandler.handleTeamProfile(teamName, interaction, botData);
                 break;
             }
             case ("stats"):
             {
-                databaseHandler.handleTeamProfile(teamName, interaction, botData, false);
+                databaseHandler.handleTeamStats(teamName, interaction, botData);
                 break;
             }
             case "maps":
             {
-                databaseHandler.handleTeamMaps(teamName, interaction, botData, false);
+                databaseHandler.handleTeamMaps(teamName, interaction, botData);
                 break;
             }
         }

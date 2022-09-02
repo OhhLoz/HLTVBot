@@ -531,11 +531,10 @@ var formatTeamProfileEmbed = (res, botData) =>
  * @param {string}      teamID         The ID of the team that this command was called for.
  * @param {string}   teamName       The name of the team that this command was called for.
  * @param {Object}   botData   Global object used to keep track of necessary botData to avoid reuse.
- * @param {boolean}   isLegacy   Whether the function call is for a legacy command or not.
  *
  * @return {MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
  */
- var handleTeamMaps = (response, mapArr, teamID, teamName, botData, isLegacy) =>
+ var handleTeamMaps = (response, mapArr, teamID, teamName, botData) =>
  {
   var currIndex = 0;
   //console.log(mapArr);
@@ -543,110 +542,61 @@ var formatTeamProfileEmbed = (res, botData) =>
 
   var embed = formatMapPageEmbed(currIndex, teamName, teamID, mapArr);
 
-  if(!isLegacy)
-  {
-    var originalMember = response.user;
-    response.editReply({ embeds: [embed], ephemeral: false, components: [botData.interactionRow] });
+  var originalMember = response.user;
+  response.editReply({ embeds: [embed], ephemeral: false, components: [botData.interactionRow] });
 
-    const filter = (user) =>
+  const filter = (user) =>
+  {
+    user.deferUpdate();
+    return user.member.id === originalMember.id;
+  }
+  const collector = response.channel.createMessageComponentCollector({filter, componentType: 'BUTTON', time: 60000});
+
+  collector.on('collect', (button) =>
+  {
+    try
     {
-      user.deferUpdate();
-      return user.member.id === originalMember.id;
+      switch (button.customId)
+      {
+        case botData.reactionControls.PREV_PAGE:
+        {
+          if (currIndex - 3 >= 0)
+            currIndex-=3;
+            response.editReply({embeds: [formatMapPageEmbed(currIndex, teamName, teamID, mapArr)]});
+          break;
+        }
+        case botData.reactionControls.NEXT_PAGE:
+        {
+          if (currIndex + 3 <= mapArr.length - 1)
+            currIndex+=3;
+            response.editReply({embeds: [formatMapPageEmbed(currIndex, teamName, teamID, mapArr)]});
+          break;
+        }
+        case botData.reactionControls.STOP:
+        {
+          // stop listening for reactions
+          collector.stop();
+          break;
+        }
+      }
     }
-    const collector = response.channel.createMessageComponentCollector({filter, componentType: 'BUTTON', time: 60000});
-
-    collector.on('collect', (button) =>
+    catch(err)
     {
-      try
-      {
-        switch (button.customId)
-        {
-          case botData.reactionControls.PREV_PAGE:
-          {
-            if (currIndex - 3 >= 0)
-              currIndex-=3;
-              response.editReply({embeds: [formatMapPageEmbed(currIndex, teamName, teamID, mapArr)]});
-            break;
-          }
-          case botData.reactionControls.NEXT_PAGE:
-          {
-            if (currIndex + 3 <= mapArr.length - 1)
-              currIndex+=3;
-              response.editReply({embeds: [formatMapPageEmbed(currIndex, teamName, teamID, mapArr)]});
-            break;
-          }
-          case botData.reactionControls.STOP:
-          {
-            // stop listening for reactions
-            collector.stop();
-            break;
-          }
-        }
-      }
-      catch(err)
-      {
-        if (err)
-            console.log(err);
+      if (err)
+          console.log(err);
 
-        response.editReply({ embeds: [formatErrorEmbed("Error Occurred - Error Code:TM3", "An error occurred during button interaction", botData)] });
-      }
-    });
+      response.editReply({ embeds: [formatErrorEmbed("Error Occurred - Error Code:TM3", "An error occurred during button interaction", botData)] });
+    }
+  });
 
-    collector.on('end', async () =>
-    {
-      response.deleteReply().catch(err =>
-        {
-            if (err.code !== 10008)
-                console.log(err);
-        });
-    });
-  }
-  else
+  collector.on('end', async () =>
   {
-    var originalAuthor = response.author;
-    response.channel.send({ embeds: [embed] }).then((message) =>
-    {
-      message.react('⬅').then(() => message.react('⏹').then(() => message.react('➡')));
-
-      const filter = (reaction, user) => (Object.values(botData.reactionControls).includes(reaction.emoji.name) && user.id == originalAuthor.id);
-      const collector = message.createReactionCollector({filter, time: 60000});
-
-      collector.on('collect', (reaction) =>
+    response.deleteReply().catch(err =>
       {
-        switch (reaction.emoji.name)
-        {
-          case botData.reactionControls.PREV_PAGE:
-          {
-            if (currIndex - 3 >= 0)
-              currIndex-=3;
-            message.edit({embeds: [formatMapPageEmbed(currIndex, teamName, teamID, mapArr)]});
-            break;
-          }
-          case botData.reactionControls.NEXT_PAGE:
-          {
-            if (currIndex + 3 <= mapArr.length - 1)
-              currIndex+=3;
-            message.edit({embeds: [formatMapPageEmbed(currIndex, teamName, teamID, mapArr)]});
-            break;
-          }
-          case botData.reactionControls.STOP:
-          {
-            // stop listening for reactions
-            collector.stop();
-            break;
-          }
-        }
+          if (err.code !== 10008)
+              console.log(err);
       });
-
-      collector.on('end', async () => {
-          message.delete().catch(err =>
-          {
-              if (err.code !== 10008)
-                  console.log(err);
-          });
-      });
-    });
-  }
+  });
 }
 
 /**

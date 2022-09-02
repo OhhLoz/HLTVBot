@@ -11,9 +11,8 @@ const { HLTV } = require('hltv');
  * @param {string}   teamName            Team name to be queried
  * @param {Object}      response     Either a discord.js interaction object or a discord.js message object
  * @param {Object}   botData           Global bot data object
- * @param {boolean}   isLegacy           Whether the command used is a legacy command or not
  */
-var handleTeamProfile = (teamName, response, botData, isLegacy) =>
+var handleTeamProfile = (teamName, response, botData) =>
 {
     database.fetchTeamDict(teamName).then(teamDictResult =>
     {
@@ -24,10 +23,7 @@ var handleTeamProfile = (teamName, response, botData, isLegacy) =>
                 //var convertedDictRes = func.teamDictHLTVtoDB(res);
                 var convertedRes = func.teamProfilesHLTVtoDB(res);
                 var embed = func.formatTeamProfileEmbed(convertedRes, botData);
-                if(isLegacy)
-                    response.channel.send({ embeds: [embed] });
-                else
-                    response.editReply({ embeds: [embed] });
+                response.editReply({ embeds: [embed] });
 
                 database.insertTeamDict(res.id, res.name);
                 if (teamName.toLowerCase() != res.name.toLowerCase())
@@ -42,10 +38,7 @@ var handleTeamProfile = (teamName, response, botData, isLegacy) =>
                     errorMessage = `"${teamName}" was not found using the HLTV API`
 
                 var embed = func.formatErrorEmbed("HLTV API Error - Error Code:T1", errorMessage, botData);
-                if(isLegacy)
-                    response.channel.send({ embeds: [embed] });
-                else
-                    response.editReply({ embeds: [embed] });
+                response.editReply({ embeds: [embed] });
             });
         }
         else
@@ -58,20 +51,14 @@ var handleTeamProfile = (teamName, response, botData, isLegacy) =>
                     {
                         var convertedRes = func.teamProfilesHLTVtoDB(res);
                         var embed = func.formatTeamProfileEmbed(convertedRes, botData);
-                        if(isLegacy)
-                            response.channel.send({ embeds: [embed] });
-                        else
-                            response.editReply({ embeds: [embed] });
+                        response.editReply({ embeds: [embed] });
                         database.insertTeamProfile(convertedRes);
                         database.insertRoster(convertedRes.players, convertedRes.team_id);
                     }).catch((err) =>
                     {
                         console.log(err);
                         var embed = func.formatErrorEmbed("HLTV API Error - Error Code:T2", "Error whilst accessing HLTV API using internal team id", botData);
-                        if(isLegacy)
-                            response.channel.send({ embeds: [embed] });
-                        else
-                            response.editReply({ embeds: [embed] });
+                        response.editReply({ embeds: [embed] });
                     });
                 }
                 else
@@ -85,20 +72,14 @@ var handleTeamProfile = (teamName, response, botData, isLegacy) =>
                             {
                                 var convertedRes = func.teamProfilesHLTVtoDB(res);
                                 var embed = func.formatTeamProfileEmbed(convertedRes, botData);
-                                if(isLegacy)
-                                    response.channel.send({ embeds: [embed] });
-                                else
-                                    response.editReply({ embeds: [embed] });
+                                response.editReply({ embeds: [embed] });
                                 database.updateTeamProfile(convertedRes);
                                 database.updateRoster(convertedRes.players, convertedRes.team_id);
                             }).catch((err) =>
                             {
                                 console.log(err);
                                 var embed = func.formatErrorEmbed("HLTV API Error - Error Code:T3", "Error whilst accessing HLTV API using internal team id", botData);
-                                if(isLegacy)
-                                    response.channel.send({ embeds: [embed] });
-                                else
-                                    response.editReply({ embeds: [embed] });
+                                response.editReply({ embeds: [embed] });
                             });
                         }
                         else
@@ -114,10 +95,7 @@ var handleTeamProfile = (teamName, response, botData, isLegacy) =>
 
                                 teamProfileResult.dataValues.players = playersArr;
                                 var embed = func.formatTeamProfileEmbed(teamProfileResult.dataValues, botData);
-                                if(isLegacy)
-                                    response.channel.send({ embeds: [embed] });
-                                else
-                                    response.editReply({ embeds: [embed] });
+                                response.editReply({ embeds: [embed] });
                             })
                         }
                     });
@@ -131,20 +109,14 @@ var handleTeamProfile = (teamName, response, botData, isLegacy) =>
         HLTV.getTeamByName({name: teamName}).then((res)=>
         {
             func.formatTeamProfileEmbed(res, botData).then((result) => {
-                if(isLegacy)
-                    response.channel.send({ embeds: [result] });
-                else
-                    response.editReply({ embeds: [result] });
+                response.editReply({ embeds: [result] });
                 database.authenticate(false);
             })
         }).catch((err) =>
         {
             console.log(err);
             var embed = func.formatErrorEmbed("HLTV API Error - Error Code:T4", "Error whilst accessing HLTV API using provided team name", botData);
-            if(isLegacy)
-                response.channel.send({ embeds: [embed] });
-            else
-                response.editReply({ embeds: [embed] });
+            response.editReply({ embeds: [embed] });
         });
     });
 }
@@ -157,9 +129,8 @@ var handleTeamProfile = (teamName, response, botData, isLegacy) =>
  * @param {string}   teamName            Team name to be queried
  * @param {Object}      response     Either a discord.js interaction object or a discord.js message object
  * @param {Object}   botData           Global bot data object
- * @param {boolean}   isLegacy           Whether the command used is a legacy command or not
  */
-var handleTeamStats = (teamName, response, botData, isLegacy) =>
+var handleTeamStats = (teamName, response, botData) =>
 {
     database.fetchTeamDict(teamName).then(teamDictResult =>
     {
@@ -180,10 +151,7 @@ var handleTeamStats = (teamName, response, botData, isLegacy) =>
                     var convertedMapsRes = func.teamMapsHLTVtoDB(res);
                     var embed = func.formatTeamStatsEmbed(convertedStatsRes, botData);
 
-                    if(isLegacy)
-                        response.channel.send({ embeds: [embed] });
-                    else
-                        response.editReply({ embeds: [embed] });
+                    response.editReply({ embeds: [embed] });
                     database.insertTeamStats(convertedRes);
 
                     database.checkUpdateTeamMaps(convertedMapsRes);
@@ -196,10 +164,7 @@ var handleTeamStats = (teamName, response, botData, isLegacy) =>
                     errorMessage = `"${teamName}" was not found using the HLTV API`
 
                 var embed = func.formatErrorEmbed("HLTV API Error - Error Code:TS1", errorMessage, botData);
-                if(isLegacy)
-                    response.channel.send({ embeds: [embed] });
-                else
-                    response.editReply({ embeds: [embed] });
+                response.editReply({ embeds: [embed] });
             });
         }
         else
@@ -214,10 +179,7 @@ var handleTeamStats = (teamName, response, botData, isLegacy) =>
                         var convertedMapsRes = func.teamMapsHLTVtoDB(res);
                         var embed = func.formatTeamStatsEmbed(convertedRes, botData);
 
-                        if(isLegacy)
-                            response.channel.send({ embeds: [embed] });
-                        else
-                            response.editReply({ embeds: [embed] });
+                        response.editReply({ embeds: [embed] });
                         database.insertTeamStats(convertedRes);
 
                         database.checkUpdateTeamMaps(convertedMapsRes);
@@ -225,10 +187,7 @@ var handleTeamStats = (teamName, response, botData, isLegacy) =>
                     {
                         console.log(err);
                         var embed = func.formatErrorEmbed("HLTV API Error - Error Code:TS2", "Error whilst accessing HLTV API using internal team id", botData);
-                        if(isLegacy)
-                            response.channel.send({ embeds: [embed] });
-                        else
-                            response.editReply({ embeds: [embed] });
+                        response.editReply({ embeds: [embed] });
                     });
                 }
                 else
@@ -244,29 +203,20 @@ var handleTeamStats = (teamName, response, botData, isLegacy) =>
                                 var convertedMapsRes = func.teamMapsHLTVtoDB(res);
                                 var embed = func.formatTeamStatsEmbed(convertedRes, botData);
 
-                                if(isLegacy)
-                                    response.channel.send({ embeds: [embed] });
-                                else
-                                    response.editReply({ embeds: [embed] });
+                                response.editReply({ embeds: [embed] });
                                 database.updateTeamStats(convertedRes);
                                 database.checkUpdateTeamMaps(convertedMapsRes);
                             }).catch((err) =>
                             {
                                 console.log(err);
                                 var embed = func.formatErrorEmbed("HLTV API Error - Error Code:TS3", "Error whilst accessing HLTV API using internal team id", botData);
-                                if(isLegacy)
-                                    response.channel.send({ embeds: [embed] });
-                                else
-                                    response.editReply({ embeds: [embed] });
+                                response.editReply({ embeds: [embed] });
                             });
                         }
                         else
                         {
                             var embed = func.formatTeamStatsEmbed(teamStatsResult.dataValues, botData);
-                            if(isLegacy)
-                                response.channel.send({ embeds: [embed] });
-                            else
-                                response.editReply({ embeds: [embed] });
+                            response.editReply({ embeds: [embed] });
                         }
                     });
                 }
@@ -281,10 +231,7 @@ var handleTeamStats = (teamName, response, botData, isLegacy) =>
             HLTV.getTeamStats({name: res.id}).then((res)=>
             {
                 var embed = func.formatTeamStatsEmbed(func.teamStatsHLTVtoDB(res), botData);
-                if(isLegacy)
-                    response.channel.send({ embeds: [embed] });
-                else
-                    response.editReply({ embeds: [embed] });
+                response.editReply({ embeds: [embed] });
             });
 
             database.authenticate(false);
@@ -292,10 +239,7 @@ var handleTeamStats = (teamName, response, botData, isLegacy) =>
         {
             console.log(err);
             var embed = func.formatErrorEmbed("HLTV API Error - Error Code:TS4", "Error whilst accessing HLTV API using provided team name", botData);
-            if(isLegacy)
-                response.channel.send({ embeds: [embed] });
-            else
-                response.editReply({ embeds: [embed] });
+            response.editReply({ embeds: [embed] });
         });
     });
 }
@@ -308,9 +252,8 @@ var handleTeamStats = (teamName, response, botData, isLegacy) =>
  * @param {string}   teamName            Team name to be queried
  * @param {Object}      response     Either a discord.js interaction object or a discord.js message object
  * @param {Object}   botData           Global bot data object
- * @param {boolean}   isLegacy           Whether the command used is a legacy command or not
  */
- var handleTeamMaps = (teamName, response, botData, isLegacy) =>
+ var handleTeamMaps = (teamName, response, botData) =>
  {
      database.fetchTeamDict(teamName).then(teamDictResult =>
      {
@@ -322,13 +265,13 @@ var handleTeamStats = (teamName, response, botData, isLegacy) =>
                  database.insertTeamDict(res.id, res.name);
                  if (teamName.toLowerCase() != res.name.toLowerCase())
                      database.insertTeamDict(res.id, teamName);
- 
+
                  database.checkUpdateTeamProfile(convertedRes);
                  HLTV.getTeamStats({id: res.id}).then((res)=>
                  {
                      var convertedStatsRes = func.teamStatsHLTVtoDB(res);
                      var convertedMapsRes = func.teamMapsHLTVtoDB(res.mapStats, res.id, res.name);
-                     func.handleTeamMaps(response, convertedMapsRes, res.id, res.name, botData, isLegacy);
+                     func.handleTeamMaps(response, convertedMapsRes, res.id, res.name, botData);
                      database.insertTeamMaps(convertedMapsRes);
                      database.checkUpdateTeamStats(convertedStatsRes);
                  });
@@ -338,12 +281,9 @@ var handleTeamStats = (teamName, response, botData, isLegacy) =>
                  var errorMessage = "Error whilst accessing HLTV API using provided team name";
                  if(err.message.includes(`Team ${teamName} not found`))
                      errorMessage = `"${teamName}" was not found using the HLTV API`
- 
+
                  var embed = func.formatErrorEmbed("HLTV API Error - Error Code:TM1", errorMessage, botData);
-                 if(isLegacy)
-                     response.channel.send({ embeds: [embed] });
-                 else
-                     response.editReply({ embeds: [embed] });
+                 response.editReply({ embeds: [embed] });
              });
          }
          else
@@ -356,17 +296,14 @@ var handleTeamStats = (teamName, response, botData, isLegacy) =>
                  {
                      var convertedStatsRes = func.teamStatsHLTVtoDB(res);
                      var convertedMapsRes = func.teamMapsHLTVtoDB(res.mapStats, res.id, res.name);
-                     func.handleTeamMaps(response, convertedMapsRes, res.id, res.name, botData, isLegacy);
+                     func.handleTeamMaps(response, convertedMapsRes, res.id, res.name, botData);
                      database.insertTeamMaps(convertedMapsRes);
                      database.checkUpdateTeamStats(convertedStatsRes);
                  }).catch((err) =>
                  {
                      console.log(err);
                      var embed = func.formatErrorEmbed("HLTV API Error - Error Code:TM2", "Error whilst accessing HLTV API using internal team id", botData);
-                     if(isLegacy)
-                         response.channel.send({ embeds: [embed] });
-                     else
-                         response.editReply({ embeds: [embed] });
+                     response.editReply({ embeds: [embed] });
                  });
              }
              else
@@ -376,7 +313,7 @@ var handleTeamStats = (teamName, response, botData, isLegacy) =>
                  {
                      mapArr.push(teamMapsResult[key].dataValues);
                  }
- 
+
                  //database.checkTeamDictUpdate(teamMapsResult.dataValues);
                  database.isExpired(new Date(mapArr[0].updated_at), databaseConstants.expiryTime.teammaps).then((needsUpdating) =>
                  {
@@ -386,21 +323,18 @@ var handleTeamStats = (teamName, response, botData, isLegacy) =>
                          {
                              var convertedStatsRes = func.teamStatsHLTVtoDB(res);
                              var convertedRes = func.teamMapsHLTVtoDB(res.mapStats, res.id, res.name);
-                             func.handleTeamMaps(response, convertedRes, res.id, res.name, botData, isLegacy);
+                             func.handleTeamMaps(response, convertedRes, res.id, res.name, botData);
                              database.updateTeamMaps(convertedRes, res.id, res.name);
                              database.checkUpdateTeamStats(convertedStatsRes);
                          }).catch((err) =>
                          {
                              console.log(err);
                              var embed = func.formatErrorEmbed("HLTV API Error - Error Code:TM3", "Error whilst accessing HLTV API using internal team id", botData);
-                             if(isLegacy)
-                                 response.channel.send({ embeds: [embed] });
-                             else
-                                 response.editReply({ embeds: [embed] });
+                             response.editReply({ embeds: [embed] });
                          });
                      }
                      else
-                         func.handleTeamMaps(response, mapArr, teamDictResult.team_id, mapArr[0].team_name, botData, isLegacy)
+                         func.handleTeamMaps(response, mapArr, teamDictResult.team_id, mapArr[0].team_name, botData)
                  });
              }
          });
@@ -415,7 +349,7 @@ var handleTeamStats = (teamName, response, botData, isLegacy) =>
              {
                  func.handleTeamMaps(interaction, func.teamMapsHLTVtoDB(res.mapStats, res.id, res.name), res.id, res.name, botData);
              });
- 
+
              database.authenticate(false);
          }).catch((err) =>
          {
@@ -433,9 +367,8 @@ var handleTeamStats = (teamName, response, botData, isLegacy) =>
  * @param {string}   playerName            Player name to be queried
  * @param {Object}      response     Either a discord.js interaction object or a discord.js message object
  * @param {Object}   botData           Global bot data object
- * @param {boolean}   isLegacy           Whether the command used is a legacy command or not
  */
-var handlePlayer = (playerName, response, botData, isLegacy) =>
+var handlePlayer = (playerName, response, botData) =>
 {
     database.fetchPlayer(playerName).then((playerResult) =>
         {
@@ -445,10 +378,7 @@ var handlePlayer = (playerName, response, botData, isLegacy) =>
                 {
                     var convertedRes = func.playersHLTVtoDB(res);
                     var embed = func.formatPlayerEmbed(convertedRes, botData);
-                    if(isLegacy)
-                        response.channel.send({ embeds: [embed] });
-                    else
-                        response.editReply({ embeds: [embed] });
+                    response.editReply({ embeds: [embed] });
                     database.insertPlayer(convertedRes);
                 }).catch((err) =>
                 {
@@ -458,10 +388,7 @@ var handlePlayer = (playerName, response, botData, isLegacy) =>
                         errorMessage = `"${playerName}" was not found using the HLTV API`
 
                     var embed = func.formatErrorEmbed("HLTV API Error - Error Code:P1", errorMessage, botData);
-                    if(isLegacy)
-                        response.channel.send({ embeds: [embed] });
-                    else
-                        response.editReply({ embeds: [embed] });
+                    response.editReply({ embeds: [embed] });
                 });
             }
             else    //player found in database
@@ -474,28 +401,19 @@ var handlePlayer = (playerName, response, botData, isLegacy) =>
                         {
                             var convertedRes = func.playersHLTVtoDB(res);
                             var embed = func.formatPlayerEmbed(convertedRes, botData);
-                            if(isLegacy)
-                                response.channel.send({ embeds: [embed] });
-                            else
-                                response.editReply({ embeds: [embed] });
+                            response.editReply({ embeds: [embed] });
                             database.updatePlayer(convertedRes);
                         }).catch((err) =>
                         {
                             console.log(err);
                             var embed = func.formatErrorEmbed("HLTV API Error - Error Code:P2", "Error whilst accessing HLTV API using internal player id", botData);
-                            if(isLegacy)
-                                response.channel.send({ embeds: [embed] });
-                            else
-                                response.editReply({ embeds: [embed] });
+                            response.editReply({ embeds: [embed] });
                         });
                     }
                     else
                     {
                         var embed = func.formatPlayerEmbed(playerResult.dataValues, botData);
-                        if(isLegacy)
-                            response.channel.send({ embeds: [embed] });
-                        else
-                            response.editReply({ embeds: [embed] });
+                        response.editReply({ embeds: [embed] });
                     }
                 });
             }
@@ -506,20 +424,14 @@ var handlePlayer = (playerName, response, botData, isLegacy) =>
             HLTV.getPlayerByName({name: playerName}).then((res)=>
             {
                 func.formatPlayerEmbed(res, botData).then((result) => {
-                    if(isLegacy)
-                        response.channel.send({ embeds: [result] });
-                    else
-                        response.editReply({ embeds: [result] });
+                    response.editReply({ embeds: [result] });
                     database.authenticate(false);
                 })
             }).catch((err) =>
             {
                 console.log(err);
                 var embed = func.formatErrorEmbed("HLTV API Error - Error Code:P3", "Error whilst accessing HLTV API using provided player name", botData);
-                if(isLegacy)
-                    response.channel.send({ embeds: [embed] });
-                else
-                    response.editReply({ embeds: [embed] });
+                response.editReply({ embeds: [embed] });
             });
         });
 }
