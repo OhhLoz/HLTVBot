@@ -11,6 +11,6 @@ module.exports =
     {
         var playerName = interaction.options.getString('player');
 
-        databaseHandler.handlePlayer(playerName, interaction, botData, false);
+        databaseHandler.handlePlayer(playerName, interaction, botData);
     }
 }
