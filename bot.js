@@ -106,17 +106,6 @@ client.on("ready", () =>
     botData = func.checkStats(guild, botData, true);
   })
 
-  const port = process.env.PORT;
-
-  const http = require('http');
-
-  const server = http.createServer(function (req, res) {
-    res.writeHead(200, {'Content-Type': 'text/plain'});
-    res.write('Received ping!');
-    res.end();
-  });
-  server.listen(port);
-
   database.authenticate(true);
   botData.hltvIMG = client.user.displayAvatarURL();
   botData.interactionRow = row;
