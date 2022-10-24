@@ -347,14 +347,14 @@ var handleTeamStats = (teamName, response, botData) =>
          {
              HLTV.getTeamStats({name: res.id}).then((res)=>
              {
-                 func.handleTeamMaps(interaction, func.teamMapsHLTVtoDB(res.mapStats, res.id, res.name), res.id, res.name, botData);
+                 func.handleTeamMaps(response, func.teamMapsHLTVtoDB(res.mapStats, res.id, res.name), res.id, res.name, botData);
              });
 
              database.authenticate(false);
          }).catch((err) =>
          {
              console.log(err);
-             interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:TM4", "Error whilst accessing HLTV API using provided team name", botData)] });
+             response.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:TM4", "Error whilst accessing HLTV API using provided team name", botData)] });
          });
      });
  }
