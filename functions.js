@@ -640,7 +640,8 @@ var formatPlayerEmbed = (res, botData) =>
     if (res.instagram)
       embed.addField("Instagram", res.instagram);
     embed.addField("Team", `[${res.team_name}](${botData.hltvURL}/team/${res.team_id}/${res.team_name.replace(/\s+/g, '')})`)
-    embed.addField("Rating", res.rating.toString());
+    if (res.rating)
+      embed.addField("Rating", res.rating.toString());
     return embed;
 }
 
@@ -728,10 +729,10 @@ var playersHLTVtoDB = (res) =>
     twitch: res.twitch,
     facebook: res.facebook,
     instagram: res.instagram,
-    country: res.country.name,
+    country: res.country != null ? res.country.name : undefined,
     team_id: res.team.id,
     team_name: res.team.name,
-    rating:res.statistics.rating
+    rating: res.statistics != null ? res.statistics.rating : undefined
   }
 }
 
