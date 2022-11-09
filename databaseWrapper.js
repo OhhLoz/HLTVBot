@@ -1,9 +1,9 @@
 const { Sequelize, Op } = require('sequelize');
 const databaseConstants = require("./databaseConstants.js");
-if (false)
+if (true)
 {
   const testConfig = require('./config.json');
-  process.env.DATABASE_URL = testConfig.databaseURL;
+  process.env.DATABASE_URL = testConfig.DATABASE_URL;
 }
 
 const databaseClient = new Sequelize(process.env.DATABASE_URL,

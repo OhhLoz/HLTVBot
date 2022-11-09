@@ -1,4 +1,5 @@
 const { MessageEmbed, MessageAttachment } = require('discord.js');
+const fetch = require("node-fetch");
 const COMMANDCODE = require("./commandcodes.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
@@ -395,6 +396,27 @@ var checkStats = (guild, botData, isJoin) =>
   return botData;
 }
 
+var postGuildCount = (clientid, count, token) =>
+{
+  var urlString = `https://discordbots.gg/api/servers?client_id=${clientid}?count=${count}`;
+  fetch(urlString, {
+    method: 'POST',
+    withCredentials: true,
+    credentials: 'include',
+    headers: {
+      "Authorization": `Bearer ${token}`
+    }
+  })
+  .then(res => {
+    // Handle response
+    console.log('Response: ', res);
+  })
+  .catch(err => {
+    // Handle error
+    console.log('Error message: ', error);
+  });
+}
+
 /**
  * Formats a team profile embed based on the given arguments
  *
@@ -736,4 +758,4 @@ var playersHLTVtoDB = (res) =>
   }
 }
 
-module.exports = {handleEventPages, formatMapPageEmbed, handleNewsPages, handlePages, reverseMapFromMap, getTime, checkStats, formatTeamProfileEmbed, formatTeamStatsEmbed, handleTeamMaps, formatPlayerEmbed, formatErrorEmbed, teamProfilesHLTVtoDB, teamMapsHLTVtoDB, teamStatsHLTVtoDB, playersHLTVtoDB};
+module.exports = {handleEventPages, formatMapPageEmbed, handleNewsPages, handlePages, reverseMapFromMap, getTime, checkStats, postGuildCount, formatTeamProfileEmbed, formatTeamStatsEmbed, handleTeamMaps, formatPlayerEmbed, formatErrorEmbed, teamProfilesHLTVtoDB, teamMapsHLTVtoDB, teamStatsHLTVtoDB, playersHLTVtoDB};
