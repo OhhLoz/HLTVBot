@@ -385,7 +385,7 @@ var handlePlayer = (playerName, response, botData) =>
                     console.log(err);
                     var errorMessage = "Error whilst accessing HLTV API using provided player name";
                     if(err.message.includes(`Player ${playerName} not found`))
-                        errorMessage = `Provided player name was not found using the HLTV API`
+                        errorMessage = `Specified player was not found using the HLTV API`
 
                     var embed = func.formatErrorEmbed("HLTV API Error - Error Code:P1", errorMessage, botData);
                     response.editReply({ embeds: [embed] });
