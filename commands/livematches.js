@@ -87,14 +87,14 @@ module.exports =
                         interaction.editReply({ embeds: [embed] });
                     }
                 });
-                collector.on('end', async () =>
-                {
-                    interaction.deleteReply().catch(err =>
-                        {
-                            if (err.code !== 10008)
-                                console.log(err);
-                        });
-                });
+                // collector.on('end', async () =>
+                // {
+                //     interaction.deleteReply().catch(err =>
+                //         {
+                //             if (err.code !== 10008)
+                //                 console.log(err);
+                //         });
+                // });
             }
         }).catch((err) =>
         {
