@@ -35,7 +35,7 @@ var handleTeamProfile = (teamName, response, botData) =>
                 console.log(err);
                 var errorMessage = "Error whilst accessing HLTV API using provided team name";
                 if(err.message.includes(`Team ${teamName} not found`))
-                    errorMessage = `"${teamName}" was not found using the HLTV API`
+                    errorMessage = `Provided teamname was not found using the HLTV API`
 
                 var embed = func.formatErrorEmbed("HLTV API Error - Error Code:T1", errorMessage, botData);
                 response.editReply({ embeds: [embed] });
@@ -161,7 +161,7 @@ var handleTeamStats = (teamName, response, botData) =>
                 console.log(err);
                 var errorMessage = "Error whilst accessing HLTV API using provided team name";
                 if(err.message.includes(`Team ${teamName} not found`))
-                    errorMessage = `"${teamName}" was not found using the HLTV API`
+                    errorMessage = `Provided teamname was not found using the HLTV API`
 
                 var embed = func.formatErrorEmbed("HLTV API Error - Error Code:TS1", errorMessage, botData);
                 response.editReply({ embeds: [embed] });
@@ -280,7 +280,7 @@ var handleTeamStats = (teamName, response, botData) =>
                  console.log(err);
                  var errorMessage = "Error whilst accessing HLTV API using provided team name";
                  if(err.message.includes(`Team ${teamName} not found`))
-                     errorMessage = `"${teamName}" was not found using the HLTV API`
+                     errorMessage = `Provided teamname was not found using the HLTV API`
 
                  var embed = func.formatErrorEmbed("HLTV API Error - Error Code:TM1", errorMessage, botData);
                  response.editReply({ embeds: [embed] });
@@ -347,14 +347,14 @@ var handleTeamStats = (teamName, response, botData) =>
          {
              HLTV.getTeamStats({name: res.id}).then((res)=>
              {
-                 func.handleTeamMaps(interaction, func.teamMapsHLTVtoDB(res.mapStats, res.id, res.name), res.id, res.name, botData);
+                 func.handleTeamMaps(response, func.teamMapsHLTVtoDB(res.mapStats, res.id, res.name), res.id, res.name, botData);
              });
 
              database.authenticate(false);
          }).catch((err) =>
          {
              console.log(err);
-             interaction.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:TM4", "Error whilst accessing HLTV API using provided team name", botData)] });
+             response.editReply({ embeds: [func.formatErrorEmbed("HLTV API Error - Error Code:TM4", "Error whilst accessing HLTV API using provided team name", botData)] });
          });
      });
  }
@@ -385,7 +385,7 @@ var handlePlayer = (playerName, response, botData) =>
                     console.log(err);
                     var errorMessage = "Error whilst accessing HLTV API using provided player name";
                     if(err.message.includes(`Player ${playerName} not found`))
-                        errorMessage = `"${playerName}" was not found using the HLTV API`
+                        errorMessage = `Specified player was not found using the HLTV API`
 
                     var embed = func.formatErrorEmbed("HLTV API Error - Error Code:P1", errorMessage, botData);
                     response.editReply({ embeds: [embed] });

@@ -1,11 +1,9 @@
 //    LIBRARIES & FUNCTIONS
 const Discord = require('discord.js');
 const client = new Discord.Client({ intents: [Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS] });
-const { HLTV } = require('hltv');
 const func = require("./functions.js");
 const fs = require("fs");
 const database = require("./databaseWrapper.js");
-const databaseHandler = require("./databaseHandler.js");
 
 //   SET TRUE WHEN TESTING TO DISABLE TOPGG Posting & TO USE TEST BOT TOKEN
 var TESTING = false;
@@ -65,20 +63,22 @@ const row = new Discord.MessageActionRow()
 
 if(!TESTING)
 {
+  // handle top.gg stat posting
   const { AutoPoster } = require('topgg-autoposter');
-  const ap = AutoPoster(process.env.TOPGG_TOKEN, client);
+  AutoPoster(process.env.TOPGG_TOKEN, client);
 
-  ap.on('posted', (stats) =>
-  {
-    console.log(`Posted stats to Top.gg | ${stats.serverCount} servers`)
-  })
+  // ap.on('posted', (stats) =>
+  // {
+  //   console.log(`Posted stats to Top.gg | ${stats.serverCount} servers`)
+  // })
 }
 else
 {
   const testConfig = require('./config.json');
   process.env.prefix = testConfig.prefix;
-  process.env.BOT_TOKEN = testConfig.token;
-  process.env.DATABASE_URL = testConfig.databaseURL;
+  process.env.BOT_TOKEN = testConfig.BOT_TOKEN;
+  process.env.DATABASE_URL = testConfig.DATABASE_URL;
+  process.env.DISCORDBOTS_TOKEN = testConfig.DISCORDBOTS_TOKEN;
 }
 
 const commandFiles = fs.readdirSync("./commands").filter(file => file.endsWith(".js"));
@@ -117,21 +117,24 @@ client.on("ready", () =>
   else
     client.application.commands.set(commandsArr);
 
+  //func.postGuildCount(client.user.id, botData.servercount, process.env.DISCORDBOTS_TOKEN);
   console.log(`HLTVBot v${botData.version} is currently serving ${botData.usercount} users, in ${botData.channelcount} channels of ${botData.servercount} servers. Alongside ${botData.botcount} bot brothers.`);
   client.user.setActivity(`${botData.servercount} servers | /help | re-add for slash command permissions`, { type: 'WATCHING' });
 });
 
 client.on("guildCreate", guild =>
 {
-  console.log(`New guild joined: ${guild.name} (id: ${guild.id}). This guild has ${guild.memberCount} members!`);
   botData = func.checkStats(guild, botData, true);
+  //func.postGuildCount(client.user.id, botData.servercount, process.env.DISCORDBOTS_TOKEN);
+  console.log(`New guild joined: ${guild.name} (id: ${guild.id}). This guild has ${guild.memberCount} members! Guild Count:${botData.servercount}`);
   client.user.setActivity(`${botData.servercount} servers | /help | re-add for slash command permissions`, { type: 'WATCHING' });
 });
 
 client.on("guildDelete", guild =>
 {
-  console.log(`I have been removed from: ${guild.name} (id: ${guild.id}). This guild had ${guild.memberCount} members!`);
   botData = func.checkStats(guild, botData, false);
+  //func.postGuildCount(client.user.id, botData.servercount, process.env.DISCORDBOTS_TOKEN);
+  console.log(`I have been removed from: ${guild.name} (id: ${guild.id}). This guild had ${guild.memberCount} members! Guild Count:${botData.servercount}`);
   client.user.setActivity(`${botData.servercount} servers | /help | re-add for slash command permissions`, { type: 'WATCHING' });
 });
 

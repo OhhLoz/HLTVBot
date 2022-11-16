@@ -1,4 +1,5 @@
 const { MessageEmbed, MessageAttachment } = require('discord.js');
+const fetch = require("node-fetch");
 const COMMANDCODE = require("./commandcodes.json");
 const mapDictionary = require("./maps.json");
 const formatDictionary = require("./formats.json");
@@ -395,6 +396,27 @@ var checkStats = (guild, botData, isJoin) =>
   return botData;
 }
 
+var postGuildCount = (clientid, count, token) =>
+{
+  var urlString = `https://discordbots.gg/api/servers?client_id=${clientid}?count=${count}`;
+  fetch(urlString, {
+    method: 'POST',
+    withCredentials: true,
+    credentials: 'include',
+    headers: {
+      "Authorization": `Bearer ${token}`
+    }
+  })
+  .then(res => {
+    // Handle response
+    console.log('Response: ', res);
+  })
+  .catch(err => {
+    // Handle error
+    console.log('Error message: ', error);
+  });
+}
+
 /**
  * Formats a team profile embed based on the given arguments
  *
@@ -640,7 +662,8 @@ var formatPlayerEmbed = (res, botData) =>
     if (res.instagram)
       embed.addField("Instagram", res.instagram);
     embed.addField("Team", `[${res.team_name}](${botData.hltvURL}/team/${res.team_id}/${res.team_name.replace(/\s+/g, '')})`)
-    embed.addField("Rating", res.rating.toString());
+    if (res.rating)
+      embed.addField("Rating", res.rating.toString());
     return embed;
 }
 
@@ -728,11 +751,11 @@ var playersHLTVtoDB = (res) =>
     twitch: res.twitch,
     facebook: res.facebook,
     instagram: res.instagram,
-    country: res.country.name,
+    country: res.country != null ? res.country.name : undefined,
     team_id: res.team.id,
     team_name: res.team.name,
-    rating:res.statistics.rating
+    rating: res.statistics != null ? res.statistics.rating : undefined
   }
 }
 
-module.exports = {handleEventPages, formatMapPageEmbed, handleNewsPages, handlePages, reverseMapFromMap, getTime, checkStats, formatTeamProfileEmbed, formatTeamStatsEmbed, handleTeamMaps, formatPlayerEmbed, formatErrorEmbed, teamProfilesHLTVtoDB, teamMapsHLTVtoDB, teamStatsHLTVtoDB, playersHLTVtoDB};
+module.exports = {handleEventPages, formatMapPageEmbed, handleNewsPages, handlePages, reverseMapFromMap, getTime, checkStats, postGuildCount, formatTeamProfileEmbed, formatTeamStatsEmbed, handleTeamMaps, formatPlayerEmbed, formatErrorEmbed, teamProfilesHLTVtoDB, teamMapsHLTVtoDB, teamStatsHLTVtoDB, playersHLTVtoDB};
