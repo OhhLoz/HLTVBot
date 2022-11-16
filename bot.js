@@ -6,7 +6,7 @@ const fs = require("fs");
 const database = require("./databaseWrapper.js");
 
 //   SET TRUE WHEN TESTING TO DISABLE TOPGG Posting & TO USE TEST BOT TOKEN
-var TESTING = true;
+var TESTING = false;
 
 //    DATA IMPORT
 const package = require("./package.json");
@@ -117,7 +117,7 @@ client.on("ready", () =>
   else
     client.application.commands.set(commandsArr);
 
-  func.postGuildCount(client.user.id, botData.servercount, process.env.DISCORDBOTS_TOKEN);
+  //func.postGuildCount(client.user.id, botData.servercount, process.env.DISCORDBOTS_TOKEN);
   console.log(`HLTVBot v${botData.version} is currently serving ${botData.usercount} users, in ${botData.channelcount} channels of ${botData.servercount} servers. Alongside ${botData.botcount} bot brothers.`);
   client.user.setActivity(`${botData.servercount} servers | /help | re-add for slash command permissions`, { type: 'WATCHING' });
 });
@@ -125,7 +125,7 @@ client.on("ready", () =>
 client.on("guildCreate", guild =>
 {
   botData = func.checkStats(guild, botData, true);
-  func.postGuildCount(client.user.id, botData.servercount, process.env.DISCORDBOTS_TOKEN);
+  //func.postGuildCount(client.user.id, botData.servercount, process.env.DISCORDBOTS_TOKEN);
   console.log(`New guild joined: ${guild.name} (id: ${guild.id}). This guild has ${guild.memberCount} members! Guild Count:${botData.servercount}`);
   client.user.setActivity(`${botData.servercount} servers | /help | re-add for slash command permissions`, { type: 'WATCHING' });
 });
@@ -133,7 +133,7 @@ client.on("guildCreate", guild =>
 client.on("guildDelete", guild =>
 {
   botData = func.checkStats(guild, botData, false);
-  func.postGuildCount(client.user.id, botData.servercount, process.env.DISCORDBOTS_TOKEN);
+  //func.postGuildCount(client.user.id, botData.servercount, process.env.DISCORDBOTS_TOKEN);
   console.log(`I have been removed from: ${guild.name} (id: ${guild.id}). This guild had ${guild.memberCount} members! Guild Count:${botData.servercount}`);
   client.user.setActivity(`${botData.servercount} servers | /help | re-add for slash command permissions`, { type: 'WATCHING' });
 });

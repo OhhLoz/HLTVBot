@@ -1,6 +1,6 @@
 {
   "name": "HLTVBot",
-  "version": "1.7.5",
+  "version": "1.7.6",
   "description": "",
   "main": "bot.js",
   "dependencies": {
