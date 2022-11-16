@@ -10,11 +10,11 @@
     "hltv": "^3.4.0",
     "node-fetch": "^2.6.7",
     "sequelize": "^6.19.0",
-    "topgg-autoposter": "^2.0.1"
+    "topgg-autoposter": "^2.0.1",
+    "pg": "^8.7.3"
   },
   "devDependencies": {
     "node-html-to-image": "^3.2.4",
-    "pg": "^8.7.3",
     "pg-hstore": "^2.3.4"
   },
   "scripts": {
