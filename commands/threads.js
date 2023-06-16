@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
-const { MessageEmbed } = require('discord.js');
+const { EmbedBuilder } = require('discord.js');
 const { HLTV } = require('hltv');
 
 module.exports =
@@ -12,7 +12,7 @@ module.exports =
       HLTV.getRecentThreads().then((res) =>
       {
         var embedcount = 0;
-        var embed = new MessageEmbed()
+        var embed = new EmbedBuilder()
         .setTitle("Recent Threads")
         .setColor(0xff8d00)
         .setURL(`${botData.hltvURL}/forums/counterstrike`)
@@ -22,7 +22,7 @@ module.exports =
         {
           if(res[index].title != undefined && res[index].category == 'cs')
           {
-            embed.addField(`${res[index].title}`, `[Link](${botData.hltvURL + res[index].link}) Replies: ${res[index].replies}`);
+            embed.addFields([{name: `${res[index].title}`, value: `[Link](${botData.hltvURL + res[index].link}) Replies: ${res[index].replies}`, inline: false}]);
             embedcount++;
           }
           if(embedcount >= 24)
@@ -39,7 +39,7 @@ module.exports =
       }).catch((err) =>
       {
         console.log(err);
-        var embed = new MessageEmbed()
+        var embed = new EmbedBuilder()
         .setTitle("Error Occurred")
         .setColor(0x00AE86)
         .setTimestamp()

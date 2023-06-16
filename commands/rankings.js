@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
-const { MessageEmbed } = require('discord.js');
+const { EmbedBuilder } = require('discord.js');
 const { HLTV } = require('hltv');
 const func = require("../functions.js")
 
@@ -13,7 +13,7 @@ module.exports =
     async execute(interaction, client, botData) 
     {
         var category = interaction.options.getString("category");
-        var embed = new MessageEmbed()
+        var embed = new EmbedBuilder()
         .setColor(0xff8d00)
         .setTimestamp()
         .setFooter({text: "Sent by HLTVBot", iconURL: botData.hltvIMG});

@@ -1,4 +1,4 @@
-const { MessageEmbed, MessageAttachment } = require('discord.js');
+const { EmbedBuilder, AttachmentBuilder, ComponentType } = require('discord.js');
 const fetch = require("node-fetch");
 const COMMANDCODE = require("./commandcodes.json");
 const mapDictionary = require("./maps.json");
@@ -48,11 +48,11 @@ let getTime = (milli) => {
  * @param {int}      startIndex     Which index within the Object to start populating the pages with.
  * @param {string}   code           An identifier used to determine where the function was called from and changes functionality accordingly.
  *
- * @return {MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
+ * @return {EmbedBuilder}      Returns the formatted embed so it can be edited further or sent to the desired channel.
  */
 var handlePages = (res, startIndex, code) => {
   var pageSize = 0;
-  var embed = new MessageEmbed()
+  var embed = new EmbedBuilder()
       .setColor(0x00AE86)
       .setTimestamp();
 
@@ -109,7 +109,7 @@ var handlePages = (res, startIndex, code) => {
     }
 
     embed.setFooter({text: `Page ${startIndex/pageSize + 1} of ${Math.ceil(pages)}`, iconURL: "https://cdn.discordapp.com/avatars/548165454158495745/222c8d9ccac5d194d8377c5da5b0f95b.png?size=4096"});
-    embed.addField(`Match`, `${matchOutputStr}`, false);
+    embed.addFields([{name: `Match`, value: `${matchOutputStr}`, inline: false}]);
 
     if(code == COMMANDCODE.MATCHES || code == COMMANDCODE.RESULTS)
     {
@@ -118,9 +118,9 @@ var handlePages = (res, startIndex, code) => {
         matchDate = "Live";
       else
         matchDate = matchDate.toUTCString()
-      embed.addField("Date", `${matchDate}`, false);
+      embed.addFields([{name: `Date`, value: `${matchDate}`, inline: false}]);
     }
-    embed.addField("Format", `${formatDictionary[match.format]}`, false);
+    embed.addFields([{name: `Format`, value: `${formatDictionary[match.format]}`, inline: false}]);
 
     var mapStr = "";
 
@@ -170,27 +170,27 @@ var handlePages = (res, startIndex, code) => {
     }
 
     if (mapStr != "")
-      embed.addField("Map", `${mapStr}`, false);
+      embed.addFields([{name: `Map`, value: `${mapStr}`, inline: false}]);
 
 
     if (code == COMMANDCODE.MATCHES || code == COMMANDCODE.LIVEMATCHES)
     {
       if (match.event != undefined)
       {
-        embed.addField("Event", `[${match.event.name}](${hltvURL}/events/${match.event.id}/${eventFormatted})`, false);
+        embed.addFields([{name: `Event`, value: `[${match.event.name}](${hltvURL}/events/${match.event.id}/${eventFormatted})`, inline: false}]);
       }
       else
-          embed.addField("Event", `${eventFormatted}`, false);
+          embed.addFields([{name: `Event`, value: `${eventFormatted}`, inline: false}]);
 
       if (match.title != undefined)
-          embed.addField("Title", match.title, false);
+          embed.addFields([{name: `Title`, value: match.title, inline: false}]);
     }
 
     if(code == COMMANDCODE.RESULTS)
-      embed.addField("Result", `${match.team1.name} ${match.result.team1.toString()} - ${match.result.team2.toString()} ${match.team2.name}`, false);
+      embed.addFields([{name: `Result`, value: `${match.team1.name} ${match.result.team1.toString()} - ${match.result.team2.toString()} ${match.team2.name}`, inline: false}]);
 
     if(i != startIndex+(pageSize - 1))
-      embed.addField('\u200b', '\u200b');
+      embed.addFields([{name: '\u200b', value: '\u200b', inline: false}]);
   }
   return embed;
 }
@@ -205,12 +205,12 @@ var handlePages = (res, startIndex, code) => {
  * @param {int}      teamID         The ID of the team that this command was called for.
  * @param {Object[]}   mapArr       An object array containing all the map objects the team has played.
  *
- * @return {MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
+ * @return {EmbedBuilder}      Returns the formatted embed so it can be edited further or sent to the desired channel.
  */
 var formatMapPageEmbed = (startIndex, teamName, teamID, mapArr) =>
 {
   var pageSize = 3;
-  var embed = new MessageEmbed()
+  var embed = new EmbedBuilder()
       .setColor(0x00AE86)
       .setTimestamp()
       .setTitle(teamName + " Maps")
@@ -235,18 +235,18 @@ var formatMapPageEmbed = (startIndex, teamName, teamID, mapArr) =>
       if (map != null)
       {
         embed.addFields
-        (
+        ([
           {name: mapName, value: "=========================================================", inline:false},
           {name: "Wins", value: map.wins == undefined ? "Not Available" : map.wins.toString(), inline:true},
           {name: "Draws", value: map.draws == undefined ? "Not Available" : map.draws.toString(), inline:true},
           {name: "Losses", value: map.losses == undefined ? "Not Available" : map.losses.toString(), inline:true},
           {name:"Win Rate", value: map.winRate == undefined ? "Not Available" : map.winRate.toString() + "%", inline:true},
           {name:"Total Rounds", value: map.totalRounds == undefined ? "Not Available" : map.totalRounds.toString(), inline:true},
-        )
+        ])
       }
 
       if(i != startIndex+(pageSize - 1) && i != mapArr.length-1 && map!=null)
-        embed.addField('\u200b', '\u200b');
+        embed.addFields([{name: '\u200b', value: '\u200b', inline: false}]);
     }
     footerStr += " - Last Updated ";
     if(mapArr[0].updated_at != undefined)
@@ -265,12 +265,12 @@ var formatMapPageEmbed = (startIndex, teamName, teamID, mapArr) =>
  * @param {Object}   eventArray     Object containing the events to be formatted into pages.
  * @param {int}      startIndex     Which index within the Object to start populating the pages with.
  *
- * @return {MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
+ * @return {EmbedBuilder}      Returns the formatted embed so it can be edited further or sent to the desired channel.
  */
 var handleEventPages = (eventArray, startIndex) =>
 {
   var pageSize = 3;
-  var embed = new MessageEmbed()
+  var embed = new EmbedBuilder()
       .setColor(0x00AE86)
       .setTimestamp()
       .setTitle("Events")
@@ -300,21 +300,21 @@ var handleEventPages = (eventArray, startIndex) =>
         matchEndDate = "Unknown";
 
       embed.addFields
-      (
+      ([
         {name:"Name", value: `[${event.name}](${hltvURL}/events/${event.id}/${eventNameURLFormat})`},
         {name:"Start", value: matchStartDate.toUTCString()},
         {name:"End", value: matchEndDate.toUTCString()}
-      )
+      ])
 
       if (event.prizePool)
-        embed.addField("Prize Pool", event.prizePool)
+        embed.addFields([{name: `Prize Pool`, value: event.prizePool, inline: false}]);
       if (event.numberOfTeams)
-        embed.addField("Number of Teams", event.numberOfTeams.toString())
+        embed.addFields([{name: `Number of Teams`, value: event.numberOfTeams.toString(), inline: false}]);
       if (event.location)
-        embed.addField("Location", event.location.name)
+        embed.addFields([{name: `Location`, value: event.location.name, inline: false}]);
 
       if(i != startIndex+(pageSize - 1))
-        embed.addField('\u200b', '\u200b');
+        embed.addFields([{name: '\u200b', value: '\u200b', inline: false}]);
     }
     return embed;
 }
@@ -327,12 +327,12 @@ var handleEventPages = (eventArray, startIndex) =>
  * @param {Object}   newsArray     Object containing the news to be formatted into pages.
  * @param {int}      startIndex     Which index within the Object to start populating the pages with.
  *
- * @return {MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
+ * @return {EmbedBuilder}      Returns the formatted embed so it can be edited further or sent to the desired channel.
  */
 var handleNewsPages = (newsArray, startIndex) =>
 {
   var pageSize = 8;
-  var embed = new MessageEmbed()
+  var embed = new EmbedBuilder()
       .setColor(0x00AE86)
       .setTimestamp()
       .setTitle("News")
@@ -351,15 +351,15 @@ var handleNewsPages = (newsArray, startIndex) =>
         break;
 
       embed.addFields
-      (
+      ([
         {name:'\u200b', value: newsObj.title == undefined || newsObj.link == undefined ? "Not Available" : `[${newsObj.title}](${hltvURL}${newsObj.link})`},
         {name:"Date", value: newsObj.date == undefined ? "Not Available" : `${(new Date(newsObj.date)).toUTCString()}`},
         {name:"Country", value: newsObj.country == undefined ? "Not Available" : newsObj.country.name},
         {name:"Comments", value: newsObj.comments == undefined ? "Not Available" : newsObj.comments.toString()},
-      )
+      ])
 
       if(i != startIndex+(pageSize - 1))
-        embed.addField('\u200b', '\u200b');
+        embed.addFields([{name: '\u200b', value: '\u200b', inline: false}]);
     }
     return embed;
 }
@@ -446,7 +446,7 @@ var formatTeamProfileEmbed = (res, botData) =>
   else
     footerStr += "Now"
 
-  var embed = new MessageEmbed()
+  var embed = new EmbedBuilder()
     .setTitle(res.team_name + " Profile")
     .setColor(0x00AE86)
     .setThumbnail(res.logo)
@@ -454,15 +454,15 @@ var formatTeamProfileEmbed = (res, botData) =>
     .setTimestamp()
     .setFooter({text: footerStr, iconURL: botData.hltvIMG})
     .setURL(`${botData.hltvURL}/team/${res.team_id}/${res.team_name.replace(/\s+/g, '')}`)
-    .addField("Location", res.location == undefined ? "Not Available" : res.location)
+    .addFields([{name: `Location`, value: res.location == undefined ? "Not Available" : res.location, inline: false}]);
     if (res.facebook)
-      embed.addField("Facebook", res.facebook);
+      embed.addFields([{name: `Facebook`, value: res.facebook, inline: false}]);
     if (res.twitter)
-      embed.addField("Twitter", res.twitter);
+      embed.addFields([{name: `Twitter`, value: res.twitter, inline: false}]);
     if (res.instagram)
-      embed.addField("Instagram", res.instagram);
-    embed.addField("Players", playerRosterOutputStr);
-    embed.addField("Rank", res.rank.toString());
+      embed.addFields([{name: `Instagram`, value: res.instagram, inline: false}]);
+    embed.addFields([{name: `Players`, value: playerRosterOutputStr, inline: false}]);
+    embed.addFields([{name: `Rank`, value: res.rank.toString(), inline: false}]);
 
   // if (res.logo.includes(".svg"))
   // {
@@ -477,7 +477,7 @@ var formatTeamProfileEmbed = (res, botData) =>
   //     encoding: 'buffer',
   //   }).then(imageResult =>
   //   {
-  //     var thumbnail = new MessageAttachment(imageResult, 'logo.png')
+  //     var thumbnail = new AttachmentBuilder(imageResult, { name: 'logo.png' });
   //     embed.setThumbnail('attachment://logo.png');
 
   //     interaction.editReply({ embeds: [embed], files: [thumbnail] });
@@ -494,7 +494,7 @@ var formatTeamProfileEmbed = (res, botData) =>
  * @param {Object}   res     Team stats object to populated the embed with
  * @param {Object}   botData   Global object used to keep track of necessary botData to avoid reuse.
  *
- * @return {MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
+ * @return {EmbedBuilder}      Returns the formatted embed so it can be edited further or sent to the desired channel.
  */
  var formatTeamStatsEmbed = (res, botData) =>
  {
@@ -503,14 +503,14 @@ var formatTeamProfileEmbed = (res, botData) =>
       footerStr += getTime(Date.now() - new Date(res.updated_at).getTime()) + " Ago"
     else
       footerStr += "Now"
-    const embed = new MessageEmbed()
+    const embed = new EmbedBuilder()
     .setTitle(res.team_name + " Stats")
     .setColor(0x00AE86)
     .setTimestamp()
     .setFooter({text: footerStr, iconURL: botData.hltvIMG})
     .setURL(`${botData.hltvURL}/stats/teams/${res.team_id}/${res.team_name.replace(/\s+/g, '-').toLowerCase()}`)
     .addFields
-    (
+    ([
         {name: "Maps Played", value: res.mapsPlayed == undefined ? "Not Available" : res.mapsPlayed.toString(), inline: true},
         {name: "Wins", value: res.wins == undefined ? "Not Available" : res.wins.toString(), inline: true},
         {name: "Losses", value: res.losses == undefined ? "Not Available" : res.losses.toString(), inline: true},
@@ -520,7 +520,7 @@ var formatTeamProfileEmbed = (res, botData) =>
         {name: "Average Kills Per Round", value: res.totalKills == undefined || res.roundsPlayed == undefined ? "Not Available" : (Math.round(res.totalKills / res.roundsPlayed * 100) / 100).toString(), inline: true},
         {name: "Rounds Played", value: res.roundsPlayed == undefined ? "Not Available" : res.roundsPlayed.toString(), inline: true},
         {name: "Overall Win%", value: res.wins == undefined || res.losses == undefined ? "Not Available" : (Math.round(res.wins / (res.losses + res.wins) * 10000) / 100).toString() + "%", inline: true},
-    )
+    ])
 
     return embed;
  }
@@ -532,11 +532,11 @@ var formatTeamProfileEmbed = (res, botData) =>
  * @param {string}   message   message for the embed
  * @param {Object}   botData   Global object used to keep track of necessary botData to avoid reuse.
  *
- * @return {MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
+ * @return {EmbedBuilder}      Returns the formatted embed so it can be edited further or sent to the desired channel.
  */
  var formatErrorEmbed = (title, message, botData) =>
  {
-  return new MessageEmbed()
+  return new EmbedBuilder()
   .setTitle(`${title}`)
   .setColor(0x00AE86)
   .setTimestamp()
@@ -554,7 +554,7 @@ var formatTeamProfileEmbed = (res, botData) =>
  * @param {string}   teamName       The name of the team that this command was called for.
  * @param {Object}   botData   Global object used to keep track of necessary botData to avoid reuse.
  *
- * @return {MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
+ * @return {EmbedBuilder}      Returns the formatted embed so it can be edited further or sent to the desired channel.
  */
  var handleTeamMaps = (response, mapArr, teamID, teamName, botData) =>
  {
@@ -572,7 +572,7 @@ var formatTeamProfileEmbed = (res, botData) =>
     user.deferUpdate();
     return user.member.id === originalMember.id;
   }
-  const collector = response.channel.createMessageComponentCollector({filter, componentType: 'BUTTON', time: 60000});
+  const collector = response.channel.createMessageComponentCollector({filter, componentType: ComponentType.Button, time: 60000});
 
   collector.on('collect', (button) =>
   {
@@ -628,7 +628,7 @@ var formatTeamProfileEmbed = (res, botData) =>
  * @param {Object}   res       Team profile object to populated the embed with
  * @param {Object}   botData   Global object used to keep track of necessary botData to avoid reuse.
  *
- * @return {MessageEmbed}      Returns the formatted embed so it can be edited further or sent to the desired channel.
+ * @return {EmbedBuilder}      Returns the formatted embed so it can be edited further or sent to the desired channel.
  */
 var formatPlayerEmbed = (res, botData) =>
 {
@@ -638,7 +638,7 @@ var formatPlayerEmbed = (res, botData) =>
   else
     footerStr += "Now"
 
-  var embed = new MessageEmbed()
+  var embed = new EmbedBuilder()
     .setTitle(res.ign + " Player Profile")
     .setColor(0x00AE86)
     .setThumbnail(res.image)
@@ -647,23 +647,23 @@ var formatPlayerEmbed = (res, botData) =>
     .setFooter({text: footerStr, iconURL: botData.hltvIMG})
     .setURL(`${botData.hltvURL}/team/${res.team_id}/${res.ign.replace(/\s+/g, '')}`)
     .addFields
-    (
+    ([
         {name: "Name", value: res.name == undefined ? "Not Available" : res.name},
         {name: "IGN", value:  res.ign == undefined ? "Not Available" : res.ign},
         {name: "Age", value:  res.age == undefined ? "Not Available" : res.age.toString()},
         {name: "Country", value:  res.country == undefined ? "Not Available" : res.country},
-    )
+    ])
     if (res.twitch)
-      embed.addField("Twitch", res.twitch);
+      embed.addFields([{name: `Twitch`, value: res.twitch, inline: false}]);
     if (res.facebook)
-      embed.addField("Facebook", res.facebook);
+      embed.addFields([{name: `Facebook`, value: res.facebook, inline: false}]);
     if (res.twitter)
-      embed.addField("Twitter", res.twitter);
+      embed.addFields([{name: `Twitter`, value: res.twitter, inline: false}]);
     if (res.instagram)
-      embed.addField("Instagram", res.instagram);
-    embed.addField("Team", `[${res.team_name}](${botData.hltvURL}/team/${res.team_id}/${res.team_name.replace(/\s+/g, '')})`)
+      embed.addFields([{name: `Instagram`, value: res.instagram, inline: false}]);
+    embed.addFields([{name: `Team`, value: `[${res.team_name}](${botData.hltvURL}/team/${res.team_id}/${res.team_name.replace(/\s+/g, '')})`, inline: false}]);
     if (res.rating)
-      embed.addField("Rating", res.rating.toString());
+      embed.addFields([{name: `Rating`, value: res.rating.toString(), inline: false}]);
     return embed;
 }
 

@@ -1,12 +1,12 @@
 //    LIBRARIES & FUNCTIONS
-const Discord = require('discord.js');
-const client = new Discord.Client({ intents: [Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS] });
+const { Client, GatewayIntentBits, ButtonBuilder, ActionRowBuilder, Collection, EmbedBuilder, ButtonStyle } = require('discord.js');
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildMessageReactions ]});
 const func = require("./functions.js");
 const fs = require("fs");
 const database = require("./databaseWrapper.js");
 
 //   SET TRUE WHEN TESTING TO DISABLE TOPGG Posting & TO USE TEST BOT TOKEN
-var TESTING = false;
+var TESTING = true;
 
 //    DATA IMPORT
 const package = require("./package.json");
@@ -34,29 +34,29 @@ var botData =
   hltvIMG: ""
 }
 
-const row = new Discord.MessageActionRow()
+const row = new ActionRowBuilder()
 .addComponents(
-  new Discord.MessageButton()
-  .setStyle('LINK')
+  new ButtonBuilder()
+  .setStyle(ButtonStyle.Link)
   .setLabel("Vote!")
   .setURL(botData.topggVoteURL),
-  new Discord.MessageButton()
+  new ButtonBuilder()
   .setCustomId(botData.reactionControls.PREV_PAGE)
-  .setStyle('SECONDARY')
+  .setStyle(ButtonStyle.Secondary)
   .setLabel(" ")
   .setEmoji(botData.reactionControls.PREV_PAGE),
-  new Discord.MessageButton()
+  new ButtonBuilder()
   .setCustomId(botData.reactionControls.STOP)
-  .setStyle('SECONDARY')
+  .setStyle(ButtonStyle.Secondary)
   .setLabel(" ")
   .setEmoji(botData.reactionControls.STOP),
-  new Discord.MessageButton()
+  new ButtonBuilder()
   .setCustomId(botData.reactionControls.NEXT_PAGE)
-  .setStyle('SECONDARY')
+  .setStyle(ButtonStyle.Secondary)
   .setLabel(" ")
   .setEmoji(botData.reactionControls.NEXT_PAGE),
-  new Discord.MessageButton()
-  .setStyle('LINK')
+  new ButtonBuilder()
+  .setStyle(ButtonStyle.Link)
   .setLabel("HLTV")
   .setURL(botData.hltvURL)
 );
@@ -85,7 +85,7 @@ const commandFiles = fs.readdirSync("./commands").filter(file => file.endsWith("
 
 const commandsArr = [];
 
-client.commands = new Discord.Collection();
+client.commands = new Collection();
 
 for (const file of commandFiles)
 {
@@ -112,7 +112,7 @@ client.on("ready", () =>
 
   const guild = client.guilds.cache.get('509391645226172420'); //development server guildid
 
-  if(TESTING)
+  if(TESTING && guild != null)
     guild.commands.set(commandsArr);
   else
     client.application.commands.set(commandsArr);
@@ -159,7 +159,7 @@ client.on("interactionCreate", async (interaction) =>
     if (err)
       console.log(err);
 
-    var embed = new Discord.MessageEmbed()
+    var embed = new EmbedBuilder()
     .setTitle("Error Occurred")
     .setColor(0x00AE86)
     .setTimestamp()

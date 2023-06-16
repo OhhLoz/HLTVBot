@@ -1,5 +1,4 @@
-const { SlashCommandBuilder } = require("@discordjs/builders");
-const { MessageEmbed, CommandInteractionOptionResolver } = require('discord.js');
+const { EmbedBuilder, ComponentType, SlashCommandBuilder } = require('discord.js');
 const { HLTV } = require('hltv');
 const func = require("../functions.js");
 
@@ -22,7 +21,7 @@ module.exports =
                 user.deferUpdate();
                 return user.member.id === originalMember.id;
             }
-            const collector = interaction.channel.createMessageComponentCollector({filter, componentType: 'BUTTON', time: 60000});
+            const collector = interaction.channel.createMessageComponentCollector({filter, componentType: ComponentType.Button, time: 60000});
 
             collector.on('collect', (button) =>
             {
@@ -57,7 +56,7 @@ module.exports =
                     if (err)
                         console.log(err);
 
-                    var embed = new MessageEmbed()
+                    var embed = new EmbedBuilder()
                     .setTitle("Error Occurred")
                     .setColor(0x00AE86)
                     .setTimestamp()
@@ -79,7 +78,7 @@ module.exports =
         {
           if (err)
             console.log(err);
-          var embed = new MessageEmbed()
+          var embed = new EmbedBuilder()
           .setTitle("Error Occurred")
           .setColor(0x00AE86)
           .setTimestamp()
