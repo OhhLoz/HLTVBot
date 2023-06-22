@@ -1,6 +1,6 @@
 {
   "name": "HLTVBot",
-  "version": "1.7.6",
+  "version": "1.7.7",
   "description": "",
   "main": "bot.js",
   "dependencies": {
@@ -8,9 +8,9 @@
     "discord.js": "^14.11.0",
     "hltv": "^3.4.6",
     "node-fetch": "^2.6.7",
+    "pg": "^8.7.3",
     "sequelize": "^6.19.0",
-    "topgg-autoposter": "^2.0.1",
-    "pg": "^8.7.3"
+    "topgg-autoposter": "^2.0.1"
   },
   "devDependencies": {
     "node-html-to-image": "^3.2.4",
@@ -20,7 +20,7 @@
     "start": "node bot.js"
   },
   "engines": {
-    "node": "16.13.0"
+    "node": "18.16.1"
   },
   "keywords": [],
   "author": "Laurence Ure",
