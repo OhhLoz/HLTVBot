@@ -397,7 +397,7 @@ var handlePlayer = (playerName, response, botData) =>
                 {
                     if (needsUpdating)
                     {
-                        HLTV.getPlayer({id: playerResult.id}).then((res)=>
+                        HLTV.getPlayer({id: playerResult.dataValues.id}).then((res)=>
                         {
                             var convertedRes = func.playersHLTVtoDB(res);
                             var embed = func.formatPlayerEmbed(convertedRes, botData);
