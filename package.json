@@ -21,7 +21,7 @@
     "start": "node bot.js"
   },
   "engines": {
-    "node": "18.16.18"
+    "node": "18.16.1"
   },
   "keywords": [],
   "author": "Laurence Ure",
